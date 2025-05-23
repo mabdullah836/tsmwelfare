@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 173 80% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 173 80% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 173 80% 10%;
+
+    --primary: 173 80% 36%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 173 30% 94%;
+    --secondary-foreground: 173 80% 30%;
+
+    --muted: 173 20% 94%;
+    --muted-foreground: 173 20% 40%;
+
+    --accent: 173 30% 94%;
+    --accent-foreground: 173 80% 30%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 173 20% 90%;
+    --input: 173 20% 90%;
+    --ring: 173 80% 36%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 173 80% 8%;
+    --foreground: 173 10% 98%;
+
+    --card: 173 80% 8%;
+    --card-foreground: 173 10% 98%;
+
+    --popover: 173 80% 8%;
+    --popover-foreground: 173 10% 98%;
+
+    --primary: 173 70% 40%;
+    --primary-foreground: 173 10% 98%;
+
+    --secondary: 173 30% 15%;
+    --secondary-foreground: 173 10% 98%;
+
+    --muted: 173 30% 15%;
+    --muted-foreground: 173 20% 70%;
+
+    --accent: 173 30% 15%;
+    --accent-foreground: 173 10% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 173 10% 98%;
+
+    --border: 173 30% 20%;
+    --input: 173 30% 20%;
+    --ring: 173 70% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold;
+  }
+}
+
+@layer components {
+  .hero-section {
+    @apply relative overflow-hidden bg-gradient-to-r from-primary/90 to-primary py-20 md:py-32;
+  }
+
+  .section-padding {
+    @apply py-12 md:py-20;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .card-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  .feature-card {
+    @apply bg-white dark:bg-secondary rounded-lg p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-border;
+  }
+
+  .carousel-container {
+    @apply relative overflow-hidden rounded-lg;
+  }
+
+  .carousel-item {
+    @apply absolute inset-0 transition-opacity duration-500;
+  }
+}

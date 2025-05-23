@@ -1,0 +1,222 @@
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Mail, Phone, MapPin, Clock } from "lucide-react"
+
+export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  })
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+
+    // Simulate form submission
+    setTimeout(() => {
+      setIsSubmitting(false)
+      setIsSubmitted(true)
+      setFormData({ name: "", email: "", subject: "", message: "" })
+    }, 1500)
+  }
+
+  return (
+    <>
+      <section className="bg-primary text-white py-16 md:py-24">
+        <div className="container">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Contact Us</h1>
+            <p className="text-xl text-white/90">
+              We'd love to hear from you. Reach out with questions, feedback, or to learn more about our services.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="container">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Send Us a Message</CardTitle>
+                  <CardDescription>
+                    Fill out the form below and we'll get back to you as soon as possible.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isSubmitted ? (
+                    <div className="bg-primary/10 text-primary p-6 rounded-lg text-center">
+                      <h3 className="text-xl font-bold mb-2">Thank You!</h3>
+                      <p>Your message has been sent. We'll get back to you soon.</p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label htmlFor="name" className="text-sm font-medium">
+                            Your Name
+                          </label>
+                          <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
+                        </div>
+                        <div className="space-y-2">
+                          <label htmlFor="email" className="text-sm font-medium">
+                            Email Address
+                          </label>
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="subject" className="text-sm font-medium">
+                          Subject
+                        </label>
+                        <Input id="subject" name="subject" value={formData.subject} onChange={handleChange} required />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="message" className="text-sm font-medium">
+                          Message
+                        </label>
+                        <Textarea
+                          id="message"
+                          name="message"
+                          rows={5}
+                          value={formData.message}
+                          onChange={handleChange}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        {isSubmitting ? "Sending..." : "Send Message"}
+                      </Button>
+                    </form>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contact Information</CardTitle>
+                  <CardDescription>Here's how you can reach us directly.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium mb-1">Address</h3>
+                      <address className="not-italic text-muted-foreground">
+                        123 Organization St.
+                        <br />
+                        City, State 12345
+                        <br />
+                        United States
+                      </address>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Phone className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium mb-1">Phone</h3>
+                      <p className="text-muted-foreground">
+                        <a href="tel:+11234567890" className="hover:text-primary">
+                          +1 (123) 456-7890
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium mb-1">Email</h3>
+                      <p className="text-muted-foreground">
+                        <a href="mailto:info@organization.org" className="hover:text-primary">
+                          info@organization.org
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-medium mb-1">Hours</h3>
+                      <p className="text-muted-foreground">
+                        Monday - Friday: 9am - 5pm
+                        <br />
+                        Saturday: 10am - 2pm
+                        <br />
+                        Sunday: Closed
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-muted">
+        <div className="container">
+          <h2 className="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {[
+              {
+                question: "How can I volunteer with your organization?",
+                answer:
+                  "We welcome volunteers! Please fill out our volunteer application form on the website or contact our Volunteer Coordinator directly.",
+              },
+              {
+                question: "Do you offer services in languages other than English?",
+                answer:
+                  "Yes, we have staff and volunteers who speak multiple languages. Please let us know your language needs when you contact us.",
+              },
+              {
+                question: "How can I make a donation?",
+                answer:
+                  "You can donate online through our secure portal, mail a check, or contact us about in-kind donations.",
+              },
+              {
+                question: "Do you offer services to all community members?",
+                answer:
+                  "Yes, our services are available to anyone in need in our service area, regardless of background or circumstances.",
+              },
+            ].map((faq, index) => (
+              <div key={index} className="bg-background rounded-lg p-6 shadow-sm">
+                <h3 className="text-lg font-bold mb-2">{faq.question}</h3>
+                <p className="text-muted-foreground">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
