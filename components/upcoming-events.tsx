@@ -9,57 +9,103 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 const events = [
   {
     id: 1,
-    title: "Charity Fundraising Dinner",
+    title: "Free Medical Camp",
     date: "June 15, 2025",
-    time: "7:00 PM - 10:00 PM",
-    location: "Grand Hotel, City Center",
-    description: "Join us for an evening of inspiration and generosity to support our education initiatives.",
-    category: "fundraising",
+    time: "8:00 AM - 4:00 PM",
+    location: "Village Chak 123, Faisalabad",
+    description:
+      "Our health department is organizing a medical camp in this village. Free checkup and medicines for everyone. We're bringing qualified doctors to help people who can't reach the city.",
+    category: "health",
   },
   {
     id: 2,
-    title: "Medical Camp",
-    date: "June 22, 2025",
-    time: "9:00 AM - 4:00 PM",
-    location: "Community Center, North District",
-    description: "Free medical checkups and consultations for community members.",
-    category: "community",
+    title: "Monthly Food Distribution",
+    date: "June 20, 2025",
+    time: "9:00 AM - 2:00 PM",
+    location: "Trust Office, Main Bazaar",
+    description:
+      "Monthly food packages for registered families. If you need food support, come with your ID card. We have rice, flour, oil and other basic items.",
+    category: "food",
   },
   {
     id: 3,
-    title: "Volunteer Orientation",
-    date: "June 28, 2025",
+    title: "Future School Planning Meeting",
+    date: "June 25, 2025",
     time: "10:00 AM - 12:00 PM",
-    location: "Trust Headquarters",
-    description: "Introduction session for new volunteers to learn about our mission and opportunities.",
-    category: "volunteer",
-  },
-  {
-    id: 4,
-    title: "Food Distribution Drive",
-    date: "July 5, 2025",
-    time: "8:00 AM - 2:00 PM",
-    location: "Various Locations",
-    description: "Distribution of food packages to families in need throughout the city.",
-    category: "community",
-  },
-  {
-    id: 5,
-    title: "Education Scholarship Ceremony",
-    date: "July 12, 2025",
-    time: "5:00 PM - 7:00 PM",
-    location: "City Hall Auditorium",
-    description: "Annual ceremony to award scholarships to deserving students.",
+    location: "Community Center, Jaranwala Road",
+    description:
+      "We're discussing our dream to build a school for poor children one day. Come join the meeting if you want to help us plan for this future project.",
     category: "education",
   },
   {
+    id: 4,
+    title: "Quran Pages Collection Drive",
+    date: "July 2, 2025",
+    time: "All Day",
+    location: "Various Mosques in the City",
+    description:
+      "Our Muqadas Awraq department is collecting old and damaged Quran pages from mosques and homes. We will properly dispose of them according to Islamic way.",
+    category: "muqadas",
+  },
+  {
+    id: 5,
+    title: "Wedding Support for Orphan Girl",
+    date: "July 8, 2025",
+    time: "6:00 PM - 10:00 PM",
+    location: "Community Hall, Millat Town",
+    description:
+      "We're organizing a simple wedding for an orphan girl who has no earning person in her family. The marriage support department covers all wedding expenses for such girls only. Everyone is invited to attend and give blessings.",
+    category: "marriage",
+  },
+  {
     id: 6,
-    title: "Monthly Board Meeting",
-    date: "July 15, 2025",
-    time: "6:00 PM - 8:00 PM",
-    location: "Trust Headquarters",
-    description: "Monthly meeting of the board of directors. Open to all members.",
-    category: "volunteer",
+    title: "Financial Help Distribution",
+    date: "July 12, 2025",
+    time: "9:00 AM - 1:00 PM",
+    location: "Trust Office",
+    description:
+      "Monthly financial assistance for widows and elderly people. If you're registered with us, come collect your support money. Bring your ID card.",
+    category: "financial",
+  },
+  {
+    id: 7,
+    title: "School Admission Drive",
+    date: "July 18, 2025",
+    time: "8:00 AM - 5:00 PM",
+    location: "Government Schools in Area",
+    description:
+      "Education department is helping poor families get their children admitted in schools. We'll pay the fees and buy books. Bring your child's birth certificate.",
+    category: "education",
+  },
+  {
+    id: 8,
+    title: "Free Quran Distribution",
+    date: "July 22, 2025",
+    time: "After Maghrib Prayer",
+    location: "Central Mosque, City Center",
+    description:
+      "Muqadas Awraq department is giving free copies of Holy Quran to families. We also have Islamic books for children. First come, first served.",
+    category: "muqadas",
+  },
+  {
+    id: 9,
+    title: "Ramadan Preparation Meeting",
+    date: "July 28, 2025",
+    time: "7:00 PM - 9:00 PM",
+    location: "Trust Office",
+    description:
+      "Planning meeting for next Ramadan food packages. We want to help 1000 families this year. Volunteers and donors are welcome to join.",
+    category: "food",
+  },
+  {
+    id: 10,
+    title: "Fundraising for School Dream",
+    date: "August 5, 2025",
+    time: "11:00 AM - 1:00 PM",
+    location: "Community Center",
+    description:
+      "We're organizing a fundraising event for our dream school project. We want to collect donations and find supporters who can help us build a school for 300 poor children in the future.",
+    category: "education",
   },
 ]
 
@@ -69,21 +115,23 @@ export function UpcomingEvents() {
   const filteredEvents = activeTab === "all" ? events : events.filter((event) => event.category === activeTab)
 
   return (
-    <section className="section-padding">
+    <section className="py-12 md:py-20">
       <div className="container">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl font-bold mb-4">Upcoming Events</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">What's Coming Up</h2>
           <p className="text-lg text-muted-foreground">
-            Join us at our upcoming events and be a part of our mission to serve the community.
+            Here are our upcoming events and activities. Come join us and be part of something good!
           </p>
         </div>
 
         <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full mb-8">
-          <TabsList className="grid grid-cols-4 max-w-md mx-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="community">Community</TabsTrigger>
+          <TabsList className="grid grid-cols-3 md:grid-cols-6 max-w-4xl mx-auto">
+            <TabsTrigger value="all">All Events</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
+            <TabsTrigger value="food">Food</TabsTrigger>
             <TabsTrigger value="education">Education</TabsTrigger>
-            <TabsTrigger value="fundraising">Fundraising</TabsTrigger>
+            <TabsTrigger value="financial">Financial</TabsTrigger>
+            <TabsTrigger value="marriage">Marriage</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -107,7 +155,7 @@ export function UpcomingEvents() {
                   </div>
                   <p className="mb-4">{event.description}</p>
                   <Button variant="outline" size="sm" className="w-full">
-                    Learn More
+                    Get More Info
                   </Button>
                 </div>
               </CardContent>
@@ -117,7 +165,7 @@ export function UpcomingEvents() {
 
         <div className="text-center mt-8">
           <Button asChild variant="outline">
-            <a href="/events">View All Events</a>
+            <a href="/events">See All Events</a>
           </Button>
         </div>
       </div>

@@ -43,11 +43,15 @@ export default function AboutPage() {
             </div>
             <div className="relative h-[400px] rounded-lg overflow-hidden">
               <Image
-                src="/placeholder.svg?height=400&width=600"
+                src="/placeholder.svg?height=400&width=600&text=Our+Journey"
                 alt="Our organization's journey"
                 fill
                 className="object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              <div className="absolute bottom-4 left-4">
+                <div className="bg-white/90 text-black px-3 py-1 rounded text-sm font-medium">25+ Years of Service</div>
+              </div>
             </div>
           </div>
         </div>
@@ -101,45 +105,46 @@ export default function AboutPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                name: "Jane Smith",
+                name: "Muhammad Tariq",
                 role: "Executive Director",
-                bio: "Jane has over 15 years of experience in nonprofit leadership and is passionate about community development.",
+                bio: "Muhammad has over 15 years of experience in nonprofit leadership and is passionate about community development.",
               },
               {
-                name: "John Davis",
+                name: "Fatima Sheikh",
                 role: "Program Director",
-                bio: "John oversees our programs and ensures they effectively meet the needs of those we serve.",
+                bio: "Fatima oversees our programs and ensures they effectively meet the needs of those we serve.",
               },
               {
-                name: "Sarah Johnson",
+                name: "Ahmed Hassan",
                 role: "Volunteer Coordinator",
-                bio: "Sarah manages our volunteer program and helps connect passionate individuals with meaningful opportunities.",
+                bio: "Ahmed manages our volunteer program and helps connect passionate individuals with meaningful opportunities.",
               },
               {
-                name: "Michael Chen",
+                name: "Aisha Khan",
                 role: "Development Director",
-                bio: "Michael leads our fundraising efforts and builds relationships with donors and supporters.",
+                bio: "Aisha leads our fundraising efforts and builds relationships with donors and supporters.",
               },
               {
-                name: "Lisa Rodriguez",
+                name: "Omar Ali",
                 role: "Community Outreach Manager",
-                bio: "Lisa works directly with community members to understand their needs and connect them with resources.",
+                bio: "Omar works directly with community members to understand their needs and connect them with resources.",
               },
               {
-                name: "David Wilson",
+                name: "Zainab Malik",
                 role: "Finance Manager",
-                bio: "David ensures our organization maintains financial integrity and makes the most of our resources.",
+                bio: "Zainab ensures our organization maintains financial integrity and makes the most of our resources.",
               },
             ].map((member, index) => (
               <Card key={index} className="overflow-hidden">
-                <div className="h-48 bg-muted">
+                <div className="h-48 bg-muted relative">
                   <Image
-                    src="/placeholder.svg?height=200&width=300"
+                    src={`/placeholder.svg?height=200&width=300&text=${member.name.split(" ")[0]}`}
                     alt={member.name}
                     width={300}
                     height={200}
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>
                 <CardContent className="pt-6">
                   <h3 className="text-xl font-bold mb-1">{member.name}</h3>

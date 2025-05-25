@@ -47,7 +47,7 @@ export function Typewriter({
   return (
     <span className={cn("inline-block", className)}>
       {text}
-      <span className="animate-pulse">|</span>
+      <span className="animate-pulse ml-1">|</span>
     </span>
   )
 }

@@ -10,11 +10,11 @@ export function SiteFooter() {
           <div>
             <Link href="/" className="flex items-center space-x-2 mb-6">
               <Image
-                src="/placeholder.svg?height=40&width=40"
+                src="/images/smw-logo-transparent.png"
                 alt="The Sirat-e-Mustaqeem Welfare Trust Logo"
                 width={40}
                 height={40}
-                className="h-10 w-10"
+                className="h-10 w-10 object-contain"
               />
               <span className="text-xl font-bold">The Sirat-e-Mustaqeem Welfare Trust</span>
             </Link>
