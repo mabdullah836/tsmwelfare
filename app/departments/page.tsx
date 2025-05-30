@@ -36,7 +36,7 @@ import { Stethoscope, Heart, DollarSign, BookOpen, Home, FileText } from "lucide
       icon: FileText,
       title: "Department of Muqadas Awraq",
       description:
-        "We collect old and damaged Quran pages from mosques and homes to dispose of them properly according to Islamic way. We also distribute free copies of Holy Quran and organize Quran classes for children.",
+        "We collect old and damaged Quran pages from mosques, homes, and even the streets to ensure they are disposed of properly according to Islamic guidelines. In addition, we distribute free copies of the Holy Quran and organize Quran classes for children to help spread knowledge and respect for the Holy Book.",
     },
   ];
 
