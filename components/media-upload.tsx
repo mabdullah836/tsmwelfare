@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Upload, ImageIcon, Video, X, Check } from "lucide-react"
+import { uploadImage, optimizeImageUrl } from "@/lib/cloudinary"
 
 interface UploadedFile {
   id: string
@@ -47,11 +48,12 @@ export function MediaUpload() {
     }
   }, [])
 
-  const handleFiles = (files: FileList) => {
-    Array.from(files).forEach((file) => {
+  const handleFiles = async (files: FileList) => {
+    Array.from(files).forEach(async (file) => {
       const fileId = Math.random().toString(36).substr(2, 9)
       const fileType = file.type.startsWith("image/") ? "image" : "video"
 
+      // Add file to state with uploading status
       const newFile: UploadedFile = {
         id: fileId,
         name: file.name,
@@ -64,20 +66,52 @@ export function MediaUpload() {
 
       setUploadedFiles((prev) => [...prev, newFile])
 
-      // Simulate upload progress
-      const interval = setInterval(() => {
+      try {
+        // Upload to Cloudinary
+        const result = await uploadImage(file)
+        
+        // Update file with optimized URL
         setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress: Math.min(f.progress + 10, 100) } : f)),
+          prev.map((f) =>
+            f.id === fileId
+              ? {
+                  ...f,
+                  status: "completed",
+                  progress: 100,
+                  url: optimizeImageUrl(result.secure_url),
+                }
+              : f
+          )
         )
-      }, 200)
 
-      // Complete upload after progress reaches 100%
-      setTimeout(() => {
-        clearInterval(interval)
+        // Save to MongoDB
+        await fetch('/api/media', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: file.name,
+            type: fileType,
+            size: newFile.size,
+            url: result.secure_url,
+            publicId: result.public_id,
+          }),
+        })
+      } catch (error) {
         setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, status: "completed", progress: 100 } : f)),
+          prev.map((f) =>
+            f.id === fileId
+              ? {
+                  ...f,
+                  status: "error",
+                  progress: 0,
+                }
+              : f
+          )
         )
-      }, 2200)
+        console.error('Upload error:', error)
+      }
     })
   }
 

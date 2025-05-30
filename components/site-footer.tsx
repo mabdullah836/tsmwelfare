@@ -19,7 +19,7 @@ export function SiteFooter() {
               <span className="text-xl font-bold">The Sirat-e-Mustaqeem Welfare Trust</span>
             </Link>
             <p className="text-muted-foreground mb-6">
-              Guiding people towards the straight path through compassion, service, and community support.
+              Serving humanity for over {new Date().getFullYear() - 2016} years, guiding people towards the straight path through compassion, service, and community support.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-primary">
@@ -106,8 +106,9 @@ export function SiteFooter() {
           <div>
             <h3 className="font-medium text-lg mb-4">Contact</h3>
             <address className="not-italic text-muted-foreground">
-              <p className="mb-2">123 Trust Street</p>
-              <p className="mb-2">City, State 12345</p>
+              <p className="mb-2">Head Office:</p>
+              <p className="mb-2">Mansehra Colony, Lal Kothi Stop</p>
+              <p className="mb-2">Landhi, Karachi</p>
               <p className="mb-4">Pakistan</p>
               <p className="mb-2">
                 <a href="tel:+921234567890" className="hover:text-primary">
