@@ -112,7 +112,7 @@ const events = [
 export function UpcomingEvents() {
   const [activeTab, setActiveTab] = useState("all")
 
-  const filteredEvents = activeTab === "all" ? events : events.filter((event) => event.category === activeTab)
+  const filteredEvents = events.filter(event => activeTab === "all" || event.category === activeTab)
 
   return (
     <section className="py-12 md:py-20">

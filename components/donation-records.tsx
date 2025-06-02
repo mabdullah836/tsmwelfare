@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Download, Filter } from "lucide-react"
+import { Search, Download, Filter, X } from "lucide-react"
+import DatePicker from "react-datepicker"
+import "react-datepicker/dist/react-datepicker.css"
 
 const donations = [
   {
@@ -59,16 +61,44 @@ const donations = [
 export function DonationRecords() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredDonations, setFilteredDonations] = useState(donations)
+  const [startDate, setStartDate] = useState<Date | null>(null)
+  const [endDate, setEndDate] = useState<Date | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
 
   const handleSearch = (term: string) => {
     setSearchTerm(term)
-    const filtered = donations.filter(
+    filterDonations(term, startDate, endDate)
+  }
+
+  const filterDonations = (term: string, start: Date | null, end: Date | null) => {
+    let filtered = donations.filter(
       (donation) =>
-        donation.donor.toLowerCase().includes(term.toLowerCase()) ||
-        donation.email.toLowerCase().includes(term.toLowerCase()) ||
-        donation.type.toLowerCase().includes(term.toLowerCase()),
+        (donation.donor.toLowerCase().includes(term.toLowerCase()) ||
+          donation.email.toLowerCase().includes(term.toLowerCase()) ||
+          donation.type.toLowerCase().includes(term.toLowerCase()))
     )
+
+    if (start && end) {
+      filtered = filtered.filter((donation) => {
+        const donationDate = new Date(donation.date)
+        return donationDate >= start && donationDate <= end
+      })
+    }
+
     setFilteredDonations(filtered)
+  }
+
+  const clearFilters = () => {
+    setStartDate(null)
+    setEndDate(null)
+    filterDonations(searchTerm, null, null)
+  }
+
+  const handleDateChange = (dates: [Date | null, Date | null]) => {
+    const [start, end] = dates
+    setStartDate(start)
+    setEndDate(end)
+    filterDonations(searchTerm, start, end)
   }
 
   const totalAmount = filteredDonations.reduce((sum, donation) => sum + donation.amount, 0)
@@ -81,26 +111,60 @@ export function DonationRecords() {
           <CardDescription>Manage and track all donations received</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search donations..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-8 w-[300px]"
-                />
+          <div className="flex flex-col space-y-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search donations..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="pl-8 w-[300px]"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  {showFilters ? "Hide Filters" : "Show Filters"}
+                </Button>
+                {(startDate || endDate) && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={clearFilters}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear Filters
+                  </Button>
+                )}
               </div>
               <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
+                <Download className="h-4 w-4 mr-2" />
+                Export
               </Button>
             </div>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            
+            {showFilters && (
+              <div className="flex items-center space-x-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Date Range</label>
+                  <DatePicker
+                    selected={startDate}
+                    onChange={handleDateChange}
+                    startDate={startDate}
+                    endDate={endDate}
+                    selectsRange
+                    className="w-[300px] rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    placeholderText="Select date range"
+                    dateFormat="MMM d, yyyy"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
