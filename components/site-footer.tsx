@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react"
+import { FacebookIcon, InstagramIcon, TwitterIcon, YoutubeIcon } from "lucide-react"
 
 export function SiteFooter() {
   return (
@@ -23,19 +23,19 @@ export function SiteFooter() {
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Facebook className="h-5 w-5" />
+                <FacebookIcon className="h-5 w-5" />
                 <span className="sr-only">Facebook</span>
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Twitter className="h-5 w-5" />
+                <TwitterIcon className="h-5 w-5" />
                 <span className="sr-only">Twitter</span>
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Instagram className="h-5 w-5" />
+                <InstagramIcon className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Youtube className="h-5 w-5" />
+                <YoutubeIcon className="h-5 w-5" />
                 <span className="sr-only">YouTube</span>
               </a>
             </div>

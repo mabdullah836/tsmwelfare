@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Shield } from "lucide-react"
+import { ShieldIcon } from "lucide-react"
 import Link from "next/link"
 
 export function AdminAccessButton() {
@@ -31,7 +31,7 @@ export function AdminAccessButton() {
         <div className="fixed bottom-4 right-4 z-50">
           <Button asChild className="shadow-lg">
             <Link href="/admin/login">
-              <Shield className="h-4 w-4 mr-2" />
+              <ShieldIcon className="h-4 w-4 mr-2" />
               Admin Access
             </Link>
           </Button>

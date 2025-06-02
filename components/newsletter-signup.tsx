@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Mail } from "lucide-react"
+import { MailIcon } from "lucide-react"
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState("")
@@ -44,7 +44,7 @@ export function NewsletterSignup() {
 
         {isSubmitted ? (
           <div className="bg-primary/10 text-primary p-6 rounded-lg text-center max-w-md mx-auto">
-            <Mail className="h-12 w-12 mx-auto mb-4 text-primary" />
+            <MailIcon className="h-12 w-12 mx-auto mb-4 text-primary" />
             <h3 className="text-xl font-bold mb-2">Thanks for Signing Up!</h3>
             <p>We'll keep you updated on all the good work we're doing together.</p>
           </div>

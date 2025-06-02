@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, MapPin } from "lucide-react"
+import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const events = [
@@ -142,15 +142,15 @@ export function UpcomingEvents() {
                 <div className="bg-primary/10 p-4 border-b">
                   <h3 className="font-bold text-xl mb-1">{event.title}</h3>
                   <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 mr-1" />
+                    <CalendarIcon className="h-4 w-4 mr-1" />
                     <span className="mr-3">{event.date}</span>
-                    <Clock className="h-4 w-4 mr-1" />
+                    <ClockIcon className="h-4 w-4 mr-1" />
                     <span>{event.time}</span>
                   </div>
                 </div>
                 <div className="p-4">
                   <div className="flex items-start mb-4">
-                    <MapPin className="h-4 w-4 mr-2 mt-1 text-muted-foreground" />
+                    <MapPinIcon className="h-4 w-4 mr-2 mt-1 text-muted-foreground" />
                     <span>{event.location}</span>
                   </div>
                   <p className="mb-4">{event.description}</p>

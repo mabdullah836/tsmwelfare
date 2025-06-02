@@ -12,7 +12,7 @@ import { DonationCounter } from "@/components/donation-counter";
 import { UpcomingEvents } from "@/components/upcoming-events";
 import { CustomImage } from "@/components/custom-image";
 import { ImpactStat } from "@/components/impact-stat";
-import { DepartmentsSection } from "./departments/page";
+import DepartmentsPage from "./departments/page";
 import GazaPage from "@/components/gaza/page";
 import { HeroSection } from "@/components/Hero/page";
 
@@ -35,7 +35,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <DepartmentsSection />
+      <DepartmentsPage />
       <GazaPage />
 
       <section className="bg-secondary py-12 md:py-20">

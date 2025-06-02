@@ -17,14 +17,14 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { LogOut, Settings, LayoutDashboard, Image, DollarSign } from "lucide-react"
+import { LogOutIcon, SettingsIcon, LayoutDashboardIcon, ImageIcon, DollarSignIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from 'next/navigation'
 
 const navigationItems = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Media", href: "/admin/media", icon: Image },
-  { name: "Donations", href: "/admin/donations", icon: DollarSign },
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboardIcon },
+  { name: "Media", href: "/admin/media", icon: ImageIcon },
+  { name: "Donations", href: "/admin/donations", icon: DollarSignIcon },
 ]
 
 export function AdminHeader() {
@@ -94,12 +94,12 @@ export function AdminHeader() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
+                <SettingsIcon className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOutIcon className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

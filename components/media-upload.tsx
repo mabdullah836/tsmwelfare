@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, ImageIcon, Video, X, Check } from "lucide-react"
+import { UploadIcon, ImageIcon, VideoIcon, XIcon, CheckIcon } from "lucide-react"
 import { uploadImage, optimizeImageUrl } from "@/lib/cloudinary"
 
 interface UploadedFile {
@@ -145,7 +145,7 @@ export function MediaUpload() {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <UploadIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium mb-2">Drop files here or click to upload</p>
                 <p className="text-sm text-muted-foreground mb-4">Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max 100MB)</p>
                 <Input
@@ -199,7 +199,7 @@ export function MediaUpload() {
                     {file.type === "image" ? (
                       <ImageIcon className="h-8 w-8 text-blue-600" />
                     ) : (
-                      <Video className="h-8 w-8 text-purple-600" />
+                      <VideoIcon className="h-8 w-8 text-purple-600" />
                     )}
                   </div>
 
@@ -225,12 +225,12 @@ export function MediaUpload() {
                             : "destructive"
                       }
                     >
-                      {file.status === "completed" && <Check className="h-3 w-3 mr-1" />}
+                      {file.status === "completed" && <CheckIcon className="h-3 w-3 mr-1" />}
                       {file.status}
                     </Badge>
 
                     <Button variant="ghost" size="sm" onClick={() => removeFile(file.id)}>
-                      <X className="h-4 w-4" />
+                      <XIcon className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
