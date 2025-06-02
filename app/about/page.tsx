@@ -27,18 +27,13 @@ export default function AboutPage() {
             <div>
               <h2 className="text-3xl font-bold mb-6">Our Story</h2>
               <p className="text-lg mb-4">
-                Founded in 1998, our organization began with a simple mission: to make a positive difference in our
-                community. What started as a small group of dedicated volunteers has grown into a thriving organization
-                with a significant impact.
+                Founded in 2016, The Sirat-e-Mustaqeem Welfare Trust began with a simple mission: to guide people towards the straight path through service to humanity. What started as a small group of dedicated volunteers has grown into a thriving organization with a significant impact across communities.
               </p>
               <p className="text-lg mb-4">
-                Over the years, we've expanded our programs and services to address the evolving needs of our community.
-                Through partnerships with local businesses, government agencies, and other nonprofits, we've been able
-                to reach more people and create lasting change.
+                For over {new Date().getFullYear() - 2016} years, we've been committed to serving the needy and underprivileged. Through our various departments including healthcare, education, food distribution, and marriage support for orphans, we've touched thousands of lives.
               </p>
               <p className="text-lg">
-                Today, we continue to be guided by our founding principles of compassion, integrity, and innovation as
-                we work to build a better future for all.
+                Today, The Sirat-e-Mustaqeem Welfare Trust continues to be guided by our founding principles of compassion, integrity, and Islamic values as we work to build a better future for all.
               </p>
             </div>
             <div className="relative h-[400px] rounded-lg overflow-hidden">
@@ -50,7 +45,7 @@ export default function AboutPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
               <div className="absolute bottom-4 left-4">
-                <div className="bg-white/90 text-black px-3 py-1 rounded text-sm font-medium">25+ Years of Service</div>
+                <div className="bg-white/90 text-black px-3 py-1 rounded text-sm font-medium">{new Date().getFullYear() - 2016}+ Years of Service</div>
               </div>
             </div>
           </div>
@@ -163,36 +158,36 @@ export default function AboutPage() {
           <div className="space-y-12">
             {[
               {
-                year: "1998",
+                year: "2016",
                 title: "Foundation",
                 description:
-                  "Our organization was founded by a group of community members committed to making a difference.",
+                  "The Sirat-e-Mustaqeem Welfare Trust was founded with a mission to serve humanity and guide people towards the straight path.",
               },
               {
-                year: "2005",
+                year: "2018",
                 title: "Expansion of Services",
-                description: "We expanded our programs to include education initiatives and youth development.",
-              },
-              {
-                year: "2010",
-                title: "New Headquarters",
-                description: "We moved to a larger facility to accommodate our growing team and programs.",
-              },
-              {
-                year: "2015",
-                title: "Community Partnership Award",
-                description: "We were recognized for our collaborative approach to addressing community needs.",
+                description: "We expanded our programs to include education initiatives, healthcare services, and food distribution programs.",
               },
               {
                 year: "2020",
-                title: "Virtual Programs Launch",
-                description: "We adapted to changing times by developing innovative virtual programs and services.",
+                title: "COVID-19 Response",
+                description: "During the pandemic, we launched emergency relief programs to support affected families with food and medical assistance.",
+              },
+              {
+                year: "2021",
+                title: "Education Initiative",
+                description: "Started comprehensive education support program for underprivileged children including school fees, books, and uniforms.",
+              },
+              {
+                year: "2023",
+                title: "Healthcare Program Enhancement",
+                description: "Expanded our medical camps and healthcare services to reach more remote areas and serve more people in need.",
               },
               {
                 year: "Today",
                 title: "Continuing Our Mission",
                 description:
-                  "We continue to grow and evolve, always focused on creating positive change in our community.",
+                  "We continue to grow and evolve, focusing on sustainable development and long-term support for our communities.",
               },
             ].map((event, index) => (
               <div key={index} className="flex gap-6">

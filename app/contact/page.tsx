@@ -155,13 +155,15 @@ export default function ContactPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <h3 className="font-medium mb-1">Address</h3>
+                      <h3 className="font-medium mb-1">Head Office Address</h3>
                       <address className="not-italic text-muted-foreground">
-                        123 Organization St.
+                        The Sirat-e-Mustaqeem Welfare Trust
                         <br />
-                        City, State 12345
+                        Mansehra Colony, Lal Kothi Stop
                         <br />
-                        United States
+                        Landhi, Karachi
+                        <br />
+                        Pakistan
                       </address>
                     </div>
                   </div>
@@ -183,8 +185,8 @@ export default function ContactPage() {
                     <div>
                       <h3 className="font-medium mb-1">Email</h3>
                       <p className="text-muted-foreground">
-                        <a href="mailto:info@organization.org" className="hover:text-primary">
-                          info@organization.org
+                        <a href="mailto:info@sirat-e-mustaqeem.org" className="hover:text-primary">
+                          info@sirat-e-mustaqeem.org
                         </a>
                       </p>
                     </div>

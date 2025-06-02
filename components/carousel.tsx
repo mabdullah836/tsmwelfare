@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect, useCallback } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -62,7 +62,7 @@ export function Carousel({ items, autoPlay = true, interval = 5000, className }:
         className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
         onClick={prev}
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeftIcon className="h-4 w-4" />
         <span className="sr-only">Previous slide</span>
       </Button>
 
@@ -72,7 +72,7 @@ export function Carousel({ items, autoPlay = true, interval = 5000, className }:
         className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
         onClick={next}
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRightIcon className="h-4 w-4" />
         <span className="sr-only">Next slide</span>
       </Button>
 

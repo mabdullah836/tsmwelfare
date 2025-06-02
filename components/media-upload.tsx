@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, ImageIcon, Video, X, Check } from "lucide-react"
+import { UploadIcon, ImageIcon, VideoIcon, XIcon, CheckIcon } from "lucide-react"
+import { uploadImage, optimizeImageUrl } from "@/lib/cloudinary"
 
 interface UploadedFile {
   id: string
@@ -47,11 +48,12 @@ export function MediaUpload() {
     }
   }, [])
 
-  const handleFiles = (files: FileList) => {
-    Array.from(files).forEach((file) => {
+  const handleFiles = async (files: FileList) => {
+    Array.from(files).forEach(async (file) => {
       const fileId = Math.random().toString(36).substr(2, 9)
       const fileType = file.type.startsWith("image/") ? "image" : "video"
 
+      // Add file to state with uploading status
       const newFile: UploadedFile = {
         id: fileId,
         name: file.name,
@@ -64,20 +66,52 @@ export function MediaUpload() {
 
       setUploadedFiles((prev) => [...prev, newFile])
 
-      // Simulate upload progress
-      const interval = setInterval(() => {
+      try {
+        // Upload to Cloudinary
+        const result = await uploadImage(file)
+        
+        // Update file with optimized URL
         setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress: Math.min(f.progress + 10, 100) } : f)),
+          prev.map((f) =>
+            f.id === fileId
+              ? {
+                  ...f,
+                  status: "completed",
+                  progress: 100,
+                  url: optimizeImageUrl(result.secure_url),
+                }
+              : f
+          )
         )
-      }, 200)
 
-      // Complete upload after progress reaches 100%
-      setTimeout(() => {
-        clearInterval(interval)
+        // Save to MongoDB
+        await fetch('/api/media', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: file.name,
+            type: fileType,
+            size: newFile.size,
+            url: result.secure_url,
+            publicId: result.public_id,
+          }),
+        })
+      } catch (error) {
         setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, status: "completed", progress: 100 } : f)),
+          prev.map((f) =>
+            f.id === fileId
+              ? {
+                  ...f,
+                  status: "error",
+                  progress: 0,
+                }
+              : f
+          )
         )
-      }, 2200)
+        console.error('Upload error:', error)
+      }
     })
   }
 
@@ -111,7 +145,7 @@ export function MediaUpload() {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <UploadIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium mb-2">Drop files here or click to upload</p>
                 <p className="text-sm text-muted-foreground mb-4">Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max 100MB)</p>
                 <Input
@@ -165,7 +199,7 @@ export function MediaUpload() {
                     {file.type === "image" ? (
                       <ImageIcon className="h-8 w-8 text-blue-600" />
                     ) : (
-                      <Video className="h-8 w-8 text-purple-600" />
+                      <VideoIcon className="h-8 w-8 text-purple-600" />
                     )}
                   </div>
 
@@ -191,12 +225,12 @@ export function MediaUpload() {
                             : "destructive"
                       }
                     >
-                      {file.status === "completed" && <Check className="h-3 w-3 mr-1" />}
+                      {file.status === "completed" && <CheckIcon className="h-3 w-3 mr-1" />}
                       {file.status}
                     </Badge>
 
                     <Button variant="ghost" size="sm" onClick={() => removeFile(file.id)}>
-                      <X className="h-4 w-4" />
+                      <XIcon className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
