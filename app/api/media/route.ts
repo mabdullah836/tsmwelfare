@@ -4,8 +4,8 @@ import Media from '@/models/Media'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
     await connectDB()
+    const body = await request.json()
     const media = await Media.create(body)
     return NextResponse.json(media)
   } catch (error) {
@@ -17,10 +17,10 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     await connectDB()
-    const media = await Media.find().sort({ createdAt: -1 })
-    return NextResponse.json(media)
+    const mediaItems = await Media.find({ type: 'image' }).sort({ createdAt: -1 })
+    return NextResponse.json(mediaItems)
   } catch (error) {
-    console.error('Database error:', error)
-    return NextResponse.json({ error: 'Failed to fetch media' }, { status: 500 })
+    console.error('Error fetching media items:', error)
+    return NextResponse.json({ error: 'Failed to fetch media items' }, { status: 500 })
   }
 } 
