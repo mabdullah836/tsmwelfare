@@ -1,7 +1,7 @@
 import React from 'react'
 import { Typewriter } from '../typewriter'
 import { Button } from '../ui/button'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRightIcon } from 'lucide-react'
 import { CustomImage } from '../custom-image'
 
 export const HeroSection = () => {
@@ -53,7 +53,7 @@ export const HeroSection = () => {
                 <Button variant="outline" size="lg" className="font-medium">
                   <a href="/donate" className="flex items-center gap-2">
                     Join Our Mission
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRightIcon className="w-4 h-4" />
                   </a>
                 </Button>
               </div>

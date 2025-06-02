@@ -20,7 +20,7 @@ export function OrganizationHeader({
       subtitle: "text-sm",
       tagline: "text-xs",
       container: "gap-3",
-      arabic: "text-sm",
+      arabic: "text-lg",
     },
     md: {
       logo: "h-16 w-16 md:h-20 md:w-20",

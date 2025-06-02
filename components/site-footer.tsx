@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react"
+import { FacebookIcon, InstagramIcon, TwitterIcon, YoutubeIcon } from "lucide-react"
 
 export function SiteFooter() {
   return (
@@ -19,23 +19,23 @@ export function SiteFooter() {
               <span className="text-xl font-bold">The Sirat-e-Mustaqeem Welfare Trust</span>
             </Link>
             <p className="text-muted-foreground mb-6">
-              Guiding people towards the straight path through compassion, service, and community support.
+              Serving humanity for over {new Date().getFullYear() - 2016} years, guiding people towards the straight path through compassion, service, and community support.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Facebook className="h-5 w-5" />
+                <FacebookIcon className="h-5 w-5" />
                 <span className="sr-only">Facebook</span>
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Twitter className="h-5 w-5" />
+                <TwitterIcon className="h-5 w-5" />
                 <span className="sr-only">Twitter</span>
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Instagram className="h-5 w-5" />
+                <InstagramIcon className="h-5 w-5" />
                 <span className="sr-only">Instagram</span>
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary">
-                <Youtube className="h-5 w-5" />
+                <YoutubeIcon className="h-5 w-5" />
                 <span className="sr-only">YouTube</span>
               </a>
             </div>
@@ -106,8 +106,9 @@ export function SiteFooter() {
           <div>
             <h3 className="font-medium text-lg mb-4">Contact</h3>
             <address className="not-italic text-muted-foreground">
-              <p className="mb-2">123 Trust Street</p>
-              <p className="mb-2">City, State 12345</p>
+              <p className="mb-2">Head Office:</p>
+              <p className="mb-2">Mansehra Colony, Lal Kothi Stop</p>
+              <p className="mb-2">Landhi, Karachi</p>
               <p className="mb-4">Pakistan</p>
               <p className="mb-2">
                 <a href="tel:+921234567890" className="hover:text-primary">

@@ -109,11 +109,11 @@ export default function BankDetailsPage() {
                       <TableRow>
                         <TableCell className="font-medium">Bank Address</TableCell>
                         <TableCell>
-                          100 Main Street
+                          Mansehra Colony, Lal Kothi Stop
                           <br />
-                          City, State 12345
+                          Landhi, Karachi
                           <br />
-                          United States
+                          Pakistan
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -191,13 +191,13 @@ export default function BankDetailsPage() {
                 <CardTitle>Check by Mail</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">Send checks payable to "Organization Name Inc." to our mailing address.</p>
+                <p className="mb-4">Send checks payable to "The Sirat-e-Mustaqeem Welfare Trust" to our head office address:</p>
                 <address className="not-italic text-muted-foreground">
-                  123 Organization St.
+                  Mansehra Colony, Lal Kothi Stop
                   <br />
-                  City, State 12345
+                  Landhi, Karachi
                   <br />
-                  United States
+                  Pakistan
                 </address>
               </CardContent>
             </Card>
@@ -208,7 +208,7 @@ export default function BankDetailsPage() {
               </CardHeader>
               <CardContent>
                 <p className="mb-4">Send payments to our PayPal account for quick and easy transactions.</p>
-                <p className="text-muted-foreground">PayPal ID: donations@organization.org</p>
+                <p className="text-muted-foreground">PayPal ID: donations@sirat-e-mustaqeem.org</p>
               </CardContent>
             </Card>
           </div>

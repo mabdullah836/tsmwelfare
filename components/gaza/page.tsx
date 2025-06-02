@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {  Heart, HandHeart } from "lucide-react"
+import { HeartIcon, HandHeartIcon } from "lucide-react"
 import { CustomImage } from "../custom-image"
 import { Button } from "../ui/button"
 
@@ -10,7 +10,7 @@ export default function GazaPage() {
         <div className="container">
           <div className="text-center max-w-4xl mx-auto mb-12">
             <div className="flex items-center justify-center mb-4">
-              <HandHeart className="h-8 w-8 text-red-600 mr-3" />
+              <HandHeartIcon className="h-8 w-8 text-red-600 mr-3" />
               <h2 className="text-3xl md:text-4xl font-bold text-red-800 dark:text-red-200">
                 Emergency Support for Gaza Palestine
               </h2>
@@ -71,7 +71,7 @@ export default function GazaPage() {
                     href="/donate?type=gaza"
                     className="flex items-center gap-2"
                   >
-                    <Heart className="w-5 h-5" />
+                    <HeartIcon className="w-5 h-5" />
                     Donate for Gaza Now
                   </a>
                 </Button>
