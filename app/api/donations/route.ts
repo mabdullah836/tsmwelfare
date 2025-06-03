@@ -1,24 +1,34 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
+import { withDbConnection } from '@/lib/mongodb';
 import Donation from '@/models/Donation';
 
 export async function GET() {
   try {
-    await connectDB();
-    const donations = await Donation.find().sort({ createdAt: -1 });
+    const donations = await withDbConnection(async () => {
+      return Donation.find().sort({ createdAt: -1 });
+    });
     return NextResponse.json(donations);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch donations' }, { status: 500 });
+    console.error('Error fetching donations:', error);
+    return NextResponse.json({ 
+      error: 'Failed to fetch donations',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    await connectDB();
-    const donation = await Donation.create(body);
+    const data = await request.json();
+    const donation = await withDbConnection(async () => {
+      return Donation.create(data);
+    });
     return NextResponse.json(donation);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create donation' }, { status: 500 });
+    console.error('Database error:', error);
+    return NextResponse.json({ 
+      error: 'Failed to create donation',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 

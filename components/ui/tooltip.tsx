@@ -3,40 +3,73 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
+interface TooltipProps {
+  children: React.ReactNode
+}
+
 const TooltipProvider = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>
 }
 
-const Tooltip = ({ children }: { children: React.ReactNode }) => {
-  return <div className="relative inline-block">{children}</div>
+const Tooltip = ({ children }: TooltipProps) => {
+  const [isOpen, setIsOpen] = React.useState(false)
+  
+  const trigger = React.Children.toArray(children).find(
+    (child: any) => child.type.displayName === "TooltipTrigger"
+  )
+  
+  const content = React.Children.toArray(children).find(
+    (child: any) => child.type.displayName === "TooltipContent"
+  )
+
+  const triggerWithProps = React.isValidElement(trigger) 
+    ? React.cloneElement(trigger as React.ReactElement<{
+        onMouseEnter?: React.MouseEventHandler
+        onMouseLeave?: React.MouseEventHandler
+      }>, {
+        onMouseEnter: () => setIsOpen(true),
+        onMouseLeave: () => setIsOpen(false),
+      })
+    : null
+
+  return (
+    <div className="relative inline-block">
+      {triggerWithProps}
+      {isOpen && content}
+    </div>
+  )
 }
 
-const TooltipTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
-  ({ className, children, ...props }, ref) => {
-    const [showTooltip, setShowTooltip] = React.useState(false)
+interface TooltipTriggerProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+}
 
+const TooltipTrigger = React.forwardRef<HTMLDivElement, TooltipTriggerProps>(
+  ({ className, children, ...props }, ref) => {
     return (
-      <button
+      <div
         ref={ref}
-        className={cn("relative", className)}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        className={cn("relative inline-block", className)}
         {...props}
       >
         {children}
-      </button>
+      </div>
     )
   },
 )
 TooltipTrigger.displayName = "TooltipTrigger"
 
-const TooltipContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+interface TooltipContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode
+}
+
+const TooltipContent = React.forwardRef<HTMLDivElement, TooltipContentProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
         "absolute z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95",
-        "bottom-full left-1/2 transform -translate-x-1/2 mb-2",
+        "top-full left-1/2 transform -translate-x-1/2 mt-2",
         className,
       )}
       {...props}
