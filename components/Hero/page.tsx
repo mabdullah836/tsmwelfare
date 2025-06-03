@@ -1,8 +1,8 @@
 import React from 'react'
-import { Typewriter } from '../typewriter'
+import { Typewriter } from '../shared/typewriter'
 import { Button } from '../ui/button'
 import { ArrowRightIcon } from 'lucide-react'
-import { CustomImage } from '../custom-image'
+import { CustomImage } from '../shared/custom-image'
 
 export const HeroSection = () => {
   return (

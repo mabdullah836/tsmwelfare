@@ -1,13 +1,7 @@
 import type React from "react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-
-interface FeatureCardProps {
-  title: string
-  description: string
-  icon: React.ReactNode
-  className?: string
-}
+import { FeatureCardProps } from "@/lib/types/components"
 
 export function FeatureCard({ title, description, icon, className }: FeatureCardProps) {
   return (

@@ -1,6 +1,6 @@
 "use client"
 
-import { DepartmentCard } from "@/components/department-card";
+import { DepartmentCard } from "@/components/features/department-card";
 import { StethoscopeIcon, HeartIcon, DollarSignIcon, BookOpenIcon, HomeIcon, FileTextIcon } from "lucide-react";
 
 const departments = [

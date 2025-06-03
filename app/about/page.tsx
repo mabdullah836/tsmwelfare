@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { Typewriter } from "@/components/typewriter"
+import { Typewriter } from "@/components/shared/typewriter"
 import { Card, CardContent } from "@/components/ui/card"
 import { Award, Calendar, Users, Heart, Lightbulb } from "lucide-react"
 

@@ -18,8 +18,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { AdminHeader } from "@/components/admin-header"
+import { AdminHeader } from "@/components/layout/admin-header"
 import { cn } from "@/lib/utils"
+import { formatDate } from "@/lib/utils/format"
 
 interface MediaItem {
   _id: string;
@@ -65,16 +66,6 @@ export default function MediaPage() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    };
-    return date.toLocaleDateString('en-US', options);
   }
 
   return (
