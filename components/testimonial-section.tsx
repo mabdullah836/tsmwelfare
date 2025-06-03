@@ -2,6 +2,7 @@ import Image from "next/image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { QuoteIcon } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface Testimonial {
   quote: string
@@ -18,6 +19,15 @@ interface TestimonialSectionProps {
 }
 
 export function TestimonialSection({ title, description, testimonials, className }: TestimonialSectionProps) {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <section className={cn("section-padding", className)}>
       <div className="container">
@@ -34,19 +44,11 @@ export function TestimonialSection({ title, description, testimonials, className
                 <p className="text-lg mb-6">{testimonial.quote}</p>
               </CardContent>
               <CardFooter className="flex items-center gap-4 border-t pt-6">
-                {testimonial.avatarUrl ? (
-                  <Image
-                    src={testimonial.avatarUrl || "/placeholder.svg"}
-                    alt={testimonial.author}
-                    width={40}
-                    height={40}
-                    className="rounded-full"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    {testimonial.author.charAt(0)}
-                  </div>
-                )}
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {getInitials(testimonial.author)}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
                   <p className="font-medium">{testimonial.author}</p>
                   <p className="text-sm text-muted-foreground">{testimonial.role}</p>

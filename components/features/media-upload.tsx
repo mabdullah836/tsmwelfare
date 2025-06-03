@@ -1,123 +1,117 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useCallback } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UploadIcon, ImageIcon, VideoIcon, XIcon, CheckIcon } from "lucide-react"
-import { uploadImage, optimizeImageUrl } from "@/lib/cloudinary"
+import { useState, useCallback, ChangeEvent } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UploadIcon, ImageIcon, VideoIcon, XIcon, CheckIcon } from "lucide-react";
 
 interface UploadedFile {
-  id: string
-  name: string
-  type: "image" | "video"
-  size: string
-  url: string
-  status: "uploading" | "completed" | "error"
-  progress: number
+  id: string;
+  name: string;
+  type: "image" | "video";
+  size: string;
+  previewUrl: string;
+  status: "uploading" | "completed" | "error";
+  progress: number;
 }
 
 export function MediaUpload() {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [dragActive, setDragActive] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [dragActive, setDragActive] = useState(false);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
-  }, [])
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
+    e.preventDefault();
+    setDragActive(false);
+    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
+  }, []);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(e.dataTransfer.files)
+  const handleFiles = (files: FileList) => {
+    const newFiles = Array.from(files).map(file => ({
+      id: Math.random().toString(36).substring(2, 11),
+      name: file.name,
+      type: file.type.startsWith("image/") ? "image" : "video" as const,
+      size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      previewUrl: URL.createObjectURL(file),
+      status: "uploading" as const,
+      progress: 0,
+    })) as UploadedFile[];
+
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+
+    // Process files sequentially
+    newFiles.reduce(async (promise, file) => {
+      await promise;
+      await uploadFile(file);
+    }, Promise.resolve());
+  };
+
+  const uploadFile = async (file: UploadedFile) => {
+    try {
+      const formData = new FormData();
+      const actualFile = await getFileFromPreview(file.previewUrl, file.name);
+      formData.append('file', actualFile);
+
+      const xhr = new XMLHttpRequest();
+      
+      xhr.upload.addEventListener('progress', e => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100);
+          setUploadedFiles(prev => 
+            prev.map(f => f.id === file.id ? { ...f, progress } : f)
+          );
+        }
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const response = JSON.parse(xhr.responseText);
+            setUploadedFiles(prev => 
+              prev.map(f => f.id === file.id ? { 
+                ...f, 
+                status: 'completed', 
+                previewUrl: response.url 
+              } : f)
+            );
+            resolve();
+          } else {
+            reject(new Error('Upload failed'));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error'));
+        xhr.open('POST', '/api/media/upload');
+        xhr.send(formData);
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadedFiles(prev => 
+        prev.map(f => f.id === file.id ? { ...f, status: 'error' } : f)
+      );
     }
-  }, [])
+  };
 
-  const handleFiles = async (files: FileList) => {
-    Array.from(files).forEach(async (file) => {
-      const fileId = Math.random().toString(36).substr(2, 9)
-      const fileType = file.type.startsWith("image/") ? "image" : "video"
-
-      // Add file to state with uploading status
-      const newFile: UploadedFile = {
-        id: fileId,
-        name: file.name,
-        type: fileType,
-        size: (file.size / 1024 / 1024).toFixed(2) + " MB",
-        url: URL.createObjectURL(file),
-        status: "uploading",
-        progress: 0,
-      }
-
-      setUploadedFiles((prev) => [...prev, newFile])
-
-      try {
-        // Upload to Cloudinary
-        const result = await uploadImage(file)
-        
-        // Update file with optimized URL
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileId
-              ? {
-                  ...f,
-                  status: "completed",
-                  progress: 100,
-                  url: optimizeImageUrl(result.secure_url),
-                }
-              : f
-          )
-        )
-
-        // Save to MongoDB
-        await fetch('/api/media', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: file.name,
-            type: fileType,
-            size: newFile.size,
-            url: result.secure_url,
-            publicId: result.public_id,
-          }),
-        })
-      } catch (error) {
-        setUploadedFiles((prev) =>
-          prev.map((f) =>
-            f.id === fileId
-              ? {
-                  ...f,
-                  status: "error",
-                  progress: 0,
-                }
-              : f
-          )
-        )
-        console.error('Upload error:', error)
-      }
-    })
-  }
+  const getFileFromPreview = async (previewUrl: string, fileName: string) => {
+    const response = await fetch(previewUrl);
+    const blob = await response.blob();
+    return new File([blob], fileName, { type: blob.type });
+  };
 
   const removeFile = (fileId: string) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId))
-  }
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+  };
 
   return (
     <div className="space-y-6">
@@ -125,11 +119,11 @@ export function MediaUpload() {
         <CardHeader>
           <CardTitle>Upload Media Files</CardTitle>
           <CardDescription>
-            Upload images and videos to your media library. Files will be stored on Cloudinary.
+            Upload images and videos to your media library
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="upload" className="w-full">
+          <Tabs defaultValue="upload">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="upload">Upload Files</TabsTrigger>
               <TabsTrigger value="url">Add from URL</TabsTrigger>
@@ -147,12 +141,14 @@ export function MediaUpload() {
               >
                 <UploadIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium mb-2">Drop files here or click to upload</p>
-                <p className="text-sm text-muted-foreground mb-4">Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max 100MB)</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Supports: JPG, PNG, GIF, MP4, MOV, AVI (Max 100MB)
+                </p>
                 <Input
                   type="file"
                   multiple
                   accept="image/*,video/*"
-                  onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                  onChange={e => e.target.files && handleFiles(e.target.files)}
                   className="hidden"
                   id="file-upload"
                 />
@@ -193,7 +189,7 @@ export function MediaUpload() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {uploadedFiles.map((file) => (
+              {uploadedFiles.map(file => (
                 <div key={file.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                   <div className="flex-shrink-0">
                     {file.type === "image" ? (
@@ -210,7 +206,9 @@ export function MediaUpload() {
                     {file.status === "uploading" && (
                       <div className="mt-2">
                         <Progress value={file.progress} className="h-2" />
-                        <p className="text-xs text-muted-foreground mt-1">Uploading... {file.progress}%</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Uploading... {file.progress}%
+                        </p>
                       </div>
                     )}
                   </div>
@@ -240,5 +238,5 @@ export function MediaUpload() {
         </Card>
       )}
     </div>
-  )
+  );
 }

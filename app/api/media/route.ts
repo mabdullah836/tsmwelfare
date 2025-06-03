@@ -1,26 +1,22 @@
-import { NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
+import { NextRequest, NextResponse } from 'next/server'
 import Media from '@/models/Media'
+import { withDbConnection } from '@/lib/mongodb'
 
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    await connectDB()
-    const body = await request.json()
-    const media = await Media.create(body)
+    const media = await withDbConnection(async () => {
+      return Media.find().sort({ createdAt: -1 });
+    });
+    
     return NextResponse.json(media)
   } catch (error) {
-    console.error('Database error:', error)
-    return NextResponse.json({ error: 'Failed to create media' }, { status: 500 })
-  }
-}
-
-export async function GET() {
-  try {
-    await connectDB()
-    const mediaItems = await Media.find({ type: 'image' }).sort({ createdAt: -1 })
-    return NextResponse.json(mediaItems)
-  } catch (error) {
-    console.error('Error fetching media items:', error)
-    return NextResponse.json({ error: 'Failed to fetch media items' }, { status: 500 })
+    console.error('Failed to fetch media:', error)
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch media',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
 } 

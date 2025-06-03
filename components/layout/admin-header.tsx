@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,8 +41,7 @@ export function AdminHeader() {
         <div className="flex items-center gap-8 flex-1">
           <Link href="/admin/dashboard" className="flex items-center gap-2 font-semibold text-lg">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="/images/smw-logo-transparent.png" alt="Logo" />
-              <AvatarFallback>SM</AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary">SM</AvatarFallback>
             </Avatar>
             <span className="hidden sm:inline-block">Admin Panel</span>
           </Link>
@@ -77,13 +76,10 @@ export function AdminHeader() {
           </Button>
 
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="/images/admin-avatar.png" alt="Admin" />
-                  <AvatarFallback className="bg-primary/10 text-primary">AD</AvatarFallback>
-                </Avatar>
-              </Button>
+            <DropdownMenuTrigger className="relative h-9 w-9 rounded-full p-0 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-primary/10 text-primary">AD</AvatarFallback>
+              </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel className="font-normal">
