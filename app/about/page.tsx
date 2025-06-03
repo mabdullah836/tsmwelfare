@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { Typewriter } from "@/components/typewriter"
+import { Typewriter } from "@/components/shared/typewriter"
 import { Card, CardContent } from "@/components/ui/card"
 import { Award, Calendar, Users, Heart, Lightbulb } from "lucide-react"
 
@@ -179,9 +179,19 @@ export default function AboutPage() {
                 description: "Started comprehensive education support program for underprivileged children including school fees, books, and uniforms.",
               },
               {
+                year: "2022",
+                title: "Flood Relief Efforts",
+                description: "Provided emergency relief and support to flood-affected communities in Sindh and Balochistan, including food, shelter, and medical assistance.",
+              },
+              {
                 year: "2023",
                 title: "Healthcare Program Enhancement",
                 description: "Expanded our medical camps and healthcare services to reach more remote areas and serve more people in need.",
+              },
+              {
+                year: "2023",
+                title: "Gaza Palestine Support",
+                description: "Extended humanitarian aid to the people of Gaza, Palestine during their time of crisis, providing essential supplies and emergency relief.",
               },
               {
                 year: "Today",

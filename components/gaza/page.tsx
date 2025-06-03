@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { HeartIcon, HandHeartIcon } from "lucide-react"
-import { CustomImage } from "../custom-image"
+import { CustomImage } from "../shared/custom-image"
 import { Button } from "../ui/button"
 
 export default function GazaPage() {

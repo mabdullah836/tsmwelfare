@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, DollarSign, Users, Image } from "lucide-react"
-import { AdminHeader } from "@/components/admin-header"
+import { AdminHeader } from "@/components/layout/admin-header"
 
 export default function AdminDashboard() {
   return (

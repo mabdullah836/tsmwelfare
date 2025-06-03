@@ -1,4 +1,4 @@
-import { FeatureCard } from "@/components/feature-card"
+import { FeatureCard } from "@/components/shared/feature-card"
 import { Carousel } from "@/components/carousel"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"

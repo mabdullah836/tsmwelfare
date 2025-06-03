@@ -7,11 +7,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { NewsletterSignup } from "@/components/newsletter-signup";
-import { DonationCounter } from "@/components/donation-counter";
-import { UpcomingEvents } from "@/components/upcoming-events";
-import { CustomImage } from "@/components/custom-image";
-import { ImpactStat } from "@/components/impact-stat";
+import { NewsletterSignup } from "@/components/features/newsletter-signup";
+import { DonationCounter } from "@/components/features/donation-counter";
+import { UpcomingEvents } from "@/components/features/upcoming-events";
+import { CustomImage } from "@/components/shared/custom-image";
+import { ImpactStat } from "@/components/shared/impact-stat";
 import DepartmentsPage from "./departments/page";
 import GazaPage from "@/components/gaza/page";
 import { HeroSection } from "@/components/Hero/page";

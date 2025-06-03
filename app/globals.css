@@ -108,12 +108,59 @@
     @apply bg-white dark:bg-secondary rounded-lg p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-border;
   }
 
+  /* Carousel Styles */
   .carousel-container {
     @apply relative overflow-hidden rounded-lg;
   }
 
   .carousel-item {
-    @apply absolute inset-0 transition-opacity duration-500;
+    @apply absolute inset-0 transition-all duration-500 ease-in-out;
+  }
+
+  .carousel-item.active {
+    @apply opacity-100 transform scale-100;
+  }
+
+  .carousel-item:not(.active) {
+    @apply opacity-0 transform scale-95;
+  }
+
+  /* Media Gallery Styles */
+  .media-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  .media-item {
+    @apply relative overflow-hidden rounded-lg transition-transform duration-300 hover:scale-[1.02];
+  }
+
+  .media-overlay {
+    @apply absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300;
+  }
+
+  .media-item:hover .media-overlay {
+    @apply opacity-100;
+  }
+
+  .media-content {
+    @apply absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-2 transition-transform duration-300;
+  }
+
+  .media-item:hover .media-content {
+    @apply translate-y-0;
+  }
+
+  /* Dialog/Modal Styles */
+  .dialog-content {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  }
+
+  .dialog-overlay {
+    @apply fixed inset-0 bg-black/80 backdrop-blur-sm;
+  }
+
+  .dialog-container {
+    @apply relative bg-background rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden;
   }
 
   /* New floating animations */
