@@ -1,175 +1,246 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Carousel } from "@/components/carousel"
-import { Play, Download, Calendar, User, X } from "lucide-react"
+import { Image as ImageIcon, Play, Download, Grid, List, Search } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { NoRecords } from "@/components/ui/no-records"
+import { cn } from "@/lib/utils"
+import { formatDate } from "@/lib/utils/format"
+import Image from "next/image"
 
-// Add this after imports and before content definition
 interface MediaItem {
-  id: string
-  title: string
-  description: string
-  url: string
-  type: 'image' | 'video'
-}
-
-// Initialize empty content
-const content: {
-  images: MediaItem[]
-  videos: MediaItem[]
-} = {
-  images: [],
-  videos: []
+  _id: string;
+  title: string;
+  type: 'image' | 'video';
+  url: string;
+  size: string;
+  createdAt: string;
 }
 
 export default function MediaPage() {
-  const [selectedTab, setSelectedTab] = useState("all")
+  const [view, setView] = useState<"grid" | "list">("grid")
+  const [filterType, setFilterType] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
 
-  const allItems = [...content.images, ...content.videos]
-  const filteredItems = selectedTab === "all" 
-    ? allItems
-    : selectedTab === "image" 
-      ? content.images 
-      : content.videos
+  useEffect(() => {
+    fetchMedia()
+  }, [])
 
-  const carouselItems = content.images.map((item) => (
-    <div key={item.id} className="relative h-[400px] w-full">
-      <Image
-        src={item.url}
-        alt={item.title}
-        fill
-        className="object-cover"
-        priority
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent">
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-          <p className="text-white/90">{item.description}</p>
+  const fetchMedia = async () => {
+    try {
+      setError(null)
+      const response = await fetch('/api/media')
+      if (!response.ok) throw new Error('Failed to fetch media')
+      const data = await response.json()
+      setMediaItems(data)
+    } catch (error) {
+      console.error('Failed to fetch media:', error)
+      setError('Failed to load media items. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredMedia = mediaItems.filter(item => {
+    if (filterType !== "all" && item.type !== filterType) return false
+    if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
+    return true
+  })
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-muted-foreground">Loading media items...</p>
+          </div>
         </div>
       </div>
-    </div>
-  ))
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center text-red-500 min-h-[400px] flex items-center justify-center">
+          {error}
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="container py-8">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Media Gallery</h1>
-      
-      {/* Media Tabs and Grid */}
-      <Tabs defaultValue="all" value={selectedTab} onValueChange={setSelectedTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto">
-          <TabsTrigger value="all">All Media ({allItems.length})</TabsTrigger>
-          <TabsTrigger value="image">Images ({content.images.length})</TabsTrigger>
-          <TabsTrigger value="video">Videos ({content.videos.length})</TabsTrigger>
-        </TabsList>
+    <div className="container mx-auto py-8 px-4">
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Select
+              value={filterType}
+              onValueChange={setFilterType}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="image">Images</SelectItem>
+                <SelectItem value="video">Videos</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search media..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={view === "grid" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setView("grid")}
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={view === "list" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setView("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-        <div className="mt-8">
-          {selectedTab === "all" && allItems.length === 0 && (
-            <NoRecords 
-              title="No Media Available"
-              description="There are no media items available at the moment."
-            />
-          )}
-          {selectedTab === "image" && content.images.length === 0 && (
-            <NoRecords 
-              title="No Images Available"
-              description="There are no images available at the moment."
-            />
-          )}
-          {selectedTab === "video" && content.videos.length === 0 && (
-            <NoRecords 
-              title="No Videos Available"
-              description="There are no videos available at the moment."
-            />
-          )}
-          {filteredItems.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="group relative overflow-hidden rounded-lg cursor-pointer"
-                  onClick={() => setSelectedItem(item)}
-                >
-                  <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
-                    <Image
-                      src={item.url}
-                      alt={item.title}
-                      width={400}
-                      height={300}
-                      className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                    />
-                    {item.type === 'video' && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="rounded-full bg-black/50 p-3">
-                          <Play className="h-8 w-8 text-white" />
+        {filteredMedia.length === 0 ? (
+          <Card className="flex items-center justify-center h-[400px] border-dashed">
+            <CardContent className="text-center">
+              <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-3" />
+              <h3 className="font-medium mb-1">No media items found</h3>
+              <p className="text-sm text-muted-foreground">
+                {searchQuery || filterType !== 'all' 
+                  ? 'Try adjusting your filters or search terms'
+                  : 'No media items available'}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className={cn(
+            "grid gap-6",
+            view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
+          )}>
+            {filteredMedia.map((item) => (
+              <Card 
+                key={item._id} 
+                className={cn(
+                  "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg",
+                  view === "list" && "flex items-center"
+                )}
+                onClick={() => setSelectedItem(item)}
+              >
+                {view === "grid" ? (
+                  <>
+                    <div className="aspect-video relative bg-muted overflow-hidden">
+                      {item.type === 'image' ? (
+                        <Image
+                          src={item.url}
+                          alt={item.title}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                          <Play className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute bottom-2 right-2">
+                          <Button size="icon" variant="secondary">
+                            <Download className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="flex h-full items-end p-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">{item.title}</h3>
-                        <p className="mt-1 text-sm text-gray-200">{item.description}</p>
+                    </div>
+                    <CardContent className="p-4">
+                      <div className="mb-2">
+                        <h3 className="font-medium truncate">{item.title}</h3>
                       </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          {formatDate(item.createdAt)}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </>
+                ) : (
+                  <div className="flex w-full items-center gap-4 p-4">
+                    <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
+                      {item.type === 'image' ? (
+                        <Image
+                          src={item.url}
+                          alt={item.title}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                          <Play className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </Tabs>
-
-      {/* Featured Media Carousel - Only show if there are images */}
-      {content.images.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-2xl font-semibold mb-6">Featured Media</h2>
-          <Carousel className="h-[400px]" items={carouselItems} />
-        </div>
-      )}
-
-      {/* Preview Dialog */}
-      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-4xl p-0">
-          {selectedItem && (
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-2 z-10 bg-black/20 hover:bg-black/40 text-white"
-                onClick={() => setSelectedItem(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <div className="relative h-[80vh]">
-                <Image
-                  src={selectedItem.url}
-                  alt={selectedItem.title}
-                  fill
-                  className="object-contain"
-                  priority
-                />
-                {selectedItem.type === 'video' && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="rounded-full bg-black/50 p-6 cursor-pointer hover:bg-black/70 transition-colors">
-                      <Play className="h-12 w-12 text-white" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {item.size.replace('MB', '').trim()} • {formatDate(item.createdAt)}
+                      </p>
                     </div>
+                    <Button size="icon" variant="secondary">
+                      <Download className="h-4 w-4" />
+                    </Button>
                   </div>
                 )}
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4">
-                <h3 className="text-xl font-bold text-white mb-2">{selectedItem.title}</h3>
-                <p className="text-white/90 mb-2">{selectedItem.description}</p>
-              </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
+        <DialogContent className="max-w-4xl p-0">
+          {selectedItem?.type === 'image' && (
+            <div className="relative aspect-video">
+              <Image
+                src={selectedItem.url}
+                alt={selectedItem.title}
+                fill
+                className="object-contain"
+                priority
+              />
             </div>
           )}
+          <div className="p-4">
+            <h2 className="text-xl font-semibold mb-1">{selectedItem?.title}</h2>
+            <p className="text-sm text-muted-foreground">
+              {selectedItem?.size.replace('MB', '').trim()} • {selectedItem && formatDate(selectedItem.createdAt)}
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
