@@ -17,14 +17,20 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { LogOutIcon, SettingsIcon, LayoutDashboardIcon, ImageIcon, DollarSignIcon } from "lucide-react"
+import { LogOutIcon, SettingsIcon, LayoutDashboardIcon, ImageIcon, DollarSignIcon, UsersIcon, CalendarIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from 'next/navigation'
 
 const navigationItems = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboardIcon },
+  { name: "Team", href: "/admin/team", icon: UsersIcon },
   { name: "Media", href: "/admin/media", icon: ImageIcon },
   { name: "Donations", href: "/admin/donations", icon: DollarSignIcon },
+  {
+    name: "Events",
+    href: "/admin/events",
+    icon: CalendarIcon,
+  },
 ]
 
 export function AdminHeader() {

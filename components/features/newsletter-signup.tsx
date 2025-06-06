@@ -6,30 +6,54 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MailIcon } from "lucide-react"
+import { AlertMessage } from "@/components/ui/alert-message"
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [error, setError] = useState("")
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
 
     if (!email) {
-      setError("Please enter your email address")
+      setAlert({
+        message: "Please enter your email address",
+        type: "error"
+      })
       return
     }
 
     setIsSubmitting(true)
 
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      const response = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to subscribe to newsletter")
+      }
+
       setIsSubmitted(true)
       setEmail("")
-    }, 1000)
+      setAlert({
+        message: "Thank you for subscribing to our newsletter!",
+        type: "success"
+      })
+    } catch (error) {
+      setAlert({
+        message: error instanceof Error ? error.message : "Failed to subscribe. Please try again later.",
+        type: "error"
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -56,14 +80,20 @@ export function NewsletterSignup() {
                 placeholder="Enter your email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={error ? "border-red-500" : ""}
               />
-              {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
             </div>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Signing Up..." : "Sign Up"}
             </Button>
           </form>
+        )}
+
+        {alert && (
+          <AlertMessage
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
         )}
       </div>
     </section>

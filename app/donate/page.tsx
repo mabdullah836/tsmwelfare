@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Heart, CreditCard, Landmark, Smartphone } from "lucide-react"
+import { AlertMessage } from "@/components/ui/alert-message"
 
 export default function DonatePage() {
   const [donationAmount, setDonationAmount] = useState<string>("")
@@ -21,20 +22,62 @@ export default function DonatePage() {
   const [paymentMethod, setPaymentMethod] = useState<string>("card")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!donationAmount || Number(donationAmount) <= 0) {
+      setAlert({
+        message: "Please enter a valid donation amount",
+        type: "error"
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      const response = await fetch("/api/donate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: donationAmount,
+          type: donationType,
+          paymentMethod,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to process donation")
+      }
+
       setIsSubmitted(true)
-    }, 1500)
+      setAlert({
+        message: "Thank you for your generous donation!",
+        type: "success"
+      })
+    } catch (error) {
+      setAlert({
+        message: error instanceof Error ? error.message : "Failed to process donation. Please try again later.",
+        type: "error"
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <>
+      {alert && (
+        <AlertMessage
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
       <section className="bg-primary text-white py-16 md:py-24">
         <div className="container">
           <div className="max-w-3xl">

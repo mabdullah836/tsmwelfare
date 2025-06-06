@@ -8,57 +8,40 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { AlertMessage } from "@/components/ui/alert-message"
 
 export default function ContactPage() {
-  const { toast } = useToast()
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  })
-
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
+      const formData = new FormData(e.currentTarget)
+      const response = await fetch('/api/contact', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(Object.fromEntries(formData)),
       })
 
-      const data = await response.json()
-
-      if (data.success) {
-        setIsSubmitted(true)
-        setFormData({ name: "", email: "", subject: "", message: "" })
-        toast({
-          title: "Success",
-          description: "Message sent successfully! We'll get back to you soon.",
-        })
-      } else {
-        throw new Error(data.message || "Failed to send message")
+      if (!response.ok) {
+        throw new Error('Failed to send message')
       }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to send message. Please try again later.",
+
+      setAlert({
+        message: "Thank you for your message. We'll get back to you soon!",
+        type: "success"
       })
-      console.error("Error:", error)
+      e.currentTarget.reset()
+    } catch (error) {
+      setAlert({
+        message: error instanceof Error ? error.message : "Failed to send message. Please try again later.",
+        type: "error"
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -66,6 +49,13 @@ export default function ContactPage() {
 
   return (
     <>
+      {alert && (
+        <AlertMessage
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
       <section className="bg-primary text-white py-16 md:py-24">
         <div className="container">
           <div className="max-w-3xl">
@@ -89,58 +79,37 @@ export default function ContactPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {isSubmitted ? (
-                    <div className="bg-primary/10 text-primary p-6 rounded-lg text-center">
-                      <h3 className="text-xl font-bold mb-2">Thank You!</h3>
-                      <p>Your message has been sent. We'll get back to you soon.</p>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="text-sm font-medium">
+                          Your Name
+                        </label>
+                        <Input id="name" name="name" required />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="email" className="text-sm font-medium">
+                          Email Address
+                        </label>
+                        <Input id="email" name="email" type="email" required />
+                      </div>
                     </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label htmlFor="name" className="text-sm font-medium">
-                            Your Name
-                          </label>
-                          <Input id="name" name="name" value={formData.name} onChange={handleChange} required />
-                        </div>
-                        <div className="space-y-2">
-                          <label htmlFor="email" className="text-sm font-medium">
-                            Email Address
-                          </label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="subject" className="text-sm font-medium">
-                          Subject
-                        </label>
-                        <Input id="subject" name="subject" value={formData.subject} onChange={handleChange} required />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="message" className="text-sm font-medium">
-                          Message
-                        </label>
-                        <Textarea
-                          id="message"
-                          name="message"
-                          rows={5}
-                          value={formData.message}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? "Sending..." : "Send Message"}
-                      </Button>
-                    </form>
-                  )}
+                    <div className="space-y-2">
+                      <label htmlFor="subject" className="text-sm font-medium">
+                        Subject
+                      </label>
+                      <Input id="subject" name="subject" required />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="message" className="text-sm font-medium">
+                        Message
+                      </label>
+                      <Textarea id="message" name="message" rows={5} required />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? "Sending..." : "Send Message"}
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
             </div>
