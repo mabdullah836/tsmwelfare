@@ -17,11 +17,9 @@ import GazaPage from "@/components/gaza/page";
 import { HeroSection } from "@/components/Hero/page";
 
 export default function HomePage() {
- 
-
   return (
     <>
-     <HeroSection/>
+      <HeroSection/>
       <section className="py-8 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20">
         <div className="container">
           <div className="text-center">
@@ -151,9 +149,6 @@ export default function HomePage() {
       <DonationCounter />
 
       <UpcomingEvents />
-
-      {/* Current Projects */}
-      
 
       <NewsletterSignup />
 

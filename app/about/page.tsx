@@ -1,9 +1,43 @@
 import Image from "next/image"
 import { Typewriter } from "@/components/shared/typewriter"
 import { Card, CardContent } from "@/components/ui/card"
-import { Award, Calendar, Users, Heart, Lightbulb } from "lucide-react"
+import { Award, Users, Heart, Lightbulb } from "lucide-react"
+import { TeamSection } from "@/components/features/team-section"
+import { EventsSection } from "@/components/features/events-section"
 
-export default function AboutPage() {
+async function getTeamMembers() {
+  try {
+    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/team`, {
+      next: { revalidate: 60 }, // Revalidate every minute
+    })
+    if (!response.ok) {
+      throw new Error('Failed to fetch team members')
+    }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching team members:', error)
+    return [] // Return empty array as fallback
+  }
+}
+
+async function getUpcomingEvents() {
+  try {
+    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/events`, {
+      next: { revalidate: 60 }, // Revalidate every minute
+    })
+    if (!response.ok) throw new Error('Failed to fetch events')
+    return response.json()
+  } catch (error) {
+    console.error('Error fetching events:', error)
+    return []
+  }
+}
+
+export default async function AboutPage() {
+  const teamMembers = await getTeamMembers()
+  const events = await getUpcomingEvents()
+
   return (
     <>
       <section className="bg-primary text-white py-16 md:py-24">
@@ -94,130 +128,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16">
-        <div className="container">
-          <h2 className="text-3xl font-bold mb-12 text-center">Our Team</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Muhammad Tariq",
-                role: "Executive Director",
-                bio: "Muhammad has over 15 years of experience in nonprofit leadership and is passionate about community development.",
-              },
-              {
-                name: "Fatima Sheikh",
-                role: "Program Director",
-                bio: "Fatima oversees our programs and ensures they effectively meet the needs of those we serve.",
-              },
-              {
-                name: "Ahmed Hassan",
-                role: "Volunteer Coordinator",
-                bio: "Ahmed manages our volunteer program and helps connect passionate individuals with meaningful opportunities.",
-              },
-              {
-                name: "Aisha Khan",
-                role: "Development Director",
-                bio: "Aisha leads our fundraising efforts and builds relationships with donors and supporters.",
-              },
-              {
-                name: "Omar Ali",
-                role: "Community Outreach Manager",
-                bio: "Omar works directly with community members to understand their needs and connect them with resources.",
-              },
-              {
-                name: "Zainab Malik",
-                role: "Finance Manager",
-                bio: "Zainab ensures our organization maintains financial integrity and makes the most of our resources.",
-              },
-            ].map((member, index) => (
-              <Card key={index} className="overflow-hidden">
-                <div className="h-48 bg-muted relative">
-                  <Image
-                    src={`/placeholder.svg?height=200&width=300&text=${member.name.split(" ")[0]}`}
-                    alt={member.name}
-                    width={300}
-                    height={200}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-                <CardContent className="pt-6">
-                  <h3 className="text-xl font-bold mb-1">{member.name}</h3>
-                  <p className="text-primary font-medium mb-3">{member.role}</p>
-                  <p className="text-muted-foreground">{member.bio}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TeamSection teamMembers={teamMembers} />
 
-      <section className="py-16 bg-muted">
-        <div className="container">
-          <h2 className="text-3xl font-bold mb-12 text-center">Our Timeline</h2>
-          <div className="space-y-12">
-            {[
-              {
-                year: "2016",
-                title: "Foundation",
-                description:
-                  "The Sirat-e-Mustaqeem Welfare Trust was founded with a mission to serve humanity and guide people towards the straight path.",
-              },
-              {
-                year: "2018",
-                title: "Expansion of Services",
-                description: "We expanded our programs to include education initiatives, healthcare services, and food distribution programs.",
-              },
-              {
-                year: "2020",
-                title: "COVID-19 Response",
-                description: "During the pandemic, we launched emergency relief programs to support affected families with food and medical assistance.",
-              },
-              {
-                year: "2021",
-                title: "Education Initiative",
-                description: "Started comprehensive education support program for underprivileged children including school fees, books, and uniforms.",
-              },
-              {
-                year: "2022",
-                title: "Flood Relief Efforts",
-                description: "Provided emergency relief and support to flood-affected communities in Sindh and Balochistan, including food, shelter, and medical assistance.",
-              },
-              {
-                year: "2023",
-                title: "Healthcare Program Enhancement",
-                description: "Expanded our medical camps and healthcare services to reach more remote areas and serve more people in need.",
-              },
-              {
-                year: "2023",
-                title: "Gaza Palestine Support",
-                description: "Extended humanitarian aid to the people of Gaza, Palestine during their time of crisis, providing essential supplies and emergency relief.",
-              },
-              {
-                year: "Today",
-                title: "Continuing Our Mission",
-                description:
-                  "We continue to grow and evolve, focusing on sustainable development and long-term support for our communities.",
-              },
-            ].map((event, index) => (
-              <div key={index} className="flex gap-6">
-                <div className="flex-none">
-                  <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-                    <Calendar className="h-6 w-6" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-bold text-primary">{event.year}</span>
-                    <h3 className="text-xl font-bold">{event.title}</h3>
-                  </div>
-                  <p className="text-muted-foreground">{event.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <EventsSection 
+        title="Our Events"
+        description="Join us in making a difference. Here are our upcoming events where you can participate and contribute to our cause."
+        events={events} 
+      />
     </>
   )
 }

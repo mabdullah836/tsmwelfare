@@ -16,6 +16,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
 import Image from "next/image"
+import { AlertMessage } from "@/components/ui/alert-message"
 
 interface MediaItem {
   _id: string;
@@ -34,6 +35,7 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     fetchMedia()
@@ -42,23 +44,55 @@ export default function MediaPage() {
   const fetchMedia = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/media')
-      if (!response.ok) throw new Error('Failed to fetch media')
+      const response = await fetch('/api/media?folder=general')
+      if (!response.ok) {
+        throw new Error('Failed to fetch media')
+      }
       const data = await response.json()
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid media data received')
+      }
       setMediaItems(data)
     } catch (error) {
       console.error('Failed to fetch media:', error)
-      setError('Failed to load media items. Please try again.')
+      setError(error instanceof Error ? error.message : 'Failed to load media items. Please try again.')
+      setMediaItems([]) // Set empty array as fallback
     } finally {
       setLoading(false)
     }
   }
 
-  const filteredMedia = mediaItems.filter(item => {
-    if (filterType !== "all" && item.type !== filterType) return false
-    if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
-    return true
-  })
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/media/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData?.message || 'Failed to delete media')
+      }
+
+      setMediaItems(prev => prev.filter(item => item._id !== id))
+      setAlert({
+        message: "Media deleted successfully",
+        type: "success"
+      })
+    } catch (error) {
+      console.error('Delete failed:', error)
+      setAlert({
+        message: error instanceof Error ? error.message : "Failed to delete media",
+        type: "error"
+      })
+    }
+  }
+
+  const filteredMedia = mediaItems?.filter(item => {
+    if (!item) return false
+    const matchesSearch = item.title?.toLowerCase().includes(searchQuery?.toLowerCase() || '')
+    const matchesType = filterType === 'all' || item.type === filterType
+    return matchesSearch && matchesType
+  }) || []
 
   if (loading) {
     return (
@@ -85,6 +119,13 @@ export default function MediaPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      {alert && (
+        <AlertMessage
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">

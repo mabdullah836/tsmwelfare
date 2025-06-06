@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { v2 as cloudinary } from 'cloudinary'
 import { withDbConnection } from '@/lib/mongodb'
 import Media from '@/models/Media'
-import { uploadImage } from '@/lib/cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 export const config = {
   api: {
@@ -12,38 +18,67 @@ export const config = {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const file = formData.get('files') as Blob | null
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      )
+    const files = formData.getAll('files')
+    const folder = request.headers.get('folder') || 'general'
+    
+    console.log('Upload request for folder:', folder)
+
+    if (!files?.length) {
+      return NextResponse.json({ error: 'No files provided' }, { status: 400 })
     }
 
-    // Convert to buffer
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const cloudinaryResult = await uploadImage(buffer)
-    
-    // Get file name and type from File object properties
-    const cleanName = (file as File).name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    const fileType = (file as File).type.split('/')[0] as 'image' | 'video'
+    const uploadPromises = files.map(async (file: any) => {
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
 
-    const mediaItem = await withDbConnection(async () => {
-      return Media.create({
-        name: cleanName,
-        title: (file as File).name,
-        type: fileType,
-        url: cloudinaryResult.secure_url,
-        size: `${((file as File).size / (1024 * 1024)).toFixed(2)}MB`,
-        publicId: cloudinaryResult.public_id
-      });
-    });
+      console.log('Uploading file:', file.name, 'to folder:', folder)
 
-    return NextResponse.json(mediaItem)
+      // Upload to Cloudinary with folder structure
+      const result = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: `tsmwelfare/${folder}`,
+            resource_type: 'auto',
+          },
+          (error, result) => {
+            if (error) reject(error)
+            else resolve(result)
+          }
+        )
+
+        uploadStream.end(buffer)
+      })
+
+      console.log('Cloudinary upload result:', {
+        publicId: (result as any).public_id,
+        url: (result as any).secure_url,
+        folder: folder
+      })
+
+      // Save to MongoDB with folder information
+      const media = await withDbConnection(async () => {
+        return await Media.create({
+          name: file.name,
+          title: file.name,
+          type: file.type.startsWith('image/') ? 'image' : 'video',
+          url: (result as any).secure_url,
+          publicId: (result as any).public_id,
+          size: ((result as any).bytes / (1024 * 1024)).toFixed(2) + ' MB',
+          folder: folder,
+        })
+      })
+
+      return media
+    })
+
+    const uploadedFiles = await Promise.all(uploadPromises)
+    console.log('All files uploaded successfully:', uploadedFiles.length)
+
+    return NextResponse.json(uploadedFiles)
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Failed to upload file', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to upload files' },
       { status: 500 }
     )
   }

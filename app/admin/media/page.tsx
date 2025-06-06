@@ -23,8 +23,8 @@ import { AdminHeader } from "@/components/layout/admin-header"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { useToast } from "@/components/ui/use-toast"
-
+import { AlertMessage } from "@/components/ui/alert-message"
+  
 interface MediaItem {
   _id: string;
   name: string;
@@ -34,6 +34,7 @@ interface MediaItem {
   url: string;
   size: string;
   publicId: string;
+  folder?: string;
   createdAt: string;
 }
 
@@ -45,7 +46,7 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
-  const { toast } = useToast()
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     fetchMedia()
@@ -54,13 +55,25 @@ export default function MediaPage() {
   const fetchMedia = async () => {
     try {
       setError(null)
-      const response = await fetch('/api/media')
+      setAlert({
+        message: "Fetching media items...",
+        type: "success"
+      })
+      const response = await fetch('/api/media?folder=general')
       if (!response.ok) throw new Error('Failed to fetch media')
       const data = await response.json()
-      setMediaItems(data)
+      const generalMedia = data.filter((item: MediaItem) => item.folder === 'general' || !item.folder)
+      setMediaItems(generalMedia)
+      setAlert({
+        message: `Successfully loaded ${generalMedia.length} media items`,
+        type: "success"
+      })
     } catch (error) {
-      console.error('Failed to fetch media:', error)
-      setError('Failed to load media items. Please try again.')
+      setAlert({
+        message: error instanceof Error ? error.message : "Failed to load media items",
+        type: "error"
+      })
+      setMediaItems([])
     } finally {
       setLoading(false)
     }
@@ -78,9 +91,12 @@ export default function MediaPage() {
         formData.append('files', file)
       })
 
-       const response = await fetch('/api/media/upload', {
+      const response = await fetch('/api/media/upload', {
         method: 'POST',
         body: formData,
+        headers: {
+          'folder': 'general',
+        },
       })
 
       if (!response.ok) {
@@ -88,12 +104,19 @@ export default function MediaPage() {
         throw new Error(error.message || 'Upload failed')
       }
       
-      // Refresh media list after upload
       await fetchMedia()
-      event.target.value = '' // Reset file input
+      event.target.value = ''
+      setAlert({
+        message: `Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''} to general folder`,
+        type: "success"
+      })
     } catch (error) {
       console.error('Upload failed:', error)
       setError('Failed to upload files. Please try again.')
+      setAlert({
+        message: error instanceof Error ? error.message : "Failed to upload files",
+        type: "error"
+      })
     } finally {
       setUploading(false)
     }
@@ -106,20 +129,19 @@ export default function MediaPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to delete media')
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to delete media')
       }
 
       setMediaItems(prev => prev.filter(item => item._id !== id))
-      toast({
-        title: "Success",
-        description: "Media deleted successfully",
+      setAlert({
+        message: "Media item has been permanently removed",
+        type: "success"
       })
     } catch (error) {
-      console.error('Delete failed:', error)
-      toast({
-        title: "Error",
-        description: "Failed to delete media",
-        variant: "destructive",
+      setAlert({
+        message: error instanceof Error ? error.message : "Failed to delete media item",
+        type: "error"
       })
     }
   }
@@ -153,6 +175,13 @@ export default function MediaPage() {
       <AdminHeader />
       
       <div className="container space-y-8 py-8">
+        {alert && (
+          <AlertMessage
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
         <div className="flex flex-col gap-4">
           <h2 className="text-3xl font-bold tracking-tight">Media Library</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -216,7 +245,7 @@ export default function MediaPage() {
                     <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Files</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="image">Images</SelectItem>
                     <SelectItem value="video">Videos</SelectItem>
                   </SelectContent>
@@ -290,7 +319,7 @@ export default function MediaPage() {
               <Image className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-3" />
               <h3 className="font-medium mb-1">No media items found</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {searchQuery || filterType !== 'all' 
+                {searchQuery || filterType !== 'all'
                   ? 'Try adjusting your filters or search terms'
                   : 'Upload your first media file to get started'}
               </p>
