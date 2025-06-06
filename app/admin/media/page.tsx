@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Image, Upload, Grid, List, Search, AlertCircle } from "lucide-react"
+import { Image, Upload, Grid, List, Search, AlertCircle, Trash2 } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -22,6 +22,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AdminHeader } from "@/components/layout/admin-header"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { useToast } from "@/components/ui/use-toast"
 
 interface MediaItem {
   _id: string;
@@ -43,6 +45,7 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchMedia()
@@ -93,6 +96,31 @@ export default function MediaPage() {
       setError('Failed to upload files. Please try again.')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/media/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete media')
+      }
+
+      setMediaItems(prev => prev.filter(item => item._id !== id))
+      toast({
+        title: "Success",
+        description: "Media deleted successfully",
+      })
+    } catch (error) {
+      console.error('Delete failed:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete media",
+        variant: "destructive",
+      })
     }
   }
 
@@ -334,9 +362,36 @@ export default function MediaPage() {
                       <CardContent className="p-4 pt-0">
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">{item.size}</span>
-                          <Button variant="ghost" size="sm">
-                            View Details
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Media</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this media? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-red-500 hover:bg-red-600"
+                                    onClick={() => handleDelete(item._id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       </CardContent>
                     </>
@@ -366,9 +421,36 @@ export default function MediaPage() {
                         <h3 className="text-sm font-medium truncate">{item.title}</h3>
                         <p className="text-sm text-muted-foreground">{item.size} • {formatDate(item.createdAt)}</p>
                       </div>
-                      <Button variant="ghost" size="sm" className="flex-shrink-0">
-                        View Details
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Media</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this media? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-500 hover:bg-red-600"
+                                onClick={() => handleDelete(item._id)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   )}
                 </Card>
