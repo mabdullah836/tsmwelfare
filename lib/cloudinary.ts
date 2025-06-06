@@ -11,6 +11,7 @@ if (!config.cloud_name || !config.api_key || !config.api_secret) {
 }
 
 cloudinary.config(config);
+
 export async function uploadImage(buffer: Buffer, folder = 'tsmwelfare') {
   return new Promise<ReturnType<typeof cloudinary.uploader.upload>>((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -23,6 +24,15 @@ export async function uploadImage(buffer: Buffer, folder = 'tsmwelfare') {
     );
 
     uploadStream.end(buffer);
+  });
+}
+
+export async function deleteImage(publicId: string) {
+  return new Promise<ReturnType<typeof cloudinary.uploader.destroy>>((resolve, reject) => {
+    cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
   });
 }
 
