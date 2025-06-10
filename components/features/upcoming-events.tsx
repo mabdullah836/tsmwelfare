@@ -27,7 +27,7 @@ export function UpcomingEvents() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch(`${process.env.NEXTAUTH_URL}/api/events`)
+        const response = await fetch('/api/events')
         if (!response.ok) {
           throw new Error('Failed to fetch events')
         }
