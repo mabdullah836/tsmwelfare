@@ -56,14 +56,16 @@ export default function VolunteerPage() {
   const handleSelectChange = (value: string, name: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
-
   const handleInterestChange = (interest: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }))
+    setFormData((prev : any) => {
+      const currentInterests = prev.interests as string[]
+      return {
+        ...prev,
+        interests: currentInterests.includes(interest)
+          ? currentInterests.filter((i) => i !== interest)
+          : [...currentInterests, interest]
+      }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
