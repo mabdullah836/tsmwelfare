@@ -141,7 +141,7 @@ export default function HomePage() {
             <ImpactStat value={`${new Date().getFullYear() - 2016}+`} label="Years of Service" />
             <ImpactStat value="2,500+" label="Families Fed" />
             <ImpactStat value="800+" label="Students Supported" />
-            <ImpactStat value="150+" label="Medical Camps" />
+            <ImpactStat value="50+" label="Medical Camps" />
           </div>
         </div>
       </section>

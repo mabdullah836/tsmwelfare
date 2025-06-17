@@ -6,51 +6,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { faqs } from "@/lib/data/faqs"
 
 export default function FAQPage() {
-  const faqs = [
-    {
-      question: "What is Sirat-e-Mustaqeem Welfare Trust?",
-      answer:
-        "Sirat-e-Mustaqeem Welfare Trust is a non-profit organization dedicated to serving the community through various welfare programs, educational initiatives, and humanitarian aid projects.",
-    },
-    {
-      question: "How can I donate to your organization?",
-      answer:
-        "You can donate through our website using credit/debit cards, bank transfers, or by sending a check. We also accept in-kind donations. Visit our donation page for more details.",
-    },
-    {
-      question: "Are donations tax-deductible?",
-      answer:
-        "Yes, all donations to Sirat-e-Mustaqeem Welfare Trust are tax-deductible. We provide receipts for all donations received.",
-    },
-    {
-      question: "How can I volunteer with your organization?",
-      answer:
-        "We welcome volunteers who want to contribute their time and skills. You can sign up through our website or contact our volunteer coordinator for more information.",
-    },
-    {
-      question: "What programs do you currently run?",
-      answer:
-        "We run various programs including food distribution, educational support, healthcare assistance, and emergency relief efforts. Check our services page for detailed information.",
-    },
-    {
-      question: "How is my donation used?",
-      answer:
-        "Your donations directly support our community programs. We maintain transparency in our financial operations and publish regular reports on fund utilization.",
-    },
-    {
-      question: "Do you provide assistance to individuals?",
-      answer:
-        "Yes, we provide assistance to individuals and families in need through our various welfare programs. Please contact us or visit our office for more information.",
-    },
-    {
-      question: "How can I stay updated about your activities?",
-      answer:
-        "You can subscribe to our newsletter, follow us on social media, or regularly visit our website for updates on our activities and programs.",
-    },
-  ]
-
   return (
     <>
       <section className="bg-primary text-white py-16 md:py-24">
@@ -60,7 +18,7 @@ export default function FAQPage() {
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-white/90">
-              Find answers to common questions about our organization, programs, and how you can get involved.
+              Find answers to common questions about our organization, programs, and how you can get involved in our mission of serving humanity.
             </p>
           </div>
         </div>
