@@ -183,6 +183,14 @@ export default function HomePage() {
                 >
                   <a href="/volunteer">Volunteer Your Time</a>
                 </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="bg-white/10 text-white border-white/20 font-medium hover:bg-white/20"
+                >
+                  <a href="/apply">Apply for Assistance</a>
+                </Button>
               </div>
             </CardContent>
           </Card>

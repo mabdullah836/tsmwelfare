@@ -15,7 +15,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
-import { AdminHeader } from "@/components/layout/admin-header"
 import { Edit2Icon, Loader2Icon } from "lucide-react"
 import { format } from "date-fns"
 import { AlertMessage } from "@/components/ui/alert-message"
@@ -52,10 +51,7 @@ export default function AdminEventsPage() {
 
   const fetchEvents = async () => {
     try {
-      setAlert({
-        message: "Fetching events...",
-        type: "success"
-      })
+     
       const response = await fetch('/api/events')
       if (!response.ok) {
         throw new Error('Failed to fetch events')
@@ -78,11 +74,12 @@ export default function AdminEventsPage() {
       } else {
         setEvents(data)
       }
-
+      if (data.length > 0) {
       setAlert({
-        message: `Successfully loaded ${data.length} events`,
-        type: "success"
-      })
+          message: `Successfully loaded ${data.length} events`,
+          type: "success"
+        })
+      }
     } catch (error) {
       setAlert({
         message: "Failed to fetch events",
@@ -338,7 +335,6 @@ export default function AdminEventsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <AdminHeader />
         <div className="container py-10">
           <div className="flex items-center justify-center">
             <Loader2Icon className="h-6 w-6 animate-spin" />
@@ -350,9 +346,8 @@ export default function AdminEventsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <AdminHeader />
-      <div className="container py-10">
+    <div className="min-h-screen">
+      <div className="container">
         {alert && (
           <AlertMessage
             message={alert.message}
