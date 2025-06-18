@@ -8,7 +8,7 @@ const departments = [
     icon: StethoscopeIcon,
     title: "Department of Health",
     description:
-      "We organize free medical camps in villages where doctors are hard to find. When we have enough funds and volunteers, we visit remote areas and provide basic medicines to families who can't afford treatment.",
+      "We organize free medical camps at our head office in Landhi, Karachi. During emergencies like the recent floods in Balochistan and Sindh, we provide medical assistance and basic medicines to affected families. Our medical services are available to those who cannot afford treatment.",
   },
   {
     icon: HeartIcon,
