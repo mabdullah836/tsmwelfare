@@ -2,76 +2,72 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, DollarSign, Users, Image } from "lucide-react"
-import { AdminHeader } from "@/components/layout/admin-header"
 
 export default function AdminDashboard() {
   return (
-    <div className="min-h-screen bg-muted/30">
-      <AdminHeader />
-
-      <div className="container space-y-8 py-8">
-        <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
+    <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-8 py-10 px-6">
+        <div className="flex flex-col gap-4 items-center text-center">
+          <p className="text-muted-foreground text-lg">
             Welcome back! Here's an overview of your organization's statistics.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="rounded-xl shadow-sm border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base font-medium">Total Donations</CardTitle>
+              <DollarSign className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">PKR 45,231</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold">PKR 45,231</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 +20.1% from last month
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="rounded-xl shadow-sm border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Donors</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base font-medium">Active Donors</CardTitle>
+              <Users className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">573</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold">573</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 +180 since last week
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="rounded-xl shadow-sm border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Media Items</CardTitle>
-              <Image className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base font-medium">Media Items</CardTitle>
+              <Image className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">129</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold">129</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 +4 new uploads today
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="rounded-xl shadow-sm border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base font-medium">Active Projects</CardTitle>
+              <Activity className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold">12</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 3 projects near completion
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="col-span-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="col-span-4 rounded-xl shadow-sm border">
             <CardHeader>
-              <CardTitle>Donation Overview</CardTitle>
+              <CardTitle className="text-2xl">Donation Overview</CardTitle>
               <CardDescription>
                 Monthly donation trends for the current year
               </CardDescription>
@@ -83,9 +79,9 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card className="col-span-3">
+          <Card className="col-span-3 rounded-xl shadow-sm border">
             <CardHeader>
-              <CardTitle>Recent Activities</CardTitle>
+              <CardTitle className="text-2xl">Recent Activities</CardTitle>
               <CardDescription>
                 Latest updates and actions
               </CardDescription>
