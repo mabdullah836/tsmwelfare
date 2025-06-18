@@ -19,7 +19,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AdminHeader } from "@/components/layout/admin-header"
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -171,9 +170,7 @@ export default function MediaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <AdminHeader />
-      
+    <div className="min-h-screen ">
       <div className="container space-y-8 py-8">
         {alert && (
           <AlertMessage

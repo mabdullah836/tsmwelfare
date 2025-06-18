@@ -10,72 +10,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
-import { LogOutIcon, SettingsIcon, LayoutDashboardIcon, ImageIcon, DollarSignIcon, UsersIcon, CalendarIcon, HeartHandshakeIcon } from "lucide-react"
+import { LogOutIcon, SettingsIcon } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from 'next/navigation'
-
-const navigationItems = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboardIcon },
-  { name: "Team", href: "/admin/team", icon: UsersIcon },
-  { name: "Media", href: "/admin/media", icon: ImageIcon },
-  { name: "Donations", href: "/admin/donations", icon: DollarSignIcon },
-  {
-    name: "Events",
-    href: "/admin/events",
-    icon: CalendarIcon,
-  },
-  { name: "Volunteers", href: "/admin/volunteers", icon: HeartHandshakeIcon },
-]
 
 export function AdminHeader() {
-  const pathname = usePathname()
-  
   const handleLogout = () => {
     localStorage.removeItem("adminToken")
     window.location.href = "/admin/login"
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
-        <div className="flex items-center gap-8 flex-1">
-          <Link href="/admin/dashboard" className="flex items-center gap-2 font-semibold text-lg">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary/10 text-primary">SM</AvatarFallback>
-            </Avatar>
-            <span className="hidden sm:inline-block">Admin Panel</span>
-          </Link>
-
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList>
-              {navigationItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                return (
-                  <NavigationMenuItem key={item.name}>
-                    <Link href={item.href} legacyBehavior passHref>
-                      <NavigationMenuLink
-                        className={`${navigationMenuTriggerStyle()} gap-2 ${
-                          isActive ? "text-primary" : "text-muted-foreground"
-                        }`}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {item.name}
-                      </NavigationMenuLink>
-                    </Link>
-                  </NavigationMenuItem>
-                )
-              })}
-            </NavigationMenuList>
-          </NavigationMenu>
-        </div>
+    <header className="z-50 border-b bg-background/95 shadow-sm supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-[88px] items-center justify-between px-10">
+        <Link href="/admin" className="flex items-center gap-2 font-semibold text-lg">
+          <span className="hidden font-bold text-2xl sm:inline-block">Dashboard</span>
+        </Link>
 
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" className="hidden md:flex">
