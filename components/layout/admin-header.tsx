@@ -10,27 +10,39 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOutIcon, SettingsIcon } from "lucide-react"
+import { LogOutIcon, SettingsIcon, Menu as MenuIcon } from "lucide-react"
 import Link from "next/link"
 
-export function AdminHeader() {
+export function AdminHeader({ onSidebarToggle }: { onSidebarToggle?: () => void }) {
   const handleLogout = () => {
     localStorage.removeItem("adminToken")
     window.location.href = "/admin/login"
   }
 
   return (
-    <header className="z-50 border-b bg-background/95 shadow-sm supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-[88px] items-center justify-between px-10">
-        <Link href="/admin" className="flex items-center gap-2 font-semibold text-lg">
-          <span className="hidden font-bold text-2xl sm:inline-block">Dashboard</span>
-        </Link>
-
+    <header className="z-50 border-b bg-background/95 shadow-sm supports-[backdrop-filter]:bg-background/60 relative">
+      <div className="flex h-[88px] items-center justify-between px-4 md:px-10">
+        <div className="flex items-center gap-2">
+          {/* Hamburger for mobile */}
+          {onSidebarToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden mr-2"
+              onClick={onSidebarToggle}
+            >
+              <MenuIcon className="h-6 w-6" />
+              <span className="sr-only">Open sidebar</span>
+            </Button>
+          )}
+          <Link href="/admin" className="flex items-center gap-2 font-semibold text-lg">
+            <span className="hidden font-bold text-2xl sm:inline-block">Dashboard</span>
+          </Link>
+        </div>
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" className="hidden md:flex">
             <Link href="/">View Website</Link>
           </Button>
-
           <DropdownMenu>
             <DropdownMenuTrigger className="relative h-9 w-9 rounded-full p-0 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <Avatar className="h-9 w-9">
