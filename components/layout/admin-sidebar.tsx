@@ -12,13 +12,10 @@ import {
   FileText,
   ExternalLink,
   ChevronLeft,
-  ChevronRight,
 
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useSidebar } from "@/components/ui/sidebar"
-import { useEffect } from "react"
 
 const navigationItems = [
   {
