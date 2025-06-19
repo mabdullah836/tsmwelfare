@@ -62,11 +62,8 @@ export default function ApplicationsPage() {
           message: `Successfully loaded ${data.data.length} applications`,
           type: "success"
         })
-      } else {
-        throw new Error(data.message)
       }
     } catch (error) {
-      console.log(error)
       setAlert({
         message: "Failed to fetch applications",
         type: "error"
