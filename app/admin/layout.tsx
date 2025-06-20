@@ -3,7 +3,16 @@
 import { AdminSidebar } from "@/components/layout/admin-sidebar"
 import { AdminHeader } from "@/components/layout/admin-header"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter, usePathname } from "next/navigation"
+
+function decodeJwt(token: string): any {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch {
+    return null
+  }
+}
 
 export default function AdminLayout({
   children,
@@ -11,6 +20,28 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    // Only run auth check if not on login page
+    if (pathname === "/admin/login") return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null
+    if (!token) {
+      router.push('/admin/login')
+      return
+    }
+    const decoded = decodeJwt(token)
+    if (!decoded || decoded.role !== 'admin') {
+      router.push('/admin/login')
+    }
+  }, [pathname])
+
+  // Only render children for /admin/login
+  if (pathname === "/admin/login") {
+    return <>{children}</>
+  }
+
   return (
     <SidebarProvider>
       <div className="fixed top-0 left-0 w-full z-50">

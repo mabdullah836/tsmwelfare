@@ -24,16 +24,24 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Simulate authentication
-    setTimeout(() => {
-      if (email === "admin@sirat-e-mustaqeem.org" && password === "admin123") {
-        localStorage.setItem("adminToken", "authenticated")
-        router.push("/admin/dashboard")
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (data.success && data.token) {
+        localStorage.setItem('adminToken', data.token)
+        router.push('/admin/dashboard')
       } else {
-        setError("Invalid email or password")
+        setError(data.message || 'Invalid email or password')
       }
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -94,9 +102,7 @@ export default function AdminLoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Email: admin@sirat-e-mustaqeem.org</p>
-            <p>Password: admin123</p>
+            {/* Remove demo credentials */}
           </div>
         </CardContent>
       </Card>

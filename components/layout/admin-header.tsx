@@ -58,8 +58,10 @@ export function AdminHeader({ onSidebarToggle }: { onSidebarToggle?: () => void 
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <SettingsIcon className="mr-2 h-4 w-4" />
-                <span>Settings</span>
+                <Link href="/admin/settings" className="flex items-center w-full h-full">
+                  <SettingsIcon className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
