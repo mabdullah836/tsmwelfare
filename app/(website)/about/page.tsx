@@ -7,7 +7,8 @@ import { EventsSection } from "@/components/features/events-section"
 
 async function getTeamMembers() {
   try {
-    const response = await fetch('/api/team', {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/team`, {
       next: { revalidate: 60 }, // Revalidate every minute
     })
     if (!response.ok) {
@@ -23,7 +24,8 @@ async function getTeamMembers() {
 
 async function getUpcomingEvents() {
   try {
-    const response = await fetch('/api/events', {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/events`, {
       next: { revalidate: 60 }, // Revalidate every minute
     })
     if (!response.ok) throw new Error('Failed to fetch events')

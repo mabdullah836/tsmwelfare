@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Activity, DollarSign, Users, Image } from "lucide-react"
+import { dashboardStats } from "@/lib/constants/dashboard"
 
 export default function AdminDashboard() {
   return (
@@ -13,55 +13,21 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="rounded-xl shadow-sm border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-medium">Total Donations</CardTitle>
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">PKR 45,231</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +20.1% from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl shadow-sm border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-medium">Active Donors</CardTitle>
-              <Users className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">573</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +180 since last week
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl shadow-sm border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-medium">Media Items</CardTitle>
-              <Image className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">129</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                +4 new uploads today
-              </p>
-            </CardContent>
-          </Card>
-          <Card className="rounded-xl shadow-sm border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base font-medium">Active Projects</CardTitle>
-              <Activity className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">12</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                3 projects near completion
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {dashboardStats.map((stat, index) => (
+            <Card key={index}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stat.description}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">

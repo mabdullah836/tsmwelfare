@@ -2,19 +2,8 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Heart, Clock, Users, GraduationCap } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,56 +15,29 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { VolunteerBenefits } from "@/components/features/volunteer/volunteer-benefits"
+import { INTEREST_OPTIONS, AVAILABILITY_OPTIONS } from "@/lib/constants/volunteer"
+import { useVolunteerForm } from "@/lib/hooks/use-volunteer-form"
+import { FormInput } from "@/components/ui/form-input"
+import { VolunteerFormData } from "@/lib/types/volunteer"
 
 export default function VolunteerPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    occupation: "",
-    availability: "",
-    interests: [],
-    skills: "",
-    experience: "",
-    motivation: "",
-    references: "",
-  })
+  const {
+    register,
+    handleSubmit,
+    errors,
+    isSubmitting,
+    handleInterestChange,
+    handleAvailabilityChange,
+    watch,
+    reset,
+  } = useVolunteerForm()
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSelectChange = (value: string, name: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-  const handleInterestChange = (interest: string) => {
-    setFormData((prev : any) => {
-      const currentInterests = prev.interests as string[]
-      return {
-        ...prev,
-        interests: currentInterests.includes(interest)
-          ? currentInterests.filter((i) => i !== interest)
-          : [...currentInterests, interest]
-      }
-    })
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setShowConfirmDialog(true)
-  }
-
-  const handleConfirmedSubmit = async () => {
+  const onSubmit = async (formData: any) => {
     setShowConfirmDialog(false)
-    setIsSubmitting(true)
 
     try {
       const response = await fetch("/api/volunteer", {
@@ -93,24 +55,16 @@ export default function VolunteerPage() {
           message: "Thank you for your interest in volunteering. We'll contact you soon!",
           type: "success"
         })
-        // Reset form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          address: "",
-          city: "",
-          occupation: "",
-          availability: "",
-          interests: [],
-          skills: "",
-          experience: "",
-          motivation: "",
-          references: "",
-        })
+        reset()
       } else {
-        throw new Error(data.message || "Failed to submit application")
+        if (data.status) {
+          setAlert({
+            message: `You have already submitted an application. Current status: ${data.status}. We'll contact you soon!`,
+            type: "error"
+          })
+        } else {
+          throw new Error(data.message || "Failed to submit application")
+        }
       }
     } catch (error) {
       setAlert({
@@ -118,10 +72,12 @@ export default function VolunteerPage() {
         type: "error"
       })
       console.error("Error:", error)
-    } finally {
-      setIsSubmitting(false)
     }
   }
+
+  const handleFormSubmit = handleSubmit((data) => {
+    setShowConfirmDialog(true)
+  })
 
   return (
     <>
@@ -143,51 +99,7 @@ export default function VolunteerPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-muted">
-        <div className="container">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-background">
-              <CardContent className="pt-6">
-                <Heart className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2">Make an Impact</h3>
-                <p className="text-muted-foreground">
-                  Your time and skills can make a real difference in your community and change lives.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-background">
-              <CardContent className="pt-6">
-                <Users className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2">Join Our Community</h3>
-                <p className="text-muted-foreground">
-                  Connect with like-minded individuals who share your passion for helping others.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-background">
-              <CardContent className="pt-6">
-                <GraduationCap className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2">Learn New Skills</h3>
-                <p className="text-muted-foreground">
-                  Gain valuable experience and develop new skills while helping your community.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-background">
-              <CardContent className="pt-6">
-                <Clock className="w-12 h-12 text-primary mb-4" />
-                <h3 className="text-xl font-bold mb-2">Flexible Hours</h3>
-                <p className="text-muted-foreground">
-                  Choose volunteer opportunities that fit your schedule and availability.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <VolunteerBenefits />
 
       <section className="py-16">
         <div className="container">
@@ -207,171 +119,140 @@ export default function VolunteerPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleFormSubmit} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Input id="address" name="address" value={formData.address} onChange={handleChange} required />
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input id="city" name="city" value={formData.city} onChange={handleChange} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="occupation">Occupation</Label>
-                      <Input
-                        id="occupation"
-                        name="occupation"
-                        value={formData.occupation}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Availability</Label>
-                    <Select
-                      name="availability"
-                      value={formData.availability}
-                      onValueChange={(value) => handleSelectChange(value, "availability")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select your availability" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="weekdays">Weekdays</SelectItem>
-                        <SelectItem value="weekends">Weekends</SelectItem>
-                        <SelectItem value="evenings">Evenings</SelectItem>
-                        <SelectItem value="flexible">Flexible</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label>Areas of Interest</Label>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      {[
-                        "Education and Tutoring",
-                        "Food Distribution",
-                        "Healthcare Support",
-                        "Administrative Work",
-                        "Event Planning",
-                        "Fundraising",
-                        "Social Media",
-                        "Community Outreach",
-                      ].map((interest) => (
-                        <div key={interest} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={interest}
-                            checked={formData.interests.includes(interest)}
-                            onCheckedChange={() => handleInterestChange(interest)}
-                          />
-                          <Label htmlFor={interest} className="cursor-pointer">
-                            {interest}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="skills">Special Skills or Qualifications</Label>
-                    <Textarea
-                      id="skills"
-                      name="skills"
-                      value={formData.skills}
-                      onChange={handleChange}
-                      placeholder="List any special skills or qualifications you have"
-                      rows={3}
+                    <FormInput<VolunteerFormData>
+                      id="firstName"
+                      label="First Name"
+                      register={register}
+                      errors={errors}
+                      required
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="experience">Previous Volunteer Experience</Label>
-                    <Textarea
-                      id="experience"
-                      name="experience"
-                      value={formData.experience}
-                      onChange={handleChange}
-                      placeholder="Describe your previous volunteer experience"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="motivation">Why do you want to volunteer with us?</Label>
-                    <Textarea
-                      id="motivation"
-                      name="motivation"
-                      value={formData.motivation}
-                      onChange={handleChange}
-                      placeholder="Tell us why you'd like to volunteer with our organization"
-                      rows={3}
+                    <FormInput<VolunteerFormData>
+                      id="lastName"
+                      label="Last Name"
+                      register={register}
+                      errors={errors}
                       required
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="references">References</Label>
-                    <Textarea
-                      id="references"
-                      name="references"
-                      value={formData.references}
-                      onChange={handleChange}
-                      placeholder="Please provide two references with their contact information"
-                      rows={3}
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <FormInput<VolunteerFormData>
+                      id="email"
+                      label="Email"
+                      type="email"
+                      register={register}
+                      errors={errors}
+                      required
+                      pattern={{
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Invalid email address"
+                      }}
+                    />
+                    <FormInput<VolunteerFormData>
+                      id="phone"
+                      label="Phone Number"
+                      type="tel"
+                      register={register}
+                      errors={errors}
+                      required
+                      pattern={{
+                        value: /^[0-9]{11}$/,
+                        message: "Please enter a valid 11-digit phone number"
+                      }}
                     />
                   </div>
+
+                  <FormInput<VolunteerFormData>
+                    id="address"
+                    label="Address"
+                    register={register}
+                    errors={errors}
+                    required
+                  />
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <FormInput<VolunteerFormData>
+                      id="city"
+                      label="City"
+                      register={register}
+                      errors={errors}
+                      required
+                    />
+                    <FormInput<VolunteerFormData>
+                      id="occupation"
+                      label="Occupation"
+                      register={register}
+                      errors={errors}
+                      required
+                    />
+                  </div>
+
+                  <FormInput<VolunteerFormData>
+                    id="availability"
+                    label="Availability"
+                    register={register}
+                    errors={errors}
+                    required
+                    options={AVAILABILITY_OPTIONS}
+                    onValueChange={handleAvailabilityChange}
+                  />
+
+                  <div className="space-y-3">
+                    <Label>Areas of Interest</Label>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {INTEREST_OPTIONS.map((interest) => (
+                        <FormInput<VolunteerFormData>
+                          key={interest}
+                          id={interest}
+                          label={interest}
+                          register={register}
+                          errors={errors}
+                          isCheckbox
+                          checked={watch("interests").includes(interest)}
+                          onCheckedChange={() => handleInterestChange(interest)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <FormInput<VolunteerFormData>
+                    id="skills"
+                    label="Special Skills or Qualifications"
+                    register={register}
+                    errors={errors}
+                    rows={3}
+                    placeholder="List any special skills or qualifications you have"
+                  />
+
+                  <FormInput<VolunteerFormData>
+                    id="experience"
+                    label="Previous Volunteer Experience"
+                    register={register}
+                    errors={errors}
+                    rows={3}
+                    placeholder="Describe your previous volunteer experience"
+                  />
+
+                  <FormInput<VolunteerFormData>
+                    id="motivation"
+                    label="Why do you want to volunteer with us?"
+                    register={register}
+                    errors={errors}
+                    required
+                    rows={3}
+                    placeholder="Tell us why you'd like to volunteer with our organization"
+                  />
+
+                  <FormInput<VolunteerFormData>
+                    id="references"
+                    label="References"
+                    register={register}
+                    errors={errors}
+                    rows={3}
+                    placeholder="Please provide two references with their contact information"
+                  />
 
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? "Submitting..." : "Submit Application"}
@@ -395,7 +276,7 @@ export default function VolunteerPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmedSubmit}>
+            <AlertDialogAction onClick={handleSubmit(onSubmit)}>
               I Understand & Confirm
             </AlertDialogAction>
           </AlertDialogFooter>

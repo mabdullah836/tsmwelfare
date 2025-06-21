@@ -27,7 +27,12 @@ export default function AdminLoginPage() {
     // Simulate authentication
     setTimeout(() => {
       if (email === "admin@sirat-e-mustaqeem.org" && password === "admin123") {
+        // Set both localStorage and cookie for authentication
         localStorage.setItem("adminToken", "authenticated")
+        
+        // Set the auth-token cookie that middleware expects
+        document.cookie = "auth-token=authenticated; path=/; max-age=86400; secure; samesite=strict"
+        
         router.push("/admin/dashboard")
       } else {
         setError("Invalid email or password")

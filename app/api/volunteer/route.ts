@@ -6,6 +6,22 @@ export async function POST(request: Request) {
   try {
     const formData = await request.json();
     
+    // Check for existing application
+    const existingApplication = await withDbConnection(async () => {
+      return VolunteerModel.findOne({ email: formData.email });
+    });
+
+    if (existingApplication) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: "You have already submitted a volunteer application. We'll contact you soon about your existing application.",
+          status: existingApplication.status
+        },
+        { status: 400 }
+      );
+    }
+    
     // Create new volunteer application using withDbConnection
     const volunteer = await withDbConnection(async () => {
       return VolunteerModel.create({

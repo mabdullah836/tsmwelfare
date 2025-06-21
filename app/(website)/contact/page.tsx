@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
+import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,38 +9,51 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
 
+interface ContactFormData {
+  name: string
+  email: string
+  subject: string
+  message: string
+}
+
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ContactFormData>()
+
+  const onSubmit = async (formData: ContactFormData) => {
     setIsSubmitting(true)
 
     try {
-      const formData = new FormData(e.currentTarget)
-      const response = await fetch('/api/contact', {
-        method: 'POST',
+      const response = await fetch("/api/contact", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(Object.fromEntries(formData)),
+        body: JSON.stringify(formData),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to send message')
+        throw new Error("Failed to send message")
       }
 
       setAlert({
         message: "Thank you for your message. We'll get back to you soon!",
         type: "success"
       })
-      e.currentTarget.reset()
+      reset()
     } catch (error) {
       setAlert({
-        message: error instanceof Error ? error.message : "Failed to send message. Please try again later.",
+        message: "Failed to send message. Please try again later.",
         type: "error"
       })
+      console.error("Error:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -79,32 +91,86 @@ export default function ContactPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label htmlFor="name" className="text-sm font-medium">
                           Your Name
                         </label>
-                        <Input id="name" name="name" required />
+                        <Input
+                          id="name"
+                          {...register("name", {
+                            required: "Name is required",
+                            minLength: {
+                              value: 2,
+                              message: "Name must be at least 2 characters"
+                            }
+                          })}
+                        />
+                        {errors.name && (
+                          <p className="text-sm text-red-500">{errors.name.message}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <label htmlFor="email" className="text-sm font-medium">
                           Email Address
                         </label>
-                        <Input id="email" name="email" type="email" required />
+                        <Input
+                          id="email"
+                          type="email"
+                          {...register("email", {
+                            required: "Email is required",
+                            pattern: {
+                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                              message: "Invalid email address"
+                            }
+                          })}
+                        />
+                        {errors.email && (
+                          <p className="text-sm text-red-500">{errors.email.message}</p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="subject" className="text-sm font-medium">
                         Subject
                       </label>
-                      <Input id="subject" name="subject" required />
+                      <Input
+                        id="subject"
+                        {...register("subject", {
+                          required: "Subject is required",
+                          minLength: {
+                            value: 5,
+                            message: "Subject must be at least 5 characters"
+                          }
+                        })}
+                      />
+                      {errors.subject && (
+                        <p className="text-sm text-red-500">{errors.subject.message}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="message" className="text-sm font-medium">
                         Message
                       </label>
-                      <Textarea id="message" name="message" rows={5} required />
+                      <Textarea
+                        id="message"
+                        rows={5}
+                        {...register("message", {
+                          required: "Message is required",
+                          minLength: {
+                            value: 10,
+                            message: "Message must be at least 10 characters"
+                          },
+                          maxLength: {
+                            value: 1000,
+                            message: "Message cannot exceed 1000 characters"
+                          }
+                        })}
+                      />
+                      {errors.message && (
+                        <p className="text-sm text-red-500">{errors.message.message}</p>
+                      )}
                     </div>
                     <Button type="submit" className="w-full" disabled={isSubmitting}>
                       {isSubmitting ? "Sending..." : "Send Message"}
