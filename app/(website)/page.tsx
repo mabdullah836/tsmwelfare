@@ -141,7 +141,7 @@ export default function HomePage() {
             <ImpactStat value={`${new Date().getFullYear() - 2016}+`} label="Years of Service" />
             <ImpactStat value="2,500+" label="Families Fed" />
             <ImpactStat value="800+" label="Students Supported" />
-            <ImpactStat value="150+" label="Medical Camps" />
+            <ImpactStat value="50+" label="Medical Camps" />
           </div>
         </div>
       </section>
@@ -182,6 +182,14 @@ export default function HomePage() {
                   className="bg-white/10 text-white border-white/20 font-medium hover:bg-white/20"
                 >
                   <a href="/volunteer">Volunteer Your Time</a>
+                </Button>
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="bg-white/10 text-white border-white/20 font-medium hover:bg-white/20"
+                >
+                  <a href="/apply">Apply for Assistance</a>
                 </Button>
               </div>
             </CardContent>

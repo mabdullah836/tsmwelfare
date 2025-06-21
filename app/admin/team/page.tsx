@@ -18,7 +18,6 @@ import Image from "next/image"
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
 import type { DropResult } from "@hello-pangea/dnd"
 import { uploadImage } from "@/lib/cloudinary"
-import { AdminHeader } from "@/components/layout/admin-header"
 import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AlertMessage } from "@/components/ui/alert-message"
@@ -362,7 +361,6 @@ export default function AdminTeamPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30">
-        <AdminHeader />
         <div className="container py-10">
           <div className="flex items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -374,8 +372,7 @@ export default function AdminTeamPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <AdminHeader />
+    <div className="min-h-screen">
       <div className="container py-10">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Manage Team Members</h1>
