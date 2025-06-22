@@ -15,11 +15,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Email and password are required.' }, { status: 400 });
     }
 
-    // Always ensure only one admin exists
     await withDbConnection(async () => {
       const admins = await Admin.find({});
       if (admins.length > 1) {
-        // Remove all but the first admin (safety net)
         await Admin.deleteMany({ _id: { $nin: [admins[0]._id] } });
       }
     });
@@ -27,24 +25,30 @@ export async function POST(request: Request) {
     let admin = await withDbConnection(() => Admin.findOne({}));
 
     if (!admin) {
-      // No admin exists, create one with provided credentials
       const hashedPassword = await bcrypt.hash(password, 10);
       admin = await withDbConnection(() => Admin.create({ email, password: hashedPassword }));
     }
 
-    // If the email doesn't match the stored admin, reject
     if (admin.email !== email) {
       return NextResponse.json({ success: false, message: 'Invalid credentials.' }, { status: 401 });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return NextResponse.json({ success: false, message: 'Invalid credentials.' }, { status: 401 });
     }
 
-    const token = jwt.sign({ id: admin._id, role: 'admin', email: admin.email }, JWT_SECRET, { expiresIn: '1d' });
-    return NextResponse.json({ success: true, token });
+    // Set JWT to expire in 7 days
+    const token = jwt.sign({ id: admin._id, role: 'admin', email: admin.email }, JWT_SECRET, { expiresIn: '7d' });
+    const response = NextResponse.json({ success: true });
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      path: '/admin', // Match the middleware path
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production', // Secure in production
+    });
+    return response;
   } catch (error) {
     console.error('Admin login error:', error);
     return NextResponse.json({ success: false, message: 'Internal server error.' }, { status: 500 });

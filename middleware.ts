@@ -1,35 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'changeme');
 
-export function middleware(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  console.log(`[Middleware] Accessing: ${pathname}`);
 
-  // Allow login page and static files
-  if (pathname === '/admin/login' || !pathname.startsWith('/admin')) {
+  // Allow login page and public assets
+  if (pathname === '/admin/login' || 
+      pathname.startsWith('/_next/') || 
+      pathname.startsWith('/favicon.ico')) {
     return NextResponse.next();
   }
 
-  // Get token from Authorization header (Bearer <token>)
-  const authHeader = request.headers.get('authorization');
-  const token = authHeader?.split(' ')[1];
+  // Check authentication for all admin routes
+  const token = request.cookies.get('auth-token')?.value;
+  console.log(`[Middleware] Token: ${token ? 'exists' : 'missing'}`);
 
   if (!token) {
+    console.log('[Middleware] No token - redirecting to login');
     return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    if (decoded.role !== 'admin') {
-      return NextResponse.redirect(new URL('/admin/login', request.url));
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    console.log(`[Middleware] User role: ${payload.role}`);
+    
+    // If trying to access login page but already authenticated
+    if (pathname === '/admin/login') {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
+    
     return NextResponse.next();
   } catch (err) {
+    console.log('[Middleware] Token verification failed:', err);
     return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 }
 
 export const config = {
   matcher: ['/admin/:path*'],
-}; 
+};

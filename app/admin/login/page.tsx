@@ -31,11 +31,11 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      if (data.success && data.token) {
-        localStorage.setItem('adminToken', data.token)
-        router.push('/admin/dashboard')
+      console.log(data)
+      if (data?.success) {
+        window.location.href = '/admin/dashboard'; // Ensure the latest state is loaded
       } else {
-        setError(data.message || 'Invalid email or password')
+        setError(data?.message || 'Invalid email or password')
       }
     } catch (err) {
       setError('Something went wrong. Please try again.')
