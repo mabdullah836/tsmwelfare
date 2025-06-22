@@ -51,15 +51,13 @@ export default function ApplicationsPage() {
     try {
       const response = await fetch('/api/applications')
       const data = await response.json()
-      
-      if (data.success) {
-        setApplications(data.data)
+      console.log(data)
+      if (data.length) {
+        setApplications(data)
         setAlert({
-          message: `Successfully loaded ${data.data.length} applications`,
+          message: `Successfully loaded ${data.length} applications`,
           type: "success"
         })
-      } else {
-        throw new Error(data.message)
       }
     } catch (error) {
       console.log(error)
@@ -92,8 +90,6 @@ export default function ApplicationsPage() {
           message: "Application status has been updated",
           type: "success"
         })
-      } else {
-        throw new Error(data.message)
       }
     } catch (error) {
       setAlert({
