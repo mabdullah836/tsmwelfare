@@ -33,7 +33,7 @@ export default function AdminLoginPage() {
       const data = await res.json()
       console.log(data)
       if (data?.success) {
-        window.location.href = '/admin/dashboard'; // Ensure the latest state is loaded
+        router.push('/admin/dashboard');
       } else {
         setError(data?.message || 'Invalid email or password')
       }
