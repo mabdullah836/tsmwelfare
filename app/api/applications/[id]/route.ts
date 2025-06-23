@@ -3,6 +3,11 @@ import { withDbConnection } from "@/lib/mongodb"
 import { Application } from "@/models/Application"
 import { deleteImage } from "@/lib/cloudinary"
 
+function extractPublicId(url: string) {
+  const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)\./);
+  return match ? match[1] : null;
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
@@ -11,18 +16,26 @@ export async function PATCH(
     const data = await request.json()
     const { status } = data
 
-    const application = await withDbConnection(async () => {
-      // If application is being rejected, delete associated documents from Cloudinary
-      if (status === "rejected") {
-        const application = await Application.findById(params.id)
-        if (application?.documents?.length > 0) {
-          await Promise.all(
-            application.documents.map((url: string) => deleteImage(url))
-          )
-        }
+    if (status === "rejected") {
+      const application = await withDbConnection(async () => {
+        return Application.findById(params.id)
+      })
+      if (application?.documents?.length > 0) {
+        await Promise.all(
+          application.documents.map((url: string) => {
+            const publicId = extractPublicId(url)
+            return publicId ? deleteImage(publicId) : Promise.resolve()
+          })
+        )
       }
+      await withDbConnection(async () => {
+        await Application.findByIdAndDelete(params.id)
+      })
+      return NextResponse.json({ success: true, message: "Application and documents deleted" })
+    }
 
-      return await Application.findByIdAndUpdate(
+    const application = await withDbConnection(async () => {
+      return Application.findByIdAndUpdate(
         params.id,
         {
           ...data,
@@ -47,4 +60,4 @@ export async function PATCH(
       { status: 500 }
     )
   }
-} 
+}

@@ -36,4 +36,32 @@ export async function PATCH(
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    const deleted = await withDbConnection(async () => {
+      return VolunteerModel.findByIdAndDelete(id);
+    });
+    if (!deleted) {
+      return NextResponse.json(
+        { success: false, message: "Volunteer not found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(
+      { success: true, message: "Volunteer deleted successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error deleting volunteer:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to delete volunteer" },
+      { status: 500 }
+    );
+  }
 } 
