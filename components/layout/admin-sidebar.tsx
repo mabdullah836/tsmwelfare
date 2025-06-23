@@ -12,12 +12,10 @@ import {
   FileText,
   ExternalLink,
   ChevronLeft,
-  ChevronRight,
 
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { useSidebar } from "@/components/ui/sidebar"
 
 const navigationItems = [
   {
@@ -57,44 +55,35 @@ const navigationItems = [
   }
 ]
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
-  const { isOpen, toggle } = useSidebar()
-
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken")
-    window.location.href = "/admin/login"
-  }
-
   return (
-    <div className="flex h-full flex-col border-r bg-background">
+    <div className="h-full w-64 flex flex-col border-r bg-background transition-all duration-300">
       {/* Logo and Title */}
-      <div className="flex items-center justify-between px-4 py-6 border-b">
+      <div className="flex items-center justify-between px-4 py-6 border-b bg-background z-50">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold">TSM</span>
           </div>
-          {isOpen && (
-            <div>
-              <h2 className="font-semibold">Admin Panel</h2>
-              <p className="text-xs text-muted-foreground">TSM Welfare</p>
-            </div>
-          )}
+          <div>
+            <h2 className="font-semibold">Admin Panel</h2>
+            <p className="text-xs text-muted-foreground">TSM Welfare</p>
+          </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          onClick={toggle}
-          className="h-8 w-8"
+          onClick={onClose}
+          className="h-8 w-8 md:hidden"
         >
-          {isOpen ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+          <ChevronLeft className="h-4 w-4" />
         </Button>
       </div>
-
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-2 py-4">
         {navigationItems.map((item) => {
@@ -107,26 +96,25 @@ export function AdminSidebar() {
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
                 isActive ? "bg-accent" : "transparent"
               )}
+              onClick={() => {
+                if (onClose) onClose()
+              }}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              {isOpen && <span>{item.name}</span>}
+              <span>{item.name}</span>
             </Link>
           )
         })}
       </nav>
-
       {/* User Menu and View Website */}
       <div className="p-4 border-t space-y-4">
         <Link
           href="/"
           target="_blank"
-          className={cn(
-            "flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
-            !isOpen && "justify-center"
-          )}
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           <ExternalLink className="h-4 w-4 shrink-0" />
-          {isOpen && <span>View Website</span>}
+          <span>View Website</span>
         </Link>
       </div>
     </div>

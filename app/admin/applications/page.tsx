@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { NoRecords } from "@/components/ui/no-records"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Application {
   _id: string
@@ -42,6 +44,8 @@ export default function ApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
   const [showDetails, setShowDetails] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
 
   useEffect(() => {
     fetchApplications()
@@ -60,7 +64,6 @@ export default function ApplicationsPage() {
         })
       }
     } catch (error) {
-      console.log(error)
       setAlert({
         message: "Failed to fetch applications",
         type: "error"
@@ -118,6 +121,16 @@ export default function ApplicationsPage() {
     })
   }
 
+  // Filtered applications
+  const filteredApplications = applications.filter((a) => {
+    const matchesSearch =
+      a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.email.toLowerCase().includes(search.toLowerCase()) ||
+      a.type.toLowerCase().includes(search.toLowerCase())
+    const matchesStatus = statusFilter === "all" || a.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
   return (
     <div className="container py-10">
       {alert && (
@@ -135,28 +148,50 @@ export default function ApplicationsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="text-center py-10">Loading...</div>
-          ) : applications.length === 0 ? (
-            <NoRecords 
-              title="No Applications Found"
-              description="There are no applications available at the moment."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
+            <div className="flex items-center gap-2 flex-1 flex-wrap">
+              <Input
+                placeholder="Search by name, email, or type..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full md:w-72"
+              />
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Applied On</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Applied On</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {applications.map((application) => (
+                ) : filteredApplications.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10">No applications found</TableCell>
+                  </TableRow>
+                ) : (
+                  filteredApplications.map((application) => (
                     <TableRow key={application._id}>
                       <TableCell className="whitespace-nowrap">{application.name}</TableCell>
                       <TableCell className="whitespace-nowrap capitalize">
@@ -207,11 +242,11 @@ export default function ApplicationsPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

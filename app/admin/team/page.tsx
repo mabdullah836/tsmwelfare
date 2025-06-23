@@ -21,6 +21,7 @@ import { uploadImage } from "@/lib/cloudinary"
 import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // This interface matches our Mongoose model
 interface TeamMember {
@@ -56,6 +57,8 @@ export default function AdminTeamPage() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [search, setSearch] = useState("")
+  const [roleFilter, setRoleFilter] = useState("all")
 
   useEffect(() => {
     fetchTeamMembers()
@@ -358,6 +361,17 @@ export default function AdminTeamPage() {
     )
   }
 
+  // Unique roles for filter dropdown
+  const uniqueRoles = ["all", ...Array.from(new Set(teamMembers.map(m => m.role)))]
+  // Filtered team members
+  const filteredTeamMembers = teamMembers.filter((m) => {
+    const matchesSearch =
+      m.name.toLowerCase().includes(search.toLowerCase()) ||
+      m.role.toLowerCase().includes(search.toLowerCase())
+    const matchesRole = roleFilter === "all" || m.role === roleFilter
+    return matchesSearch && matchesRole
+  })
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30">
@@ -420,6 +434,27 @@ export default function AdminTeamPage() {
           </div>
         </div>
 
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
+          <div className="flex items-center gap-2 flex-1 flex-wrap">
+            <Input
+              placeholder="Search by name or role..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full md:w-72"
+            />
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueRoles.map(role => (
+                  <SelectItem key={role} value={role}>{role === "all" ? "All Roles" : role}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="team-members">
             {(provided) => (
@@ -431,14 +466,14 @@ export default function AdminTeamPage() {
                   viewMode === 'grid' && "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 space-y-0"
                 )}
               >
-                {teamMembers.length === 0 ? (
+                {filteredTeamMembers.length === 0 ? (
                   <Card className="p-8 text-center">
                     <CardContent>
                       <p className="text-muted-foreground">No team members yet. Add your first team member to get started.</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  teamMembers.map((member, index) => (
+                  filteredTeamMembers.map((member, index) => (
                     <Draggable key={member._id} draggableId={member._id} index={index}>
                       {(provided) => (
                         <div
