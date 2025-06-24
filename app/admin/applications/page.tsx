@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -23,20 +23,11 @@ import { AlertMessage } from "@/components/ui/alert-message"
 import { NoRecords } from "@/components/ui/no-records"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface Application {
-  _id: string
-  type: string
-  name: string
-  email: string
-  phone: string
-  address: string
-  description: string
-  documents: string[]
-  status: string
-  createdAt: string
-  cnic: string
-}
+import { formatDate } from "@/lib/utils/format"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
+import { FixedSizeList as RWList, ListChildComponentProps } from 'react-window';
+import { fetchApplications, updateApplicationStatus } from '@/lib/services/application'
+import type { Application } from '@/lib/types/application'
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
@@ -46,59 +37,36 @@ export default function ApplicationsPage() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const pageSize = 10
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [search, statusFilter])
 
   useEffect(() => {
-    fetchApplications()
+    (async () => {
+      setLoading(true)
+      try {
+        const data = await fetchApplications()
+        setApplications(data)
+        setAlert({ message: `Successfully loaded ${data.length} applications`, type: 'success' })
+      } catch (error) {
+        setAlert({ message: 'Failed to fetch applications', type: 'error' })
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
 
-  const fetchApplications = async () => {
+  const updateStatus = async (applicationId: string, newStatus: 'pending' | 'approved' | 'rejected') => {
     try {
-      const response = await fetch('/api/applications')
-      const data = await response.json()
-      console.log(data)
-      if (data.length) {
-        setApplications(data)
-        setAlert({
-          message: `Successfully loaded ${data.length} applications`,
-          type: "success"
-        })
-      }
+      await updateApplicationStatus(applicationId, newStatus)
+      setApplications(applications.map(a => a._id === applicationId ? { ...a, status: newStatus } : a))
+      setAlert({ message: 'Application status has been updated', type: 'success' })
     } catch (error) {
-      setAlert({
-        message: "Failed to fetch applications",
-        type: "error"
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/applications/${applicationId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
-        setApplications(applications.map(a => 
-          a._id === applicationId ? { ...a, status: newStatus } : a
-        ))
-        setAlert({
-          message: "Application status has been updated",
-          type: "success"
-        })
-      }
-    } catch (error) {
-      setAlert({
-        message: "Failed to update application status",
-        type: "error"
-      })
+      setAlert({ message: 'Failed to update application status', type: 'error' })
     }
   }
 
@@ -113,23 +81,57 @@ export default function ApplicationsPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  }
-
   // Filtered applications
-  const filteredApplications = applications.filter((a) => {
+  const filteredApplications = useMemo(() => applications.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(search.toLowerCase()) ||
       a.email.toLowerCase().includes(search.toLowerCase()) ||
       a.type.toLowerCase().includes(search.toLowerCase())
     const matchesStatus = statusFilter === "all" || a.status === statusFilter
     return matchesSearch && matchesStatus
-  })
+  }), [applications, search, statusFilter])
+
+  const totalPages = Math.ceil(filteredApplications.length / pageSize)
+
+  // Memoize paginated applications
+  const paginatedApplications = useMemo(() => {
+    return filteredApplications.slice((page - 1) * pageSize, page * pageSize)
+  }, [filteredApplications, page, pageSize])
+
+  // Adjust page number if it's out of bounds
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
+
+  const Row = ({ index, style }: ListChildComponentProps) => {
+    const application = paginatedApplications[index];
+    if (!application) return null;
+    return (
+      <div style={style} className="flex items-center border-b" role="row">
+        <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{application.name}</div>
+        <div className="p-4 flex-[2] whitespace-nowrap capitalize" role="cell">
+          {application.type.replace("_", " ")}
+        </div>
+        <div className="p-4 flex-[3]" role="cell">
+          <div className="space-y-1">
+            <div>{application.email}</div>
+            <div>{application.phone}</div>
+          </div>
+        </div>
+        <div className="p-4 flex-[2]" role="cell">{formatDate(application.createdAt || '')}</div>
+        <div className="p-4 flex-[1]" role="cell">
+          <Badge className={getStatusBadgeColor(application.status)}>{application.status}</Badge>
+        </div>
+        <div className="p-4 flex-[1]" role="cell">
+          <Button size="sm" onClick={() => { setSelectedApplication(application); setShowDetails(true); }}>
+            View
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="container py-10">
@@ -170,83 +172,50 @@ export default function ApplicationsPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <Table className="min-w-[700px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Applied On</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="rounded-md border" role="table">
+              <div className="flex bg-muted/50 font-medium" role="rowgroup">
+                <div className="p-4 flex-[2]" role="columnheader">Name</div>
+                <div className="p-4 flex-[2]" role="columnheader">Type</div>
+                <div className="p-4 flex-[3]" role="columnheader">Contact</div>
+                <div className="p-4 flex-[2]" role="columnheader">Applied On</div>
+                <div className="p-4 flex-[1]" role="columnheader">Status</div>
+                <div className="p-4 flex-[1]" role="columnheader">Actions</div>
+              </div>
+              <div role="rowgroup">
                 {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
-                  </TableRow>
-                ) : filteredApplications.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10">No applications found</TableCell>
-                  </TableRow>
+                  <div className="p-10 text-center">Loading...</div>
+                ) : paginatedApplications.length === 0 ? (
+                  <NoRecords title="No applications found" description={search || statusFilter !== 'all' ? 'Try adjusting your filters or search terms' : 'No applications available yet.'} />
                 ) : (
-                  filteredApplications.map((application) => (
-                    <TableRow key={application._id}>
-                      <TableCell className="whitespace-nowrap">{application.name}</TableCell>
-                      <TableCell className="whitespace-nowrap capitalize">
-                        {application.type.replace("_", " ")}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="whitespace-nowrap">{application.email}</div>
-                          <div className="whitespace-nowrap">{application.phone}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">{formatDate(application.createdAt)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusBadgeColor(application.status)}>
-                          {application.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedApplication(application)
-                              setShowDetails(true)
-                            }}
-                          >
-                            View
-                          </Button>
-                          {application.status === 'pending' && (
-                            <>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => updateApplicationStatus(application._id, 'approved')}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => updateApplicationStatus(application._id, 'rejected')}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  <RWList
+                    height={400}
+                    itemCount={paginatedApplications.length}
+                    itemSize={73}
+                    width="100%"
+                  >
+                    {Row}
+                  </RWList>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+            </div>
           </div>
+          {totalPages > 1 && (
+            <Pagination className="mt-8 flex justify-center">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+                </PaginationItem>
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </CardContent>
       </Card>
 
@@ -257,7 +226,7 @@ export default function ApplicationsPage() {
               <DialogHeader>
                 <DialogTitle>Application Details</DialogTitle>
                 <DialogDescription>
-                  Submitted on {formatDate(selectedApplication.createdAt)}
+                  Submitted on {formatDate(selectedApplication.createdAt || '')}
                 </DialogDescription>
               </DialogHeader>
               

@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import { NoRecords } from "@/components/ui/no-records"
@@ -22,7 +23,7 @@ interface TeamSectionProps {
   teamMembers: TeamMember[]
 }
 
-export function TeamSection({ 
+export const TeamSection = React.memo(function TeamSection({ 
   title = "Our Team", 
   description = "Meet the dedicated individuals who make our mission possible.", 
   teamMembers 
@@ -43,10 +44,7 @@ export function TeamSection({
           </p>
         )}
         {teamMembers.length === 0 ? (
-          <NoRecords 
-            title="No Team Members Yet"
-            description="Our team section is currently being updated. Check back soon to meet our amazing team members."
-          />
+          <NoRecords title="No Team Members Yet" description="Our team section is currently being updated. Check back soon to meet our amazing team members." />
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {teamMembers.map((member) => (
@@ -76,4 +74,4 @@ export function TeamSection({
       </div>
     </section>
   )
-} 
+}); 

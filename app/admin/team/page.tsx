@@ -22,6 +22,7 @@ import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { NoRecords } from '@/components/ui/no-records'
 
 // This interface matches our Mongoose model
 interface TeamMember {
@@ -463,15 +464,20 @@ export default function AdminTeamPage() {
                 ref={provided.innerRef}
                 className={cn(
                   "space-y-4",
-                  viewMode === 'grid' && "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 space-y-0"
+                  viewMode === 'grid' && filteredTeamMembers.length > 0 ? "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 space-y-0" : "flex flex-col gap-4"
                 )}
               >
-                {filteredTeamMembers.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <CardContent>
-                      <p className="text-muted-foreground">No team members yet. Add your first team member to get started.</p>
-                    </CardContent>
-                  </Card>
+                {isLoading ? (
+                  <div className="relative min-h-[200px]">
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <span className="ml-2">Loading team members...</span>
+                    </div>
+                  </div>
+                ) : filteredTeamMembers.length === 0 ? (
+                  <div className="flex justify-center items-center min-h-[300px]">
+                    <NoRecords title="No team members yet" description="Add your first team member to get started." />
+                  </div>
                 ) : (
                   filteredTeamMembers.map((member, index) => (
                     <Draggable key={member._id} draggableId={member._id} index={index}>

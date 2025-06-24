@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,99 +23,58 @@ import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
+import { FixedSizeGrid as RWGrid, FixedSizeList as RWList, GridChildComponentProps, ListChildComponentProps } from 'react-window';
+import { fetchMedia, uploadMedia, deleteMedia } from '@/lib/services/media'
+import type { Media } from '@/lib/types/media'
+import { NoRecords } from '@/components/ui/no-records'
   
-interface MediaItem {
-  _id: string;
-  name: string;
-  title: string;
-  description?: string;
-  type: 'image' | 'video';
-  url: string;
-  size: string;
-  publicId: string;
-  folder?: string;
-  createdAt: string;
-}
-
 export default function MediaPage() {
   const [view, setView] = useState<"grid" | "list">("grid")
   const [filterType, setFilterType] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+  const [mediaItems, setMediaItems] = useState<Media[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [page, setPage] = useState(1)
+  const pageSize = 12
 
   useEffect(() => {
-    fetchMedia()
-  }, [])
+    setPage(1)
+  }, [searchQuery, filterType])
 
-  const fetchMedia = async () => {
-    try {
-      setError(null)
-      setAlert({
-        message: "Fetching media items...",
-        type: "success"
-      })
-      const response = await fetch('/api/media?folder=general')
-      if (!response.ok) throw new Error('Failed to fetch media')
-      const data = await response.json()
-      const generalMedia = data.filter((item: MediaItem) => item.folder === 'general' || !item.folder)
-      setMediaItems(generalMedia)
-      setAlert({
-        message: `Successfully loaded ${generalMedia.length} media items`,
-        type: "success"
-      })
-    } catch (error) {
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to load media items",
-        type: "error"
-      })
-      setMediaItems([])
-    } finally {
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    (async () => {
+      setLoading(true)
+      try {
+        const items = await fetchMedia('general')
+        setMediaItems(items)
+        setAlert({ message: `Successfully loaded ${items.length} media items`, type: 'success' })
+      } catch (error) {
+        setAlert({ message: error instanceof Error ? error.message : 'Failed to load media items', type: 'error' })
+        setMediaItems([])
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
     if (!files?.length) return
-
     setUploading(true)
     setError(null)
     try {
-      const formData = new FormData()
-      Array.from(files).forEach(file => {
-        formData.append('files', file)
-      })
-
-      const response = await fetch('/api/media/upload', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'folder': 'general',
-        },
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Upload failed')
-      }
-      
-      await fetchMedia()
+      await uploadMedia(Array.from(files), 'general')
+      const items = await fetchMedia('general')
+      setMediaItems(items)
       event.target.value = ''
-      setAlert({
-        message: `Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''} to general folder`,
-        type: "success"
-      })
+      setAlert({ message: `Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''} to general folder`, type: 'success' })
     } catch (error) {
-      console.error('Upload failed:', error)
       setError('Failed to upload files. Please try again.')
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to upload files",
-        type: "error"
-      })
+      setAlert({ message: error instanceof Error ? error.message : 'Failed to upload files', type: 'error' })
     } finally {
       setUploading(false)
     }
@@ -123,43 +82,29 @@ export default function MediaPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/media/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete media')
-      }
-
+      await deleteMedia(id)
       setMediaItems(prev => prev.filter(item => item._id !== id))
-      setAlert({
-        message: "Media item has been permanently removed",
-        type: "success"
-      })
+      setAlert({ message: 'Media item has been permanently removed', type: 'success' })
     } catch (error) {
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to delete media item",
-        type: "error"
-      })
+      setAlert({ message: error instanceof Error ? error.message : 'Failed to delete media item', type: 'error' })
     }
   }
 
-  const filteredMedia = mediaItems.filter(item => {
+  const filteredMedia = useMemo(() => mediaItems.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType = filterType === 'all' || item.type === filterType
     return matchesSearch && matchesType
-  })
+  }), [mediaItems, searchQuery, filterType])
 
-  const stats = {
+  const stats = useMemo(() => ({
     total: mediaItems.length,
     images: mediaItems.filter(item => item.type === 'image').length,
     videos: mediaItems.filter(item => item.type === 'video').length,
     totalSize: mediaItems.reduce((acc, item) => {
-      const size = parseFloat(item.size)
+      const size = parseFloat(String(item.size ?? ''))
       return isNaN(size) ? acc : acc + size
     }, 0)
-  }
+  }), [mediaItems])
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
@@ -168,6 +113,145 @@ export default function MediaPage() {
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
+
+  const totalPages = Math.ceil(filteredMedia.length / pageSize)
+  
+  const paginatedMedia = useMemo(() => {
+    return filteredMedia.slice((page - 1) * pageSize, page * pageSize)
+  }, [filteredMedia, page, pageSize])
+
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
+
+  const MediaGridCell = ({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
+    const index = rowIndex * 4 + columnIndex;
+    if (index >= paginatedMedia.length) return null;
+    const item = paginatedMedia[index];
+    return (
+      <div style={style} key={item._id}>
+        <Card className={cn("overflow-hidden")}>
+          <div className="aspect-video relative bg-muted">
+            {item.type === 'image' ? (
+              <img
+                src={item.url}
+                alt={item.title}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.endsWith('/placeholder-image.svg')) {
+                    target.src = '/placeholder-image.svg';
+                  }
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Image className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          <CardHeader className="p-4">
+            <CardTitle className="text-sm">{item.title}</CardTitle>
+            <CardDescription>{formatDate(item.createdAt || '')}</CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{String(item.size ?? '')}</span>
+              <div className="flex items-center gap-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleDelete(item._id!)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Media</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this media file? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(item._id!)}>
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const MediaListRow = ({ index, style }: ListChildComponentProps) => {
+    const item = paginatedMedia[index];
+    return (
+      <div style={style} key={item._id} className="mb-4 px-2">
+        <Card className={cn("overflow-hidden flex items-center p-4")}>
+          <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
+            {item.type === 'image' ? (
+              <img
+                src={item.url}
+                alt={item.title}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.endsWith('/placeholder-image.svg')) {
+                    target.src = '/placeholder-image.svg';
+                  }
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Image className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0 p-4">
+            <h3 className="font-medium truncate">{item.title}</h3>
+            <p className="text-sm text-muted-foreground">
+              {String(item.size ?? '')} • {formatDate(item.createdAt || '')}
+            </p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="icon"
+                onClick={() => handleDelete(item._id!)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Media</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this media file? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDelete(item._id!)}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </Card>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen ">
@@ -303,186 +387,63 @@ export default function MediaPage() {
           </CardContent>
         </Card>
 
-        {loading ? (
-          <div className="flex items-center justify-center h-[200px]">
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-muted-foreground">Loading media items...</p>
-            </div>
-          </div>
-        ) : filteredMedia.length === 0 ? (
-          <Card className="flex items-center justify-center h-[200px] border-dashed">
-            <CardContent className="text-center">
-              <Image className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-3" />
-              <h3 className="font-medium mb-1">No media items found</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {searchQuery || filterType !== 'all'
-                  ? 'Try adjusting your filters or search terms'
-                  : 'Upload your first media file to get started'}
-              </p>
-              <div className="relative inline-block">
-                <input
-                  type="file"
-                  id="empty-state-upload"
-                  multiple
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={handleUpload}
-                  disabled={uploading}
-                />
-                <Button 
-                  asChild
-                  variant="outline"
-                  disabled={uploading}
-                >
-                  <label htmlFor="empty-state-upload" className="cursor-pointer">
-                    <Upload className="mr-2 h-4 w-4" />
-                    {uploading ? 'Uploading...' : 'Upload Files'}
-                  </label>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {paginatedMedia.length === 0 && !loading ? (
+          <NoRecords title="No media items found" description={searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started'} />
         ) : (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredMedia.length} of {mediaItems.length} items
-              </p>
-            </div>
-            <div className={cn(
-              "grid gap-6",
-              view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
-            )}>
-              {filteredMedia.map((item) => (
-                <Card key={item._id} className={cn(
-                  "overflow-hidden",
-                  view === "list" && "flex items-center"
-                )}>
+          <div className="relative min-h-[200px]">
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <p className="text-muted-foreground">Loading media items...</p>
+                </div>
+              </div>
+            )}
+            {!loading && (
+              <>
+                <div className={view === "grid" ? "gap-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : undefined}>
                   {view === "grid" ? (
-                    <>
-                      <div className="aspect-video relative bg-muted">
-                        {item.type === 'image' ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.url}
-                            alt={item.title}
-                            className="absolute inset-0 h-full w-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              if (!target.src.endsWith('/placeholder-image.svg')) {
-                                target.src = '/placeholder-image.svg';
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Image className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <CardHeader className="p-4">
-                        <CardTitle className="text-sm">{item.title}</CardTitle>
-                        <CardDescription>{formatDate(item.createdAt)}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">{item.size}</span>
-                          <div className="flex items-center gap-2">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Media</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this media? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-red-500 hover:bg-red-600"
-                                    onClick={() => handleDelete(item._id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </>
+                    <RWGrid
+                      columnCount={4}
+                      columnWidth={300}
+                      height={800}
+                      rowCount={Math.ceil(paginatedMedia.length / 4)}
+                      rowHeight={340}
+                      width={1200}
+                    >
+                      {MediaGridCell}
+                    </RWGrid>
                   ) : (
-                    <div className="flex w-full items-center gap-4 p-4">
-                      <div className="h-12 w-12 relative bg-muted rounded flex-shrink-0">
-                        {item.type === 'image' ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.url}
-                            alt={item.title}
-                            className="absolute inset-0 h-full w-full object-cover rounded"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              if (!target.src.endsWith('/placeholder-image.svg')) {
-                                target.src = '/placeholder-image.svg';
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Image className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium truncate">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">{item.size} • {formatDate(item.createdAt)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Media</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this media? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-red-500 hover:bg-red-600"
-                                onClick={() => handleDelete(item._id)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
+                    <RWList
+                      height={800}
+                      itemCount={paginatedMedia.length}
+                      itemSize={120}
+                      width={1200}
+                    >
+                      {MediaListRow}
+                    </RWList>
                   )}
-                </Card>
-              ))}
-            </div>
-          </>
+                </div>
+                {totalPages > 1 && (
+                  <Pagination className="mt-8 flex justify-center">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+                      </PaginationItem>
+                      {[...Array(totalPages)].map((_, i) => (
+                        <PaginationItem key={i}>
+                          <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

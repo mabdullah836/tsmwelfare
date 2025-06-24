@@ -1,4 +1,4 @@
-import { Carousel } from "@/components/carousel";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,80 +48,82 @@ export default function HomePage() {
             </p>
           </div>
 
-          <Carousel
-            className="h-[350px] md:h-[400px] max-w-4xl mx-auto"
-            items={[
-              <Card
-                key="1"
-                className="h-full flex flex-col items-center justify-center p-6 md:p-8 text-center border-0 bg-background"
-              >
-                <div className="mb-6 rounded-full overflow-hidden w-16 h-16 md:w-20 md:h-20 mx-auto">
-                  <CustomImage
-                    src="/placeholder.svg?height=80&width=80&text=Ahmed"
-                    alt="Ahmed's photo"
-                    height="80"
-                    width="80"
-                    fill={false}
-                    overlay={false}
-                  />
-                </div>
-                <blockquote className="text-lg md:text-xl italic mb-4">
-                  "My daughter was very sick and I had no money for the doctor.
-                  The health department helped us get free treatment. Now she's
-                  healthy and going to school again."
-                </blockquote>
-                <cite className="not-italic font-medium">
-                  — Ahmed Khan, Father of 3
-                </cite>
-              </Card>,
-              <Card
-                key="2"
-                className="h-full flex flex-col items-center justify-center p-6 md:p-8 text-center border-0 bg-background"
-              >
-                <div className="mb-6 rounded-full overflow-hidden w-16 h-16 md:w-20 md:h-20 mx-auto">
-                  <CustomImage
-                    src="/placeholder.svg?height=80&width=80&text=Fatima"
-                    alt="Fatima's photo"
-                    height="80"
-                    width="80"
-                    fill={false}
-                    overlay={false}
-                  />
-                </div>
-                <blockquote className="text-lg md:text-xl italic mb-4">
-                  "After my husband died, I didn't know how to feed my children.
-                  The trust gives us monthly support and food packages. My kids
-                  are still in school because of their help."
-                </blockquote>
-                <cite className="not-italic font-medium">
-                  — Fatima Bibi, Widow with 4 children
-                </cite>
-              </Card>,
-              <Card
-                key="3"
-                className="h-full flex flex-col items-center justify-center p-6 md:p-8 text-center border-0 bg-background"
-              >
-                <div className="mb-6 rounded-full overflow-hidden w-16 h-16 md:w-20 md:h-20 mx-auto">
-                  <CustomImage
-                    src="/placeholder.svg?height=80&width=80&text=Ali"
-                    alt="Ali's photo"
-                    height="80"
-                    width="80"
-                    fill={false}
-                    overlay={false}
-                  />
-                </div>
-                <blockquote className="text-lg md:text-xl italic mb-4">
-                  "I'm an orphan and had no money for my wedding. The marriage
-                  support department helped me with everything. Now I have my
-                  own family and I'm very grateful."
-                </blockquote>
-                <cite className="not-italic font-medium">
-                  — Muhammad Ali, Orphan
-                </cite>
-              </Card>,
-            ]}
-          />
+          <Carousel className="h-[350px] md:h-[400px] max-w-4xl mx-auto">
+            <CarouselContent>
+              <CarouselItem>
+                <Card
+                  className="h-full flex flex-col items-center justify-center p-6 md:p-8 text-center border-0 bg-background"
+                >
+                  <div className="mb-6 rounded-full overflow-hidden w-16 h-16 md:w-20 md:h-20 mx-auto">
+                    <CustomImage
+                      src="/placeholder.svg?height=80&width=80&text=Ahmed"
+                      alt="Ahmed's photo"
+                      height="80"
+                      width="80"
+                      fill={false}
+                      overlay={false}
+                    />
+                  </div>
+                  <blockquote className="text-lg md:text-xl italic mb-4">
+                    "My daughter was very sick and I had no money for the doctor.
+                    The health department helped us get free treatment. Now she's
+                    healthy and going to school again."
+                  </blockquote>
+                  <cite className="not-italic font-medium">
+                    — Ahmed Khan, Father of 3
+                  </cite>
+                </Card>
+              </CarouselItem>
+              <CarouselItem>
+                <Card
+                  className="h-full flex flex-col items-center justify-center p-6 md:p-8 text-center border-0 bg-background"
+                >
+                  <div className="mb-6 rounded-full overflow-hidden w-16 h-16 md:w-20 md:h-20 mx-auto">
+                    <CustomImage
+                      src="/placeholder.svg?height=80&width=80&text=Fatima"
+                      alt="Fatima's photo"
+                      height="80"
+                      width="80"
+                      fill={false}
+                      overlay={false}
+                    />
+                  </div>
+                  <blockquote className="text-lg md:text-xl italic mb-4">
+                    "After my husband died, I didn't know how to feed my children.
+                    The trust gives us monthly support and food packages. My kids
+                    are still in school because of their help."
+                  </blockquote>
+                  <cite className="not-italic font-medium">
+                    — Fatima Bibi, Widow with 4 children
+                  </cite>
+                </Card>
+              </CarouselItem>
+              <CarouselItem>
+                <Card
+                  className="h-full flex flex-col items-center justify-center p-6 md:p-8 text-center border-0 bg-background"
+                >
+                  <div className="mb-6 rounded-full overflow-hidden w-16 h-16 md:w-20 md:h-20 mx-auto">
+                    <CustomImage
+                      src="/placeholder.svg?height=80&width=80&text=Ali"
+                      alt="Ali's photo"
+                      height="80"
+                      width="80"
+                      fill={false}
+                      overlay={false}
+                    />
+                  </div>
+                  <blockquote className="text-lg md:text-xl italic mb-4">
+                    "I'm an orphan and had no money for my wedding. The marriage
+                    support department helped me with everything. Now I have my
+                    own family and I'm very grateful."
+                  </blockquote>
+                  <cite className="not-italic font-medium">
+                    — Muhammad Ali, Orphan
+                  </cite>
+                </Card>
+              </CarouselItem>
+            </CarouselContent>
+          </Carousel>
         </div>
       </section>
 

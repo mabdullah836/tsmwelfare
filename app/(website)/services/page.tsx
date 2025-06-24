@@ -1,5 +1,5 @@
 import { FeatureCard } from "@/components/shared/feature-card"
-import { Carousel } from "@/components/carousel"
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, Users, Award, BookOpen, Handshake, Calendar, MapPin } from "lucide-react"
@@ -176,53 +176,58 @@ export default function ServicesPage() {
             </p>
           </div>
 
-          <Carousel
-            className="h-[400px] max-w-4xl mx-auto"
-            items={[
-              <div key="1" className="h-full rounded-lg overflow-hidden relative">
-                <Image
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Service highlight"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">Community Garden Project</h3>
-                  <p className="text-white/90">
-                    Our community garden provides fresh produce and a space for neighbors to connect and learn.
-                  </p>
+          <Carousel className="h-[400px] max-w-4xl mx-auto">
+            <CarouselContent>
+              <CarouselItem>
+                <div className="h-full rounded-lg overflow-hidden relative">
+                  <Image
+                    src="/placeholder.svg?height=400&width=800"
+                    alt="Service highlight"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">Community Garden Project</h3>
+                    <p className="text-white/90">
+                      Our community garden provides fresh produce and a space for neighbors to connect and learn.
+                    </p>
+                  </div>
                 </div>
-              </div>,
-              <div key="2" className="h-full rounded-lg overflow-hidden relative">
-                <Image
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Service highlight"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">Youth Mentorship Program</h3>
-                  <p className="text-white/90">
-                    Our mentorship program pairs young people with caring adults who provide guidance and support.
-                  </p>
+              </CarouselItem>
+              <CarouselItem>
+                <div className="h-full rounded-lg overflow-hidden relative">
+                  <Image
+                    src="/placeholder.svg?height=400&width=800"
+                    alt="Service highlight"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">Youth Mentorship Program</h3>
+                    <p className="text-white/90">
+                      Our mentorship program pairs young people with caring adults who provide guidance and support.
+                    </p>
+                  </div>
                 </div>
-              </div>,
-              <div key="3" className="h-full rounded-lg overflow-hidden relative">
-                <Image
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Service highlight"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">Senior Support Services</h3>
-                  <p className="text-white/90">
-                    We help older adults remain independent and connected through various support services.
-                  </p>
+              </CarouselItem>
+              <CarouselItem>
+                <div className="h-full rounded-lg overflow-hidden relative">
+                  <Image
+                    src="/placeholder.svg?height=400&width=800"
+                    alt="Service highlight"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">Senior Support Services</h3>
+                    <p className="text-white/90">
+                      We help older adults remain independent and connected through various support services.
+                    </p>
+                  </div>
                 </div>
-              </div>,
-            ]}
-          />
+              </CarouselItem>
+            </CarouselContent>
+          </Carousel>
         </div>
       </section>
 

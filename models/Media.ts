@@ -29,7 +29,7 @@ const mediaSchema = new mongoose.Schema({
   },
   folder: {
     type: String,
-    enum: ['events', 'team-members', 'general'],
+    enum: ['events', 'team-members', 'general', 'applications'],
     default: 'general',
   },
 }, {

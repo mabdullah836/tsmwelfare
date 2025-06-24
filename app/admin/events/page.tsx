@@ -15,9 +15,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
-import { Edit2Icon, Loader2Icon } from "lucide-react"
+import { Edit2Icon, Loader2Icon, GridIcon, ListIcon } from "lucide-react"
 import { format } from "date-fns"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { NoRecords } from '@/components/ui/no-records'
 
 interface Event {
   _id: string
@@ -44,6 +45,8 @@ export default function AdminEventsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     fetchEvents()
@@ -332,6 +335,12 @@ export default function AdminEventsPage() {
     )
   }
 
+  // Filtered events
+  const filteredEvents = events.filter(event =>
+    event.title.toLowerCase().includes(search.toLowerCase()) ||
+    event.description.toLowerCase().includes(search.toLowerCase())
+  )
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-muted/30">
@@ -355,89 +364,115 @@ export default function AdminEventsPage() {
             onClose={() => setAlert(null)}
           />
         )}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <h1 className="text-3xl font-bold">Manage Events</h1>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open)
-            if (!open) setEditingEvent(null)
-          }}>
-            <DialogTrigger asChild>
-              <Button>Add Event</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingEvent ? "Edit Event" : "Add New Event"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingEvent 
-                    ? "Update the event's information below."
-                    : "Add a new event to your calendar. Fill in the details below."
-                  }
-                </DialogDescription>
-              </DialogHeader>
-              <EventForm event={editingEvent || undefined} />
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Search events..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full md:w-72"
+            />
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="h-8 w-8 p-0"
+            >
+              <GridIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="h-8 w-8 p-0"
+            >
+              <ListIcon className="h-4 w-4" />
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open)
+              if (!open) setEditingEvent(null)
+            }}>
+              <DialogTrigger asChild>
+                <Button>Add Event</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingEvent ? "Edit Event" : "Add New Event"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingEvent 
+                      ? "Update the event's information below."
+                      : "Add a new event to your calendar. Fill in the details below."
+                    }
+                  </DialogDescription>
+                </DialogHeader>
+                <EventForm event={editingEvent || undefined} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-
-        <div className="grid gap-6">
-          {events.length === 0 ? (
-            <Card className="p-8 text-center">
-              <CardContent>
-                <p className="text-muted-foreground">No events scheduled. Add your first event to get started.</p>
-              </CardContent>
-            </Card>
+        <div className="relative min-h-[200px]">
+          {isLoading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+              <Loader2Icon className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Loading events...</span>
+            </div>
+          ) : filteredEvents.length === 0 ? (
+            <NoRecords title="No events scheduled" description="Add your first event to get started." />
           ) : (
-            events.map((event) => (
-              <Card key={event._id}>
-                <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                  {event.imageUrl && (
-                    <div className="relative h-20 w-32 rounded overflow-hidden flex-shrink-0">
-                      <Image
-                        src={event.imageUrl}
-                        alt={event.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="mb-1">{event.title}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingEvent(event)
-                            setIsDialogOpen(true)
-                          }}
-                        >
-                          <Edit2Icon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteEvent(event._id)}
-                          disabled={isDeleting === event._id}
-                        >
-                          {isDeleting === event._id ? "Deleting..." : "Delete"}
-                        </Button>
+            <div className={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}>
+              {filteredEvents.map((event) => (
+                <Card key={event._id}>
+                  <CardHeader className={viewMode === 'grid' ? 'flex flex-col items-center gap-4 space-y-0' : 'flex flex-row items-center gap-4 space-y-0'}>
+                    {event.imageUrl && (
+                      <div className="relative h-20 w-32 rounded overflow-hidden flex-shrink-0">
+                        <Image
+                          src={event.imageUrl}
+                          alt={event.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="mb-1">{event.title}</CardTitle>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingEvent(event)
+                              setIsDialogOpen(true)
+                            }}
+                          >
+                            <Edit2Icon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteEvent(event._id)}
+                            disabled={isDeleting === event._id}
+                          >
+                            {isDeleting === event._id ? "Deleting..." : "Delete"}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{format(new Date(event.date), 'MMMM d, yyyy')}</span>
+                        <span>{event.time}</span>
+                        <span>{event.location}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{format(new Date(event.date), 'MMMM d, yyyy')}</span>
-                      <span>{event.time}</span>
-                      <span>{event.location}</span>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{event.description}</p>
-                </CardContent>
-              </Card>
-            ))
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{event.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
       </div>

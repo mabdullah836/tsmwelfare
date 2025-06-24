@@ -9,6 +9,8 @@ import { formatDate } from "@/lib/utils/format"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FixedSizeList as RWList, ListChildComponentProps } from 'react-window';
+import { NoRecords } from '@/components/ui/no-records'
 
 interface Volunteer {
   _id: string
@@ -141,6 +143,33 @@ export default function VolunteersPage() {
     return matchesSearch && matchesStatus
   })
 
+  const Row = ({ index, style }: ListChildComponentProps) => {
+    const v = filteredVolunteers[index];
+    if (!v) return null;
+    return (
+      <div style={style} className="flex items-center border-b" role="row">
+        <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.firstName} {v.lastName}</div>
+        <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.email}</div>
+        <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.phone}</div>
+        <div className="p-4 flex-[1]" role="cell">
+          <Badge className={getStatusBadgeColor(v.status)}>{v.status}</Badge>
+        </div>
+        <div className="p-4 flex-[2]" role="cell">{formatDate(v.createdAt)}</div>
+        <div className="p-4 flex-[1]" role="cell">
+          <Button size="sm" onClick={() => openModal(v)}>View</Button>
+        </div>
+        <div className="p-4 flex-[2] space-x-2" role="cell">
+          {v.status === 'pending' && (
+            <>
+              <Button size="sm" variant="default" onClick={() => handleStatusChange(v._id, 'approved')}>Approve</Button>
+              <Button size="sm" variant="destructive" onClick={() => handleStatusChange(v._id, 'rejected')}>Reject</Button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen">
       <div className="container py-10">
@@ -180,77 +209,32 @@ export default function VolunteersPage() {
                 </Select>
               </div>
             </div>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="h-12 px-4 text-left align-middle font-medium">Name</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Email</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Phone</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Status</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Applied On</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">View</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                        Loading volunteers...
-                      </td>
-                    </tr>
-                  ) : filteredVolunteers.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                        No volunteer applications found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredVolunteers.map((volunteer) => (
-                      <tr key={volunteer._id} className="border-b">
-                        <td className="p-4 align-middle">{volunteer.firstName} {volunteer.lastName}</td>
-                        <td className="p-4 align-middle">{volunteer.email}</td>
-                        <td className="p-4 align-middle">{volunteer.phone}</td>
-                        <td className="p-4 align-middle">
-                          <Badge className={getStatusBadgeColor(volunteer.status)}>
-                            {volunteer.status}
-                          </Badge>
-                        </td>
-                        <td className="p-4 align-middle">{formatDate(volunteer.createdAt)}</td>
-                        <td className="p-4 align-middle">
-                          <Button size="sm" variant="outline" onClick={() => openModal(volunteer)}>
-                            View
-                          </Button>
-                        </td>
-                        <td className="p-4 align-middle">
-                          <div className="flex gap-2">
-                            {volunteer.status === 'pending' ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleStatusChange(volunteer._id, 'approved')}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleStatusChange(volunteer._id, 'rejected')}
-                                >
-                                  Reject
-                                </Button>
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="rounded-md border" role="table">
+              <div className="flex bg-muted/50 font-medium" role="rowgroup">
+                <div className="p-4 flex-[2]" role="columnheader">Name</div>
+                <div className="p-4 flex-[2]" role="columnheader">Email</div>
+                <div className="p-4 flex-[2]" role="columnheader">Phone</div>
+                <div className="p-4 flex-[1]" role="columnheader">Status</div>
+                <div className="p-4 flex-[2]" role="columnheader">Applied On</div>
+                <div className="p-4 flex-[1]" role="columnheader">View</div>
+                <div className="p-4 flex-[2]" role="columnheader">Actions</div>
+              </div>
+              <div role="rowgroup">
+                {isLoading ? (
+                  <div className="p-10 text-center text-muted-foreground">Loading volunteers...</div>
+                ) : filteredVolunteers.length === 0 ? (
+                  <NoRecords title="No volunteers found" description={search || statusFilter !== 'all' ? 'Try adjusting your filters or search terms' : 'No volunteer applications available yet.'} />
+                ) : (
+                  <RWList
+                    height={400}
+                    itemCount={filteredVolunteers.length}
+                    itemSize={65}
+                    width="100%"
+                  >
+                    {Row}
+                  </RWList>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

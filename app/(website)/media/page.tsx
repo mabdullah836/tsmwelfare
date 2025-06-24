@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Image as ImageIcon, Play, Download, Grid, List, Search } from "lucide-react"
@@ -17,6 +17,9 @@ import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
 import Image from "next/image"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
+import { FixedSizeGrid as RWGrid, FixedSizeList as RWList, GridChildComponentProps, ListChildComponentProps } from 'react-window';
+import { NoRecords } from '@/components/ui/no-records'
 
 interface MediaItem {
   _id: string;
@@ -36,6 +39,12 @@ export default function MediaPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [page, setPage] = useState(1)
+  const pageSize = 12
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, filterType])
 
   useEffect(() => {
     fetchMedia()
@@ -87,12 +96,110 @@ export default function MediaPage() {
     }
   }
 
-  const filteredMedia = mediaItems?.filter(item => {
-    if (!item) return false
-    const matchesSearch = item.title?.toLowerCase().includes(searchQuery?.toLowerCase() || '')
-    const matchesType = filterType === 'all' || item.type === filterType
-    return matchesSearch && matchesType
-  }) || []
+  const filteredMedia = useMemo(() => mediaItems?.filter(item => {
+    if (!item) return false;
+    const matchesSearch = item.title?.toLowerCase().includes(searchQuery?.toLowerCase() || '');
+    const matchesType = filterType === 'all' || item.type === filterType;
+    return matchesSearch && matchesType;
+  }) || [], [mediaItems, searchQuery, filterType]);
+
+  const totalPages = Math.ceil(filteredMedia.length / pageSize);
+  
+  const paginatedMedia = useMemo(() => {
+    return filteredMedia.slice((page - 1) * pageSize, page * pageSize);
+  }, [filteredMedia, page, pageSize]);
+
+  useEffect(() => {
+    if (page > totalPages && totalPages > 0) {
+      setPage(totalPages)
+    }
+  }, [page, totalPages])
+
+  const MediaGridCell = ({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
+    const index = rowIndex * 4 + columnIndex;
+    if (index >= paginatedMedia.length) return null;
+    const item = paginatedMedia[index];
+    return (
+      <div style={style} key={item._id}>
+        <Card 
+          className={cn(
+            "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg"
+          )}
+          onClick={() => setSelectedItem(item)}
+        >
+          <div className="aspect-video relative bg-muted overflow-hidden">
+            {item.type === 'image' ? (
+              <Image
+                src={item.url}
+                alt={item.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                <Play className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute bottom-2 right-2">
+                <Button size="icon" variant="secondary">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          <CardContent className="p-4">
+            <div className="mb-2">
+              <h3 className="font-medium truncate">{item.title}</h3>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {formatDate(item.createdAt)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  const MediaListRow = ({ index, style }: ListChildComponentProps) => {
+    const item = paginatedMedia[index];
+    return (
+      <div style={style} key={item._id}>
+        <Card 
+          className={cn(
+            "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg flex items-center"
+          )}
+          onClick={() => setSelectedItem(item)}
+        >
+          <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
+            {item.type === 'image' ? (
+              <Image
+                src={item.url}
+                alt={item.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                <Play className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0 p-4">
+            <h3 className="font-medium truncate">{item.title}</h3>
+            <p className="text-sm text-muted-foreground">
+              {item.size.replace('MB', '').trim()} • {formatDate(item.createdAt)}
+            </p>
+          </div>
+          <Button size="icon" variant="secondary">
+            <Download className="h-4 w-4" />
+          </Button>
+        </Card>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -170,96 +277,48 @@ export default function MediaPage() {
           </div>
         </div>
 
-        {filteredMedia.length === 0 ? (
-          <Card className="flex items-center justify-center h-[400px] border-dashed">
-            <CardContent className="text-center">
-              <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-3" />
-              <h3 className="font-medium mb-1">No media items found</h3>
-              <p className="text-sm text-muted-foreground">
-                {searchQuery || filterType !== 'all' 
-                  ? 'Try adjusting your filters or search terms'
-                  : 'No media items available'}
-              </p>
-            </CardContent>
-          </Card>
+        {paginatedMedia.length === 0 ? (
+          <NoRecords title="No media items found" description={searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started'} />
         ) : (
-          <div className={cn(
-            "grid gap-6",
-            view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
-          )}>
-            {filteredMedia.map((item) => (
-              <Card 
-                key={item._id} 
-                className={cn(
-                  "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg",
-                  view === "list" && "flex items-center"
-                )}
-                onClick={() => setSelectedItem(item)}
-              >
-                {view === "grid" ? (
-                  <>
-                    <div className="aspect-video relative bg-muted overflow-hidden">
-                      {item.type === 'image' ? (
-                        <Image
-                          src={item.url}
-                          alt={item.title}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                          <Play className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute bottom-2 right-2">
-                          <Button size="icon" variant="secondary">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="mb-2">
-                        <h3 className="font-medium truncate">{item.title}</h3>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">
-                          {formatDate(item.createdAt)}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </>
-                ) : (
-                  <div className="flex w-full items-center gap-4 p-4">
-                    <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
-                      {item.type === 'image' ? (
-                        <Image
-                          src={item.url}
-                          alt={item.title}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                          <Play className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium truncate">{item.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {item.size.replace('MB', '').trim()} • {formatDate(item.createdAt)}
-                      </p>
-                    </div>
-                    <Button size="icon" variant="secondary">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            ))}
-          </div>
+          view === "grid" ? (
+            <RWGrid
+              columnCount={4}
+              columnWidth={300}
+              height={800}
+              rowCount={Math.ceil(paginatedMedia.length / 4)}
+              rowHeight={340}
+              width={1200}
+            >
+              {MediaGridCell}
+            </RWGrid>
+          ) : (
+            <RWList
+              height={800}
+              itemCount={paginatedMedia.length}
+              itemSize={120}
+              width={1200}
+            >
+              {MediaListRow}
+            </RWList>
+          )
+        )}
+
+        {totalPages > 1 && (
+          <Pagination className="mt-8 flex justify-center">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+              </PaginationItem>
+              {[...Array(totalPages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         )}
       </div>
 

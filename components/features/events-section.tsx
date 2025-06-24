@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { NoRecords } from "@/components/ui/no-records"
 import Image from "next/image"
@@ -23,7 +24,7 @@ interface EventsSectionProps {
   events: Event[]
 }
 
-export function EventsSection({ 
+export const EventsSection = React.memo(function EventsSection({ 
   title = "Upcoming Events", 
   description = "Join us in our upcoming events and be part of our mission.", 
   events 
@@ -38,10 +39,7 @@ export function EventsSection({
           </p>
         )}
         {events.length === 0 ? (
-          <NoRecords 
-            title="No Events Scheduled"
-            description="There are no upcoming events at the moment. Please check back later for new events."
-          />
+          <NoRecords title="No Events Scheduled" description="There are no upcoming events at the moment. Please check back later for new events." />
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {events.map((event) => (
@@ -80,4 +78,4 @@ export function EventsSection({
       </div>
     </section>
   )
-} 
+}); 

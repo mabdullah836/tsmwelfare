@@ -3,7 +3,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, DollarSign, Users, Image, Plus, Calendar, FileText, TrendingUp, AlertCircle, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DonationChart } from "@/components/donation-chart"
+import dynamic from "next/dynamic"
+
+const DonationChart = dynamic(() => import("@/components/donation-chart").then(mod => mod.DonationChart), { ssr: false, loading: () => <div className="h-full flex items-center justify-center">Loading chart...</div> })
 
 export default function AdminDashboard() {
   return (

@@ -24,6 +24,7 @@ interface FormInputProps<T extends Record<string, any>> {
   isCheckbox?: boolean
   checked?: boolean
   onCheckedChange?: (checked: boolean) => void
+  inputProps?: React.InputHTMLAttributes<HTMLInputElement>
 }
 
 export const FormInput = <T extends Record<string, any>>({
@@ -42,6 +43,7 @@ export const FormInput = <T extends Record<string, any>>({
   isCheckbox = false,
   checked,
   onCheckedChange,
+  inputProps,
 }: FormInputProps<T>) => {
   const error = errors[id]?.message as string
 
@@ -122,6 +124,7 @@ export const FormInput = <T extends Record<string, any>>({
           pattern: pattern
         })}
         placeholder={placeholder}
+        {...inputProps}
       />
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
