@@ -15,14 +15,19 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
-import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
-import type { DropResult } from "@hello-pangea/dnd"
-import { uploadImage } from "@/lib/cloudinary"
+import { Draggable, DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd"
 import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { NoRecords } from '@/components/ui/no-records'
+import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
+import { GridSkeleton } from "@/components/shared/skeletons/GridSkeleton"
 
 // This interface matches our Mongoose model
 interface TeamMember {
@@ -36,13 +41,6 @@ interface TeamMember {
   updatedAt: Date
 }
 
-interface TeamMemberFormData {
-  name: string
-  role: string
-  bio: string
-  imageUrl?: string
-}
-
 interface MediaItem {
   _id: string
   url: string
@@ -53,7 +51,6 @@ export default function AdminTeamPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -279,7 +276,7 @@ export default function AdminTeamPage() {
   }
 
   const handleDeleteMember = async (id: string) => {
-    setIsDeleting(id)
+    setIsSubmitting(true)
     try {
       const response = await fetch(`/api/team/${id}`, {
         method: 'DELETE',
@@ -301,7 +298,7 @@ export default function AdminTeamPage() {
         type: "error"
       })
     } finally {
-      setIsDeleting(null)
+      setIsSubmitting(false)
     }
   }
 
@@ -364,27 +361,36 @@ export default function AdminTeamPage() {
 
   // Unique roles for filter dropdown
   const uniqueRoles = ["all", ...Array.from(new Set(teamMembers.map(m => m.role)))]
-  // Filtered team members
-  const filteredTeamMembers = teamMembers.filter((m) => {
-    const matchesSearch =
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.role.toLowerCase().includes(search.toLowerCase())
-    const matchesRole = roleFilter === "all" || m.role === roleFilter
-    return matchesSearch && matchesRole
-  })
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <div className="container py-10">
-          <div className="flex items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="ml-2">Loading team members...</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const {
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    filtered: filteredTeamMembers,
+    paginated: paginatedTeamMembers,
+  } = usePaginationFilter(teamMembers, {
+    pageSize: 12,
+    searchValue: search,
+    filterFn: (m, search) =>
+      m.name.toLowerCase().includes(search.toLowerCase()) ||
+      m.role.toLowerCase().includes(search.toLowerCase()),
+    extraFilters: { roleFilter },
+    extraFilterFn: (m, { roleFilter }) => roleFilter === 'all' || m.role === roleFilter,
+  });
+
+  const selectableTeam = filteredTeamMembers.filter(member => typeof member._id === 'string') as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableTeam);
+
+  const deleteTeamMembers = async (ids: string[]) => {
+    for (const id of ids) {
+      await fetch(`/api/team/${id}`, { method: 'DELETE' });
+    }
+    setTeamMembers(prev => prev.filter(member => !ids.includes(member._id)));
+    setSelectedIds([]);
+    setAlert({ type: 'success', message: 'Selected team members deleted.' });
+  };
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteTeamMembers, selectedIds);
 
   return (
     <div className="min-h-screen">
@@ -434,9 +440,9 @@ export default function AdminTeamPage() {
             </Dialog>
           </div>
         </div>
-
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
           <div className="flex items-center gap-2 flex-1 flex-wrap">
+            <span className="font-medium">Filter by role:</span>
             <Input
               placeholder="Search by name or role..."
               value={search}
@@ -445,48 +451,60 @@ export default function AdminTeamPage() {
             />
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
                 {uniqueRoles.map(role => (
-                  <SelectItem key={role} value={role}>{role === "all" ? "All Roles" : role}</SelectItem>
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="team-members">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className={cn(
-                  "space-y-4",
-                  viewMode === 'grid' && filteredTeamMembers.length > 0 ? "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 space-y-0" : "flex flex-col gap-4"
+          <div className="flex items-center gap-2">
+            <div className="flex bg-muted/50 font-medium" role="rowgroup">
+              <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="columnheader">
+                {selectedIds.length > 0 && (
+                  <>
+                    <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
+                    <Checkbox
+                      id="select-all-checkbox"
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </>
                 )}
-              >
-                {isLoading ? (
-                  <div className="relative min-h-[200px]">
-                    <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
-                      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      <span className="ml-2">Loading team members...</span>
+              </div>
+            </div>
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Delete Selected
+            </Button>
                     </div>
                   </div>
+        <div className={cn(
+          viewMode === 'grid' && filteredTeamMembers.length > 0 ? "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "flex flex-col gap-4"
+        )}>
+          {isLoading ? (
+            <GridSkeleton items={4} itemHeight={160} gridClassName={viewMode === 'grid' ? 'grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4' : 'flex flex-col gap-4'} />
                 ) : filteredTeamMembers.length === 0 ? (
-                  <div className="flex justify-center items-center min-h-[300px]">
                     <NoRecords title="No team members yet" description="Add your first team member to get started." />
-                  </div>
                 ) : (
-                  filteredTeamMembers.map((member, index) => (
-                    <Draggable key={member._id} draggableId={member._id} index={index}>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="team-list">
+                {(provided) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}>
+                    {filteredTeamMembers.map((member, idx) => (
+                      <Draggable key={member._id} draggableId={member._id} index={idx}>
                       {(provided) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
+                            className="relative"
                         >
+                            <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(member._id)} onCheckedChange={() => toggleSelect(member._id)} />
                           <Card>
                             {viewMode === 'grid' ? (
                               <>
@@ -513,9 +531,9 @@ export default function AdminTeamPage() {
                                       variant="destructive"
                                       size="sm"
                                       onClick={() => handleDeleteMember(member._id)}
-                                      disabled={isDeleting === member._id}
+                                        disabled={isSubmitting}
                                     >
-                                      {isDeleting === member._id ? "..." : "Delete"}
+                                        {isSubmitting ? "..." : "Delete"}
                                     </Button>
                                   </div>
                                 </div>
@@ -559,9 +577,9 @@ export default function AdminTeamPage() {
                                       variant="destructive"
                                       size="sm"
                                       onClick={() => handleDeleteMember(member._id)}
-                                      disabled={isDeleting === member._id}
+                                        disabled={isSubmitting}
                                     >
-                                      {isDeleting === member._id ? "Deleting..." : "Delete"}
+                                        {isSubmitting ? "Deleting..." : "Delete"}
                                     </Button>
                                   </div>
                                 </CardHeader>
@@ -574,13 +592,14 @@ export default function AdminTeamPage() {
                         </div>
                       )}
                     </Draggable>
-                  ))
-                )}
+                    ))}
                 {provided.placeholder}
               </div>
             )}
           </Droppable>
         </DragDropContext>
+          )}
+        </div>
       </div>
       {alert && (
         <AlertMessage
@@ -589,6 +608,14 @@ export default function AdminTeamPage() {
           onClose={() => setAlert(null)}
         />
       )}
+      <ConfirmDeleteModal
+        open={showDeleteConfirm}
+        title="Delete Team Members"
+        description="Are you sure you want to delete the selected team members? This action cannot be undone."
+        loading={isSubmitting}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+      />
     </div>
   )
 } 

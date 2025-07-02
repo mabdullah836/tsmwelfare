@@ -15,10 +15,18 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
-import { Edit2Icon, Loader2Icon, GridIcon, ListIcon } from "lucide-react"
+import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
 import { format } from "date-fns"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { NoRecords } from '@/components/ui/no-records'
+import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
+import { GridSkeleton } from "@/components/shared/skeletons/GridSkeleton"
+import { uploadMedia } from '@/lib/services/media'
 
 interface Event {
   _id: string
@@ -41,7 +49,6 @@ export default function AdminEventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -103,24 +110,8 @@ export default function AdminEventsPage() {
       let imageUrl = editingEvent.imageUrl
 
       if (imageFile?.size > 0) {
-        const imageData = new FormData()
-        imageData.append('files', imageFile)
-        const uploadResponse = await fetch('/api/media/upload', {
-          method: 'POST',
-          body: imageData,
-          headers: {
-            'folder': 'events',
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json()
-          throw new Error(error.message || 'Failed to upload image')
-        }
-        
-        const uploadResult = await uploadResponse.json()
-        imageUrl = uploadResult[0]?.url
+        const uploaded = await uploadMedia([imageFile], 'events')
+        imageUrl = uploaded[0]?.url
       }
 
       const updatedEvent = {
@@ -172,24 +163,8 @@ export default function AdminEventsPage() {
       let imageUrl = undefined
 
       if (imageFile?.size > 0) {
-        const imageData = new FormData()
-        imageData.append('files', imageFile)
-        const uploadResponse = await fetch('/api/media/upload', {
-          method: 'POST',
-          body: imageData,
-          headers: {
-            'folder': 'events',
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json()
-          throw new Error(error.message || 'Failed to upload image')
-        }
-        
-        const uploadResult = await uploadResponse.json()
-        imageUrl = uploadResult[0]?.url
+        const uploaded = await uploadMedia([imageFile], 'events')
+        imageUrl = uploaded[0]?.url
       }
 
       const newEvent = {
@@ -232,7 +207,7 @@ export default function AdminEventsPage() {
   }
 
   const handleDeleteEvent = async (id: string) => {
-    setIsDeleting(id)
+    setIsSubmitting(true)
     try {
       const response = await fetch(`/api/events/${id}`, {
         method: 'DELETE',
@@ -254,7 +229,7 @@ export default function AdminEventsPage() {
         type: "error"
       })
     } finally {
-      setIsDeleting(null)
+      setIsSubmitting(false)
     }
   }
 
@@ -335,24 +310,33 @@ export default function AdminEventsPage() {
     )
   }
 
-  // Filtered events
-  const filteredEvents = events.filter(event =>
-    event.title.toLowerCase().includes(search.toLowerCase()) ||
-    event.description.toLowerCase().includes(search.toLowerCase())
-  )
+  const {
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    filtered: filteredEvents,
+    paginated: paginatedEvents,
+  } = usePaginationFilter(events, {
+    pageSize: 12,
+    searchValue: search,
+    filterFn: (e, search) =>
+      e.title.toLowerCase().includes(search.toLowerCase()) ||
+      e.location.toLowerCase().includes(search.toLowerCase()),
+  });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <div className="container py-10">
-          <div className="flex items-center justify-center">
-            <Loader2Icon className="h-6 w-6 animate-spin" />
-            <span className="ml-2">Loading events...</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const selectableEvents = filteredEvents.filter(event => typeof event._id === 'string') as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableEvents);
+
+  const deleteEvents = async (ids: string[]) => {
+    for (const id of ids) {
+      await fetch(`/api/events/${id}`, { method: 'DELETE' });
+    }
+    setEvents(prev => prev.filter(event => !ids.includes(event._id)));
+    setSelectedIds([]);
+    setAlert({ type: 'success', message: 'Selected events deleted.' });
+  };
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteEvents, selectedIds);
 
   return (
     <div className="min-h-screen">
@@ -366,12 +350,12 @@ export default function AdminEventsPage() {
         )}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <h1 className="text-3xl font-bold">Manage Events</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <Input
               placeholder="Search events..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full md:w-72"
+              className="w-48"
             />
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -389,6 +373,26 @@ export default function AdminEventsPage() {
             >
               <ListIcon className="h-4 w-4" />
             </Button>
+            <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="columnheader">
+              {selectedIds.length > 0 && (
+                <>
+                  <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
+                  <Checkbox
+                    id="select-all-checkbox"
+                    checked={allSelected}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </>
+              )}
+            </div>
+            {selectedIds.length > 0 && (
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete Selected
+              </Button>
+            )}
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open)
               if (!open) setEditingEvent(null)
@@ -415,34 +419,41 @@ export default function AdminEventsPage() {
         </div>
         <div className="relative min-h-[200px]">
           {isLoading ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
-              <Loader2Icon className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Loading events...</span>
-            </div>
+            <GridSkeleton items={3} itemHeight={256} gridClassName={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'} />
           ) : filteredEvents.length === 0 ? (
             <NoRecords title="No events scheduled" description="Add your first event to get started." />
           ) : (
             <div className={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}>
               {filteredEvents.map((event) => (
-                <Card key={event._id}>
-                  <CardHeader className={viewMode === 'grid' ? 'flex flex-col items-center gap-4 space-y-0' : 'flex flex-row items-center gap-4 space-y-0'}>
-                    {event.imageUrl && (
-                      <div className="relative h-20 w-32 rounded overflow-hidden flex-shrink-0">
+                <div key={event._id} className="relative group">
+                  <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id)} onCheckedChange={() => event._id && toggleSelect(event._id)} />
+                  <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">
+                    <div className="relative h-48 w-full bg-gray-100">
+                      {event.imageUrl && (
                         <Image
                           src={event.imageUrl}
                           alt={event.title}
                           fill
-                          className="object-cover"
+                          className="object-cover w-full h-full"
                         />
+                      )}
+                      <div className="absolute top-2 right-2 flex flex-col items-end gap-2 z-20">
+                        <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                          {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                        </span>
+                        <span className="bg-white/80 text-xs px-2 py-0.5 rounded shadow text-gray-700">
+                          {format(new Date(event.date), 'MMM d, yyyy')}
+                        </span>
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="mb-1">{event.title}</CardTitle>
-                        <div className="flex items-center gap-2">
+                    </div>
+                    <CardHeader className="flex flex-col gap-2 p-4 pb-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-lg font-bold truncate w-3/4">{event.title}</CardTitle>
+                        <div className="flex gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            className="hover:bg-primary/10"
                             onClick={() => {
                               setEditingEvent(event)
                               setIsDialogOpen(true)
@@ -452,29 +463,37 @@ export default function AdminEventsPage() {
                           </Button>
                           <Button
                             variant="destructive"
-                            size="sm"
+                            size="icon"
+                            className="hover:bg-destructive/20"
                             onClick={() => handleDeleteEvent(event._id)}
-                            disabled={isDeleting === event._id}
+                            disabled={isSubmitting}
                           >
-                            {isDeleting === event._id ? "Deleting..." : "Delete"}
+                            {isSubmitting ? <span className="text-xs">...</span> : "✕"}
                           </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{format(new Date(event.date), 'MMMM d, yyyy')}</span>
-                        <span>{event.time}</span>
-                        <span>{event.location}</span>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                        <span className="inline-flex items-center gap-1"><span className="font-medium">Time:</span> {event.time}</span>
+                        <span className="inline-flex items-center gap-1"><span className="font-medium">Location:</span> {event.location}</span>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{event.description}</p>
-                  </CardContent>
-                </Card>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-2">
+                      <p className="text-sm text-gray-700 line-clamp-3">{event.description}</p>
+                    </CardContent>
+                  </Card>
+                </div>
               ))}
             </div>
           )}
         </div>
+        <ConfirmDeleteModal
+          open={showDeleteConfirm}
+          title="Delete Events"
+          description="Are you sure you want to delete the selected events? This action cannot be undone."
+          loading={isSubmitting}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleBulkDelete}
+        />
       </div>
     </div>
   )

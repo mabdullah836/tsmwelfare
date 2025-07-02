@@ -9,8 +9,16 @@ import { formatDate } from "@/lib/utils/format"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FixedSizeList as RWList, ListChildComponentProps } from 'react-window';
 import { NoRecords } from '@/components/ui/no-records'
+import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
+import { TableSkeleton } from "@/components/shared/skeletons/TableSkeleton";
+import { AdminTable } from "@/components/shared/AdminTable";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 
 interface Volunteer {
   _id: string
@@ -49,9 +57,8 @@ export default function VolunteersPage() {
       setIsLoading(true)
       const response = await fetch('/api/volunteer')
       const data = await response.json()
-      if (response.ok && data.success) {
-        console.log(data.data)  
-        setVolunteers(data.data)
+      if (response.ok) {
+        setVolunteers(data)
       } else {
         throw new Error('Failed to fetch volunteers')
       }
@@ -132,22 +139,63 @@ export default function VolunteersPage() {
     setSelectedVolunteer(null)
   }
 
-  // Filtered volunteers
-  const filteredVolunteers = volunteers.filter((v) => {
-    const matchesSearch =
+  const {
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    filtered: filteredVolunteers,
+    paginated: paginatedVolunteers,
+  } = usePaginationFilter(volunteers, {
+    pageSize: 10,
+    searchValue: search,
+    filterFn: (v, search) =>
       v.firstName.toLowerCase().includes(search.toLowerCase()) ||
       v.lastName.toLowerCase().includes(search.toLowerCase()) ||
       v.email.toLowerCase().includes(search.toLowerCase()) ||
-      v.phone.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = statusFilter === "all" || v.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+      v.phone.toLowerCase().includes(search.toLowerCase()),
+    extraFilters: { statusFilter },
+    extraFilterFn: (v, { statusFilter }) => statusFilter === 'all' || v.status === statusFilter,
+  });
 
-  const Row = ({ index, style }: ListChildComponentProps) => {
-    const v = filteredVolunteers[index];
-    if (!v) return null;
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(filteredVolunteers);
+
+  const deleteVolunteers = async (ids: string[]) => {
+    for (const id of ids) {
+      await fetch(`/api/volunteer/${id}`, { method: 'DELETE' });
+    }
+    setVolunteers(prev => prev.filter(v => !ids.includes(v._id)));
+    setSelectedIds([]);
+    setAlert({ type: 'success', message: 'Selected volunteers deleted.' });
+  };
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteVolunteers, selectedIds);
+
+  const columns = [
+    { key: "select", label: selectedIds.length > 0 ? (
+      <>
+        <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
+        <Checkbox
+          id="select-all-checkbox"
+          checked={allSelected}
+          onCheckedChange={toggleSelectAll}
+        />
+      </>
+    ) : null, className: "w-8 flex-shrink-0 flex items-center justify-center" },
+    { key: "name", label: "Name", className: "flex-[2]" },
+    { key: "email", label: "Email", className: "flex-[2]" },
+    { key: "phone", label: "Phone", className: "flex-[2]" },
+    { key: "status", label: "Status", className: "flex-[1]" },
+    { key: "appliedOn", label: "Applied On", className: "flex-[2]" },
+    { key: "actions", label: "Actions", className: "flex-[1]" },
+  ];
+
+  const renderVolunteerRow = (v: Volunteer) => {
+    const isSelected = selectedIds.includes(v._id);
     return (
-      <div style={style} className="flex items-center border-b" role="row">
+      <div key={v._id} className="flex items-center border-b" role="row">
+        <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="cell">
+          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(v._id)} />
+        </div>
         <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.firstName} {v.lastName}</div>
         <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.email}</div>
         <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.phone}</div>
@@ -157,14 +205,6 @@ export default function VolunteersPage() {
         <div className="p-4 flex-[2]" role="cell">{formatDate(v.createdAt)}</div>
         <div className="p-4 flex-[1]" role="cell">
           <Button size="sm" onClick={() => openModal(v)}>View</Button>
-        </div>
-        <div className="p-4 flex-[2] space-x-2" role="cell">
-          {v.status === 'pending' && (
-            <>
-              <Button size="sm" variant="default" onClick={() => handleStatusChange(v._id, 'approved')}>Approve</Button>
-              <Button size="sm" variant="destructive" onClick={() => handleStatusChange(v._id, 'rejected')}>Reject</Button>
-            </>
-          )}
         </div>
       </div>
     );
@@ -181,11 +221,23 @@ export default function VolunteersPage() {
           />
         )}
         <Card>
-          <CardHeader>
-            <CardTitle>Volunteer Applications</CardTitle>
+          <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle>Volunteers</CardTitle>
             <CardDescription>
               Manage and review volunteer applications
             </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  {`Delete Selected ${selectedIds.length}`}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
@@ -209,33 +261,33 @@ export default function VolunteersPage() {
                 </Select>
               </div>
             </div>
-            <div className="rounded-md border" role="table">
-              <div className="flex bg-muted/50 font-medium" role="rowgroup">
-                <div className="p-4 flex-[2]" role="columnheader">Name</div>
-                <div className="p-4 flex-[2]" role="columnheader">Email</div>
-                <div className="p-4 flex-[2]" role="columnheader">Phone</div>
-                <div className="p-4 flex-[1]" role="columnheader">Status</div>
-                <div className="p-4 flex-[2]" role="columnheader">Applied On</div>
-                <div className="p-4 flex-[1]" role="columnheader">View</div>
-                <div className="p-4 flex-[2]" role="columnheader">Actions</div>
-              </div>
-              <div role="rowgroup">
-                {isLoading ? (
-                  <div className="p-10 text-center text-muted-foreground">Loading volunteers...</div>
-                ) : filteredVolunteers.length === 0 ? (
-                  <NoRecords title="No volunteers found" description={search || statusFilter !== 'all' ? 'Try adjusting your filters or search terms' : 'No volunteer applications available yet.'} />
-                ) : (
-                  <RWList
-                    height={400}
-                    itemCount={filteredVolunteers.length}
-                    itemSize={65}
-                    width="100%"
-                  >
-                    {Row}
-                  </RWList>
-                )}
-              </div>
-            </div>
+            <AdminTable
+              columns={columns}
+              data={paginatedVolunteers}
+              loading={isLoading}
+              emptyState={{
+                title: "No volunteers found",
+                description: search || statusFilter !== 'all' ? 'Try adjusting your filters or search terms' : 'No volunteer applications available yet.'
+              }}
+              pagination={totalPages > 1 && (
+                <Pagination className="mt-8 flex justify-center">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+              renderRow={renderVolunteerRow}
+            />
           </CardContent>
         </Card>
         <Dialog open={isModalOpen} onOpenChange={closeModal}>
@@ -263,6 +315,14 @@ export default function VolunteersPage() {
             )}
           </DialogContent>
         </Dialog>
+        <ConfirmDeleteModal
+          open={showDeleteConfirm}
+          title="Delete Volunteers"
+          description="Are you sure you want to delete the selected volunteers? This action cannot be undone."
+          loading={deleting}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleBulkDelete}
+        />
       </div>
     </div>
   )

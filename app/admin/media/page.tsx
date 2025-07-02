@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Image, Upload, Grid, List, Search, AlertCircle, Trash2 } from "lucide-react"
+import { Upload, Grid, List, Search, AlertCircle } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -19,15 +19,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
-import { FixedSizeGrid as RWGrid, FixedSizeList as RWList, GridChildComponentProps, ListChildComponentProps } from 'react-window';
 import { fetchMedia, uploadMedia, deleteMedia } from '@/lib/services/media'
 import type { Media } from '@/lib/types/media'
 import { NoRecords } from '@/components/ui/no-records'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
+import { AdminGrid } from "@/components/shared/AdminGrid"
+import { AdminList } from "@/components/shared/AdminList"
   
 export default function MediaPage() {
   const [view, setView] = useState<"grid" | "list">("grid")
@@ -38,12 +42,8 @@ export default function MediaPage() {
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-  const [page, setPage] = useState(1)
-  const pageSize = 12
-
-  useEffect(() => {
-    setPage(1)
-  }, [searchQuery, filterType])
+  const [mediaToDelete, setMediaToDelete] = useState<string | null>(null);
+  const [deletingSingle, setDeletingSingle] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -90,11 +90,26 @@ export default function MediaPage() {
     }
   }
 
-  const filteredMedia = useMemo(() => mediaItems.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = filterType === 'all' || item.type === filterType
-    return matchesSearch && matchesType
-  }), [mediaItems, searchQuery, filterType])
+  const handleDeleteWithModal = async () => {
+    if (!mediaToDelete) return;
+    setDeletingSingle(true);
+    await handleDelete(mediaToDelete);
+    setDeletingSingle(false);
+    setMediaToDelete(null);
+  };
+
+  const {
+    page,
+    setPage,
+    totalPages,
+    paginated: paginatedMedia,
+  } = usePaginationFilter<Media>(mediaItems, {
+    pageSize: 12,
+    searchValue: searchQuery,
+    filterFn: (item, search) => item.title.toLowerCase().includes(search.toLowerCase()),
+    extraFilters: { filterType },
+    extraFilterFn: (item, { filterType }) => filterType === 'all' || item.type === filterType,
+  });
 
   const stats = useMemo(() => ({
     total: mediaItems.length,
@@ -114,144 +129,25 @@ export default function MediaPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const totalPages = Math.ceil(filteredMedia.length / pageSize)
-  
-  const paginatedMedia = useMemo(() => {
-    return filteredMedia.slice((page - 1) * pageSize, page * pageSize)
-  }, [filteredMedia, page, pageSize])
+  const selectableMedia = paginatedMedia.filter(item => typeof item._id === 'string') as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableMedia);
 
-  useEffect(() => {
-    if (page > totalPages && totalPages > 0) {
-      setPage(totalPages)
+  const deleteMediaItems = async (ids: string[]) => {
+    const response = await fetch('/api/media/bulk-delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      setMediaItems(prev => prev.filter(item => !ids.includes(item._id!)));
+      setSelectedIds([]);
+      setAlert({ message: 'Selected media items deleted.', type: 'success' });
+    } else {
+      setAlert({ message: data.message || 'Failed to delete media items.', type: 'error' });
     }
-  }, [page, totalPages])
-
-  const MediaGridCell = ({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
-    const index = rowIndex * 4 + columnIndex;
-    if (index >= paginatedMedia.length) return null;
-    const item = paginatedMedia[index];
-    return (
-      <div style={style} key={item._id}>
-        <Card className={cn("overflow-hidden")}>
-          <div className="aspect-video relative bg-muted">
-            {item.type === 'image' ? (
-              <img
-                src={item.url}
-                alt={item.title}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (!target.src.endsWith('/placeholder-image.svg')) {
-                    target.src = '/placeholder-image.svg';
-                  }
-                }}
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Image className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-          <CardHeader className="p-4">
-            <CardTitle className="text-sm">{item.title}</CardTitle>
-            <CardDescription>{formatDate(item.createdAt || '')}</CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{String(item.size ?? '')}</span>
-              <div className="flex items-center gap-2">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      onClick={() => handleDelete(item._id!)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Media</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this media file? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDelete(item._id!)}>
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
   };
-
-  const MediaListRow = ({ index, style }: ListChildComponentProps) => {
-    const item = paginatedMedia[index];
-    return (
-      <div style={style} key={item._id} className="mb-4 px-2">
-        <Card className={cn("overflow-hidden flex items-center p-4")}>
-          <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
-            {item.type === 'image' ? (
-              <img
-                src={item.url}
-                alt={item.title}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  if (!target.src.endsWith('/placeholder-image.svg')) {
-                    target.src = '/placeholder-image.svg';
-                  }
-                }}
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Image className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0 p-4">
-            <h3 className="font-medium truncate">{item.title}</h3>
-            <p className="text-sm text-muted-foreground">
-              {String(item.size ?? '')} • {formatDate(item.createdAt || '')}
-            </p>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => handleDelete(item._id!)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Media</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this media file? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(item._id!)}>
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </Card>
-      </div>
-    );
-  };
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteMediaItems, selectedIds);
 
   return (
     <div className="min-h-screen ">
@@ -300,7 +196,113 @@ export default function MediaPage() {
             </Card>
           </div>
         </div>
-
+        <div className="border rounded-lg px-4 py-3 mb-6 flex items-center w-full">
+          <div className="flex-grow flex items-center">
+            <div className="relative w-full">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search media files..." 
+                className="pl-8 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 ml-4">
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="image">Images</SelectItem>
+                <SelectItem value="video">Videos</SelectItem>
+              </SelectContent>
+            </Select>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button 
+                    variant={view === "grid" ? "default" : "outline"} 
+                    size="icon"
+                    onClick={() => setView("grid")}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Grid view</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button 
+                    variant={view === "list" ? "default" : "outline"} 
+                    size="icon"
+                    onClick={() => setView("list")}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>List view</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <div className="relative">
+              <input
+                type="file"
+                id="file-upload"
+                multiple
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={handleUpload}
+                disabled={uploading}
+              />
+              <label htmlFor="file-upload">
+                <Button 
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  {uploading ? 'Uploading...' : 'Upload Files'}
+                </Button>
+              </label>
+            </div>
+           {selectedIds.length > 0 && (
+                <div className="flex items-center gap-1 ml-2">
+                  <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="columnheader">
+                      <>
+                        <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
+                        <Checkbox
+                          id="select-all-checkbox"
+                          checked={allSelected}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </>
+                  </div>
+                </div>
+              )}
+            {selectedIds.length > 0 && (
+              <Button
+                variant="destructive"
+                disabled={deleting}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete
+              </Button>
+            )}
+          </div>
+        </div>
+        <ConfirmDeleteModal
+          open={showDeleteConfirm || !!mediaToDelete}
+          title="Delete Media"
+          description="Are you sure you want to delete the selected media file(s)? This action cannot be undone."
+          loading={mediaToDelete ? deletingSingle : deleting}
+          onCancel={() => {
+            mediaToDelete ? setMediaToDelete(null) : setShowDeleteConfirm(false);
+          }}
+          onConfirm={mediaToDelete ? handleDeleteWithModal : handleBulkDelete}
+        />
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -308,142 +310,116 @@ export default function MediaPage() {
           </Alert>
         )}
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-1 items-center space-x-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search media files..." 
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="image">Images</SelectItem>
-                    <SelectItem value="video">Videos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button 
-                        variant={view === "grid" ? "default" : "outline"} 
-                        size="icon"
-                        onClick={() => setView("grid")}
-                      >
-                        <Grid className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Grid view</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button 
-                        variant={view === "list" ? "default" : "outline"} 
-                        size="icon"
-                        onClick={() => setView("list")}
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>List view</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <div className="relative">
-                  <input
-                    type="file"
-                    id="file-upload"
-                    multiple
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={handleUpload}
-                    disabled={uploading}
-                  />
-                  <label htmlFor="file-upload">
-                    <Button 
-                      type="button"
-                      disabled={uploading}
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {uploading ? 'Uploading...' : 'Upload Files'}
-                    </Button>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {paginatedMedia.length === 0 && !loading ? (
           <NoRecords title="No media items found" description={searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started'} />
         ) : (
-          <div className="relative min-h-[200px]">
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <p className="text-muted-foreground">Loading media items...</p>
-                </div>
-              </div>
-            )}
-            {!loading && (
-              <>
-                <div className={view === "grid" ? "gap-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : undefined}>
-                  {view === "grid" ? (
-                    <RWGrid
-                      columnCount={4}
-                      columnWidth={300}
-                      height={800}
-                      rowCount={Math.ceil(paginatedMedia.length / 4)}
-                      rowHeight={340}
-                      width={1200}
-                    >
-                      {MediaGridCell}
-                    </RWGrid>
-                  ) : (
-                    <RWList
-                      height={800}
-                      itemCount={paginatedMedia.length}
-                      itemSize={120}
-                      width={1200}
-                    >
-                      {MediaListRow}
-                    </RWList>
-                  )}
-                </div>
-                {totalPages > 1 && (
-                  <Pagination className="mt-8 flex justify-center">
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+          view === "grid" ? (
+            <AdminGrid
+              items={paginatedMedia}
+              loading={loading}
+              emptyState={{
+                title: "No media items found",
+                description: searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started'
+              }}
+              pagination={totalPages > 1 && (
+                <Pagination className="mt-8 flex justify-center">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
                       </PaginationItem>
-                      {[...Array(totalPages)].map((_, i) => (
-                        <PaginationItem key={i}>
-                          <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
-                        </PaginationItem>
-                      ))}
-                      <PaginationItem>
-                        <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+              renderItem={(media: Media) => {
+                return (
+                  <div key={media._id ?? ''} className="relative group">
+                    <Checkbox
+                      className="absolute top-2 left-2 z-10"
+                      checked={selectedIds.includes(media._id ?? '')}
+                      onCheckedChange={() => media._id && toggleSelect(media._id)}
+                    />
+                    <Card className="overflow-hidden">
+                      <CardContent className="p-0">
+                        {media.type === 'image' ? (
+                          <img
+                            src={media.url ?? ''}
+                            alt={media.name ?? 'Media'}
+                            className="object-cover w-full h-48"
+                          />
+                        ) : (
+                          <video src={media.url ? media.url : ''} controls className="object-cover w-full h-48" />
+                        )}
+                      </CardContent>
+                      <CardHeader className="p-4 flex flex-col gap-1">
+                        <CardTitle className="text-base truncate">{media.name || 'Untitled'}</CardTitle>
+                        <CardDescription className="truncate text-xs">{formatDate(media.createdAt || '')}</CardDescription>
+                      </CardHeader>
+                    </Card>
+                  </div>
+                );
+              }}
+            />
+          ) : (
+            <AdminList
+              items={paginatedMedia}
+              loading={loading}
+              emptyState={{
+                title: "No media items found",
+                description: searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started'
+              }}
+              pagination={totalPages > 1 && (
+                <Pagination className="mt-8 flex justify-center">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+                    </PaginationItem>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
                       </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                )}
-              </>
-            )}
-          </div>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+              renderItem={(media: Media) => {
+                return (
+                  <div key={media._id ?? ''} className="relative group flex items-center gap-4 border rounded-lg p-4">
+                    <Checkbox
+                      className="absolute top-2 left-2 z-10"
+                      checked={selectedIds.includes(media._id ?? '')}
+                      onCheckedChange={() => media._id && toggleSelect(media._id)}
+                    />
+                    <div className="flex-shrink-0 w-24 h-24 overflow-hidden rounded">
+                      {media.type === 'image' ? (
+                        <img
+                          src={media.url ?? ''}
+                          alt={media.name ?? 'Media'}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <video src={media.url ? media.url : ''} controls className="object-cover w-full h-full" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{media.name || 'Untitled'}</div>
+                      <div className="text-xs text-muted-foreground truncate">{formatDate(media.createdAt || '')}</div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          )
         )}
       </div>
     </div>
