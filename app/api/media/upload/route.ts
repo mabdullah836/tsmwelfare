@@ -18,16 +18,17 @@ export const config = {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const files = formData.getAll('files')
-    const folder = request.headers.get('folder') || 'general'
-    
+    const files = formData.getAll('files') as File[]
+    console.log("==========>>>>>>",files)
+    const folder = formData.get('folder')?.toString() || 'general'
+    console.log("==============>>>>>>>",formData)
     console.log('Upload request for folder:', folder)
 
     if (!files?.length) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 })
     }
 
-    const uploadPromises = files.map(async (file: any) => {
+    const uploadPromises = files.map(async (file) => {
       const bytes = await file.arrayBuffer()
       const buffer = Buffer.from(bytes)
 
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
             folder: `tsmwelfare/${folder}`,
             resource_type: 'auto',
           },
-          (error, result) => {
+          (error: unknown, result: unknown) => {
             if (error) reject(error)
             else resolve(result)
           }

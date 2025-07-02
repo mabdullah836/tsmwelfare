@@ -1,34 +1,18 @@
-import { NextResponse } from "next/server"
-import { withDbConnection } from "@/lib/mongodb"
-import { Application } from "@/models/Application"
+import { NextRequest } from 'next/server'
+import { Application } from '@/models/Application'
+import { handleBulkDelete, handleGetAll, handlePost } from '@/lib/utils/crudHandlers'
+import { withDbConnection } from '@/lib/mongodb'
 
 export async function GET() {
-  try {
-    const applications = await withDbConnection(async () => {
-      return await Application.find().sort({ createdAt: -1 })
-    })
-    return NextResponse.json(applications)
-  } catch (error) {
-    console.error("Error fetching applications:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch applications" },
-      { status: 500 }
-    )
-  }
+  return await withDbConnection(() => handleGetAll({ model: Application, sort: { createdAt: -1 } }))
 }
 
-export async function POST(request: Request) {
-  try {
+export async function POST(request: NextRequest) {
     const data = await request.json()
-    const application = await withDbConnection(async () => {
-      return await Application.create(data)
-    })
-    return NextResponse.json(application)
-  } catch (error) {
-    console.error("Error creating application:", error)
-    return NextResponse.json(
-      { error: "Failed to create application" },
-      { status: 500 }
-    )
-  }
+  return await withDbConnection(() => handlePost({ model: Application, data }))
+}
+
+export async function DELETE(request: Request) {
+  const { ids } = await request.json()
+  return await withDbConnection(() => handleBulkDelete({ model: Application, ids }))
 } 
