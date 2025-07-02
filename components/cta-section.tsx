@@ -2,11 +2,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface CTASectionProps {
-  title: string
-  description: string
-  ctaText: string
-  ctaLink: string
-  className?: string
+  title: string;
+  description: string;
+  ctaText: string;
+  ctaLink: string;
+  className?: string;
 }
 
 export function CTASection({ title, description, ctaText, ctaLink, className }: CTASectionProps) {

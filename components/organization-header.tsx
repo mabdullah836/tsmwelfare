@@ -1,5 +1,5 @@
-import Image from "next/image"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 interface OrganizationHeaderProps {
   variant?: "full" | "compact" | "banner" | "emblem" | "modern"

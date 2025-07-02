@@ -1,6 +1,5 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, TooltipProps } from "recharts"
 
 const data = [

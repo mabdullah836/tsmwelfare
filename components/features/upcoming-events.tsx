@@ -7,6 +7,7 @@ import Image from "next/image"
 import { format } from "date-fns"
 import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Event {
   _id: string
@@ -51,9 +52,11 @@ export function UpcomingEvents() {
     return (
       <section className="py-16">
         <div className="container">
-          <div className="flex items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="ml-2">Loading events...</span>
+          <h2 className="text-3xl font-bold mb-12 text-center">Upcoming Events</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-64 w-full rounded-lg" />
+            ))}
           </div>
         </div>
       </section>
