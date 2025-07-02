@@ -7,6 +7,7 @@ if (!process.env.MONGODB_URI) {
 const MONGODB_URI = process.env.MONGODB_URI;
 
 let cachedConnection: mongoose.Connection | null = null;
+let listenersAttached = false;
 
 export async function dbConnect(): Promise<mongoose.Connection> {
   if (cachedConnection) {
@@ -17,7 +18,8 @@ export async function dbConnect(): Promise<mongoose.Connection> {
     const connection = await mongoose.connect(MONGODB_URI);
     cachedConnection = connection.connection;
     
-    // Handle connection errors after initial connect
+    // Attach listeners only once
+    if (!listenersAttached) {
     connection.connection.on('error', (error) => {
       console.error('MongoDB connection error:', error);
       cachedConnection = null;
@@ -27,6 +29,8 @@ export async function dbConnect(): Promise<mongoose.Connection> {
       console.log('MongoDB disconnected');
       cachedConnection = null;
     });
+      listenersAttached = true;
+    }
 
     return connection.connection;
   } catch (error) {

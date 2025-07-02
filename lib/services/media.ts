@@ -7,13 +7,13 @@ export async function fetchMedia(folder: string = 'general'): Promise<Media[]> {
   return Array.isArray(data) ? data : []
 }
 
-export async function uploadMedia(files: File[], folder: string = 'general'): Promise<Media[]> {
+export async function uploadMedia(files: File[], folder: string = 'events'): Promise<Media[]> {
   const formData = new FormData()
   files.forEach(file => formData.append('files', file))
+  formData.append('folder', folder)
   const response = await fetch('/api/media/upload', {
     method: 'POST',
     body: formData,
-    headers: { 'folder': folder },
   })
   if (!response.ok) throw new Error('Failed to upload files')
   return await response.json()
