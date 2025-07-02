@@ -18,8 +18,8 @@ import { formatDate } from "@/lib/utils/format"
 import Image from "next/image"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
-import { FixedSizeGrid as RWGrid, FixedSizeList as RWList, GridChildComponentProps, ListChildComponentProps } from 'react-window';
 import { NoRecords } from '@/components/ui/no-records'
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface MediaItem {
   _id: string;
@@ -115,100 +115,13 @@ export default function MediaPage() {
     }
   }, [page, totalPages])
 
-  const MediaGridCell = ({ columnIndex, rowIndex, style }: GridChildComponentProps) => {
-    const index = rowIndex * 4 + columnIndex;
-    if (index >= paginatedMedia.length) return null;
-    const item = paginatedMedia[index];
-    return (
-      <div style={style} key={item._id}>
-        <Card 
-          className={cn(
-            "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg"
-          )}
-          onClick={() => setSelectedItem(item)}
-        >
-          <div className="aspect-video relative bg-muted overflow-hidden">
-            {item.type === 'image' ? (
-              <Image
-                src={item.url}
-                alt={item.title}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                <Play className="h-12 w-12 text-muted-foreground" />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute bottom-2 right-2">
-                <Button size="icon" variant="secondary">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          <CardContent className="p-4">
-            <div className="mb-2">
-              <h3 className="font-medium truncate">{item.title}</h3>
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {formatDate(item.createdAt)}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
-  const MediaListRow = ({ index, style }: ListChildComponentProps) => {
-    const item = paginatedMedia[index];
-    return (
-      <div style={style} key={item._id}>
-        <Card 
-          className={cn(
-            "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg flex items-center"
-          )}
-          onClick={() => setSelectedItem(item)}
-        >
-          <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
-            {item.type === 'image' ? (
-              <Image
-                src={item.url}
-                alt={item.title}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                <Play className="h-8 w-8 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0 p-4">
-            <h3 className="font-medium truncate">{item.title}</h3>
-            <p className="text-sm text-muted-foreground">
-              {item.size.replace('MB', '').trim()} • {formatDate(item.createdAt)}
-            </p>
-          </div>
-          <Button size="icon" variant="secondary">
-            <Download className="h-4 w-4" />
-          </Button>
-        </Card>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <p className="text-muted-foreground">Loading media items...</p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-lg" />
+          ))}
         </div>
       </div>
     )
@@ -277,32 +190,98 @@ export default function MediaPage() {
           </div>
         </div>
 
-        {paginatedMedia.length === 0 ? (
-          <NoRecords title="No media items found" description={searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started'} />
-        ) : (
-          view === "grid" ? (
-            <RWGrid
-              columnCount={4}
-              columnWidth={300}
-              height={800}
-              rowCount={Math.ceil(paginatedMedia.length / 4)}
-              rowHeight={340}
-              width={1200}
-            >
-              {MediaGridCell}
-            </RWGrid>
+        <div className="relative min-h-[200px]">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-64 w-full rounded-lg" />
+              ))}
+            </div>
           ) : (
-            <RWList
-              height={800}
-              itemCount={paginatedMedia.length}
-              itemSize={120}
-              width={1200}
-            >
-              {MediaListRow}
-            </RWList>
-          )
+            <>
+              <div className="w-full">
+                {view === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {paginatedMedia.map((item) => (
+                      <Card 
+                        key={item._id}
+                        className={cn(
+                          "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg h-full flex flex-col"
+                        )}
+                        onClick={() => setSelectedItem(item)}
+                      >
+                        <div className="aspect-video relative bg-muted overflow-hidden">
+                          {item.type === 'image' ? (
+                            <Image
+                              src={item.url}
+                              alt={item.title}
+                              fill
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                              <Play className="h-12 w-12 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute bottom-2 right-2">
+                              <Button size="icon" variant="secondary">
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                        <CardContent className="p-4">
+                          <div className="mb-2">
+                            <h3 className="font-medium truncate">{item.title}</h3>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-muted-foreground">
+                              {formatDate(item.createdAt)}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {paginatedMedia.map((item) => (
+                      <Card 
+                        key={item._id}
+                        className={cn(
+                          "overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg flex items-center"
+                        )}
+                        onClick={() => setSelectedItem(item)}
+                      >
+                        <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
+                          {item.type === 'image' ? (
+                            <Image
+                              src={item.url}
+                              alt={item.title}
+                              fill
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                              <Play className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 p-4">
+                          <h3 className="font-medium truncate">{item.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {item.size.replace('MB', '').trim()} • {formatDate(item.createdAt)}
+                          </p>
+                        </div>
+                        <Button size="icon" variant="secondary">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </Card>
+                    ))}
+                  </div>
         )}
-
+              </div>
         {totalPages > 1 && (
           <Pagination className="mt-8 flex justify-center">
             <PaginationContent>
@@ -320,6 +299,9 @@ export default function MediaPage() {
             </PaginationContent>
           </Pagination>
         )}
+            </>
+          )}
+        </div>
       </div>
 
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
