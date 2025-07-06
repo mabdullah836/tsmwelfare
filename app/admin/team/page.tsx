@@ -137,12 +137,10 @@ export default function AdminTeamPage() {
       if (imageFile?.size > 0) {
         const imageData = new FormData()
         imageData.append('files', imageFile)
+        imageData.append('folder', 'team-members')
         const uploadResponse = await fetch('/api/media/upload', {
           method: 'POST',
           body: imageData,
-          headers: {
-            'folder': 'team-members'
-          },
         })
         
         if (!uploadResponse.ok) {
@@ -203,12 +201,10 @@ export default function AdminTeamPage() {
       if (imageFile?.size > 0) {
         const imageData = new FormData()
         imageData.append('files', imageFile)
+        imageData.append('folder', 'team-members')
         const uploadResponse = await fetch('/api/media/upload', {
           method: 'POST',
           body: imageData,
-          headers: {
-            'folder': 'team-members'
-          },
         })
         
         if (!uploadResponse.ok) {
