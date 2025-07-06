@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { PageHeader } from "@/components/page-header"
 
 interface ContactFormData {
   name: string
@@ -68,16 +69,11 @@ export default function ContactPage() {
           onClose={() => setAlert(null)}
         />
       )}
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Contact Us</h1>
-            <p className="text-xl text-white/90">
-              We'd love to hear from you. Reach out with questions, feedback, or to learn more about our services.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Contact Us">
+        <p className="text-xl text-white/90">
+          We'd love to hear from you. Reach out with questions, feedback, or to learn more about our services.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container">

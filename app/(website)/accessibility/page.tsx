@@ -1,16 +1,13 @@
+import { PageHeader } from "@/components/page-header";
+
 export default function AccessibilityPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Accessibility</h1>
-            <p className="text-xl text-white/90">
-              We are committed to ensuring our website is accessible to everyone, regardless of ability or technology, as we believe in serving all members of our community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Accessibility">
+        <p className="text-xl text-white/90">
+        We are committed to ensuring our website is accessible to everyone, regardless of ability or technology, as we believe in serving all members of our community.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">

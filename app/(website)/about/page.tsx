@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Award, Users, Heart, Lightbulb } from "lucide-react"
 import { TeamSection } from "@/components/features/team-section"
 import { EventsSection } from "@/components/features/events-section"
+import { PageHeader } from "@/components/page-header"
 
 async function getTeamMembers() {
   try {
@@ -42,20 +43,20 @@ export default async function AboutPage() {
 
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">About Our Organization</h1>
-            <p className="text-xl text-white/90">
-              We are dedicated to{" "}
-              <Typewriter
-                words={["empowering communities", "creating change", "building futures", "inspiring hope"]}
-                className="text-secondary-foreground font-medium"
-              />
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="About Our Organization">
+        <p className="text-xl text-white/90">
+          We are dedicated to{" "}
+          <Typewriter
+            words={[
+              "empowering communities",
+              "creating change",
+              "building futures",
+              "inspiring hope",
+            ]}
+            className="text-secondary-foreground font-medium"
+          />
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container">

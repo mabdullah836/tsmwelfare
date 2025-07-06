@@ -4,20 +4,16 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, Users, Award, BookOpen, Handshake, Calendar, MapPin } from "lucide-react"
 import Image from "next/image"
+import { PageHeader } from "@/components/page-header"
 
 export default function ServicesPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Our Services</h1>
-            <p className="text-xl text-white/90">
-              Discover the various ways we're working to make a positive impact in our community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Our Services">
+        <p className="text-xl text-white/90">
+          Discover the various ways we're working to make a positive impact in our community.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container">

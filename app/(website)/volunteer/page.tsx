@@ -1,5 +1,6 @@
 "use client"
 
+import { PageHeader } from "@/components/page-header"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -88,16 +89,11 @@ export default function VolunteerPage() {
           onClose={() => setAlert(null)}
         />
       )}
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Volunteer With Us</h1>
-            <p className="text-xl text-white/90">
-              Join our community of dedicated volunteers and make a real difference in people's lives.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Volunteer With Us">
+        <p className="text-xl text-white/90">
+          Join our community of dedicated volunteers and make a real difference in people's lives.
+        </p>
+      </PageHeader>
 
       <VolunteerBenefits />
 

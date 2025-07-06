@@ -1,5 +1,6 @@
 "use client"
 
+import { PageHeader } from "@/components/page-header"
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -46,14 +47,9 @@ export default function ZakatCalculatorPage() {
 
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Zakat Calculator</h1>
-            <p className="text-xl text-white/90">Calculate your Zakat accurately with our easy-to-use calculator.</p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Zakat Calculator">
+        <p className="text-xl text-white/90">Calculate your Zakat accurately with our easy-to-use calculator.</p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">

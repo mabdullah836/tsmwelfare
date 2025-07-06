@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Heart, CreditCard, Landmark, Smartphone } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { PageHeader } from "@/components/page-header"
 
 export default function DonatePage() {
   const [donationAmount, setDonationAmount] = useState<string>("")
@@ -78,16 +79,11 @@ export default function DonatePage() {
           onClose={() => setAlert(null)}
         />
       )}
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Donate</h1>
-            <p className="text-xl text-white/90">
-              Your generosity can change lives. Support our mission to serve the community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Donate">
+        <p className="text-xl text-white/90">
+          Your generosity can change lives. Support our mission to serve the community.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">
