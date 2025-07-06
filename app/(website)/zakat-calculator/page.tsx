@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calculator, HelpCircle } from "lucide-react"
+import Link from "next/link"
 
 export default function ZakatCalculatorPage() {
   const [goldValue, setGoldValue] = useState<number>(0)
@@ -313,7 +314,7 @@ export default function ZakatCalculatorPage() {
                           )}
                           {calculatedZakat > 0 && (
                             <Button asChild className="mt-4">
-                              <a href="/donate?amount={calculatedZakat}&type=zakat">Pay Zakat Now</a>
+                              <Link href={`/donate?amount=${calculatedZakat}&type=zakat`}>Pay Zakat Now</Link>
                             </Button>
                           )}
                         </div>
@@ -400,9 +401,9 @@ export default function ZakatCalculatorPage() {
                   <div className="pt-4 border-t">
                     <p className="font-medium">
                       If you have any questions about Zakat or need assistance with your calculation, please{" "}
-                      <a href="/contact" className="text-primary hover:underline">
+                      <Link href="/contact" className="text-primary hover:underline">
                         contact us
-                      </a>
+                      </Link>
                       .
                     </p>
                   </div>

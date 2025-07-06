@@ -12,65 +12,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NoRecords } from '@/components/ui/no-records'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
 import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
 import { TableSkeleton } from "@/components/shared/skeletons/TableSkeleton";
 import { AdminTable } from "@/components/shared/AdminTable";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
-
-interface Volunteer {
-  _id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  status: 'pending' | 'approved' | 'rejected'
-  createdAt: string
-  address?: string
-  city?: string
-  occupation?: string
-  availability?: string
-  interests?: string[]
-  skills?: string
-  experience?: string
-  motivation?: string
-  references?: string
-}
+import { getVolunteers } from "@/lib/services/volunteer"
+import { VolunteerFormData } from "@/lib/types/volunteer"
 
 export default function VolunteersPage() {
-  const [volunteers, setVolunteers] = useState<Volunteer[]>([])
+  const [volunteers, setVolunteers] = useState<VolunteerFormData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null)
-  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null)
+  const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerFormData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
   useEffect(() => {
-    fetchVolunteers()
-  }, [])
-
-  const fetchVolunteers = async () => {
-    try {
+    (async () => {
       setIsLoading(true)
-      const response = await fetch('/api/volunteer')
-      const data = await response.json()
-      if (response.ok) {
-        setVolunteers(data)
+      const data = await getVolunteers()
+      setVolunteers(data)
+  
+      if (data.length > 0) {
+        setAlert({
+          type: 'success',
+          message: `Successfully loaded ${data.length} volunteers`,
+        })
       } else {
-        throw new Error('Failed to fetch volunteers')
+        setAlert({
+          type: 'error',
+          message: 'No volunteers found',
+        })
       }
-    } catch (error) {
-      setAlert({
-        type: 'error',
-        message: 'Failed to fetch volunteers'
-      })
-    } finally {
+  
       setIsLoading(false)
-    }
-  }
+    })()
+  }, [])
+  
 
   const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected') => {
     try {
@@ -130,7 +112,7 @@ export default function VolunteersPage() {
     }
   }
 
-  const openModal = (volunteer: Volunteer) => {
+  const openModal = (volunteer: VolunteerFormData) => {
     setSelectedVolunteer(volunteer)
     setIsModalOpen(true)
   }
@@ -158,13 +140,15 @@ export default function VolunteersPage() {
     extraFilterFn: (v, { statusFilter }) => statusFilter === 'all' || v.status === statusFilter,
   });
 
-  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(filteredVolunteers);
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(
+    filteredVolunteers.filter(v => v._id) as { _id: string }[]
+  );
 
   const deleteVolunteers = async (ids: string[]) => {
     for (const id of ids) {
       await fetch(`/api/volunteer/${id}`, { method: 'DELETE' });
     }
-    setVolunteers(prev => prev.filter(v => !ids.includes(v._id)));
+    setVolunteers(prev => prev.filter(v => !ids.includes(v._id || '')));
     setSelectedIds([]);
     setAlert({ type: 'success', message: 'Selected volunteers deleted.' });
   };
@@ -189,20 +173,20 @@ export default function VolunteersPage() {
     { key: "actions", label: "Actions", className: "flex-[1]" },
   ];
 
-  const renderVolunteerRow = (v: Volunteer) => {
-    const isSelected = selectedIds.includes(v._id);
+  const renderVolunteerRow = (v: VolunteerFormData) => {
+    const isSelected = selectedIds.includes(v._id || '');
     return (
       <div key={v._id} className="flex items-center border-b" role="row">
         <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="cell">
-          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(v._id)} />
+          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(v._id || '')} />
         </div>
         <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.firstName} {v.lastName}</div>
         <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.email}</div>
         <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.phone}</div>
         <div className="p-4 flex-[1]" role="cell">
-          <Badge className={getStatusBadgeColor(v.status)}>{v.status}</Badge>
+          <Badge className={getStatusBadgeColor(v.status || 'pending')}>{v.status || 'pending'}</Badge>
         </div>
-        <div className="p-4 flex-[2]" role="cell">{formatDate(v.createdAt)}</div>
+        <div className="p-4 flex-[2]" role="cell">{v.createdAt ? formatDate(v.createdAt) : 'N/A'}</div>
         <div className="p-4 flex-[1]" role="cell">
           <Button size="sm" onClick={() => openModal(v)}>View</Button>
         </div>
@@ -301,7 +285,7 @@ export default function VolunteersPage() {
                 <div><b>Email:</b> {selectedVolunteer.email}</div>
                 <div><b>Phone:</b> {selectedVolunteer.phone}</div>
                 <div><b>Status:</b> {selectedVolunteer.status}</div>
-                <div><b>Applied On:</b> {formatDate(selectedVolunteer.createdAt)}</div>
+                <div><b>Applied On:</b> {selectedVolunteer.createdAt ? formatDate(selectedVolunteer.createdAt) : 'N/A'}</div>
                 {selectedVolunteer.address && <div><b>Address:</b> {selectedVolunteer.address}</div>}
                 {selectedVolunteer.city && <div><b>City:</b> {selectedVolunteer.city}</div>}
                 {selectedVolunteer.occupation && <div><b>Occupation:</b> {selectedVolunteer.occupation}</div>}
@@ -315,13 +299,15 @@ export default function VolunteersPage() {
             )}
           </DialogContent>
         </Dialog>
-        <ConfirmDeleteModal
+        <ConfirmDialog
           open={showDeleteConfirm}
           title="Delete Volunteers"
           description="Are you sure you want to delete the selected volunteers? This action cannot be undone."
+          confirmLabel={deleting ? "Deleting..." : "Delete"}
+          cancelLabel="Cancel"
           loading={deleting}
-          onCancel={() => setShowDeleteConfirm(false)}
           onConfirm={handleBulkDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
         />
       </div>
     </div>

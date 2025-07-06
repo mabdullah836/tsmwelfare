@@ -1,6 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import React from "react";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ConfirmDeleteModalProps {
   open: boolean;
@@ -19,20 +17,14 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
   onConfirm,
   onCancel,
 }) => (
-  <Dialog open={open} onOpenChange={onCancel}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>{title}</DialogTitle>
-      </DialogHeader>
-      <p>{description}</p>
-      <DialogFooter>
-        <Button variant="outline" onClick={onCancel} disabled={loading}>
-          Cancel
-        </Button>
-        <Button variant="destructive" onClick={onConfirm} disabled={loading}>
-          {loading ? "Deleting..." : "Delete"}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+  <ConfirmDialog
+    open={open}
+    title={title}
+    description={description}
+    confirmLabel={loading ? "Deleting..." : "Delete"}
+    cancelLabel="Cancel"
+    loading={loading}
+    onConfirm={onConfirm}
+    onCancel={onCancel}
+  />
 ); 

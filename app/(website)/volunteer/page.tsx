@@ -21,6 +21,7 @@ import { INTEREST_OPTIONS, AVAILABILITY_OPTIONS } from "@/lib/constants/voluntee
 import { useVolunteerForm } from "@/lib/hooks/use-volunteer-form"
 import { FormInput } from "@/components/ui/form-input"
 import { VolunteerFormData } from "@/lib/types/volunteer"
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
 
 export default function VolunteerPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -37,15 +38,13 @@ export default function VolunteerPage() {
     reset,
   } = useVolunteerForm()
 
-  const onSubmit = async (formData: any) => {
+  const onSubmit = async (formData: VolunteerFormData) => {
     setShowConfirmDialog(false)
 
     try {
       const response = await fetch("/api/volunteer", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
 
@@ -54,41 +53,32 @@ export default function VolunteerPage() {
       if (data.success) {
         setAlert({
           message: "Thank you for your interest in volunteering. We'll contact you soon!",
-          type: "success"
+          type: "success",
         })
         reset()
+      } else if (data.status) {
+        setAlert({
+          message: `You have already submitted an application. Current status: ${data.status}. We'll contact you soon!`,
+          type: "error",
+        })
       } else {
-        if (data.status) {
-          setAlert({
-            message: `You have already submitted an application. Current status: ${data.status}. We'll contact you soon!`,
-            type: "error"
-          })
-        } else {
-          throw new Error(data.message || "Failed to submit application")
-        }
+        throw new Error(data.message || "Failed to submit application")
       }
     } catch (error) {
       setAlert({
         message: "Failed to submit application. Please try again later.",
-        type: "error"
+        type: "error",
       })
       console.error("Error:", error)
     }
   }
 
-  const handleFormSubmit = handleSubmit((data) => {
-    setShowConfirmDialog(true)
-  })
+  const handleFormSubmit = handleSubmit(() => setShowConfirmDialog(true))
 
   return (
     <>
-      {alert && (
-        <AlertMessage
-          message={alert.message}
-          type={alert.type}
-          onClose={() => setAlert(null)}
-        />
-      )}
+      {alert && <AlertMessage message={alert.message} type={alert.type} onClose={() => setAlert(null)} />}
+
       <PageHeader title="Volunteer With Us">
         <p className="text-xl text-white/90">
           Join our community of dedicated volunteers and make a real difference in people's lives.
@@ -109,32 +99,23 @@ export default function VolunteerPage() {
                 </CardDescription>
                 <div className="mt-4 p-4 bg-muted rounded-lg border text-sm">
                   <p className="font-medium text-primary mb-2">Important Notice:</p>
-                  <p>This is an unpaid volunteer position. As a faith-based organization working for the greater good, 
-                  we believe in serving our community through selfless dedication. Your contribution will be rewarded 
-                  through the positive impact you make in people's lives and the spiritual fulfillment of serving others.</p>
+                  <p>
+                    This is an unpaid volunteer position. As a faith-based organization working for the greater good, we
+                    believe in serving our community through selfless dedication. Your contribution will be rewarded
+                    through the positive impact you make in people's lives and the spiritual fulfillment of serving others.
+                  </p>
                 </div>
               </CardHeader>
+
               <CardContent>
                 <form onSubmit={handleFormSubmit} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <FormInput<VolunteerFormData>
-                      id="firstName"
-                      label="First Name"
-                      register={register}
-                      errors={errors}
-                      required
-                    />
-                    <FormInput<VolunteerFormData>
-                      id="lastName"
-                      label="Last Name"
-                      register={register}
-                      errors={errors}
-                      required
-                    />
+                    <FormInput id="firstName" label="First Name" register={register} errors={errors} required />
+                    <FormInput id="lastName" label="Last Name" register={register} errors={errors} required />
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <FormInput<VolunteerFormData>
+                    <FormInput
                       id="email"
                       label="Email"
                       type="email"
@@ -143,10 +124,10 @@ export default function VolunteerPage() {
                       required
                       pattern={{
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Invalid email address"
+                        message: "Invalid email address",
                       }}
                     />
-                    <FormInput<VolunteerFormData>
+                    <FormInput
                       id="phone"
                       label="Phone Number"
                       type="tel"
@@ -155,37 +136,19 @@ export default function VolunteerPage() {
                       required
                       pattern={{
                         value: /^[0-9]{11}$/,
-                        message: "Please enter a valid 11-digit phone number"
+                        message: "Please enter a valid 11-digit phone number",
                       }}
                     />
                   </div>
 
-                  <FormInput<VolunteerFormData>
-                    id="address"
-                    label="Address"
-                    register={register}
-                    errors={errors}
-                    required
-                  />
+                  <FormInput id="address" label="Address" register={register} errors={errors} required />
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <FormInput<VolunteerFormData>
-                      id="city"
-                      label="City"
-                      register={register}
-                      errors={errors}
-                      required
-                    />
-                    <FormInput<VolunteerFormData>
-                      id="occupation"
-                      label="Occupation"
-                      register={register}
-                      errors={errors}
-                      required
-                    />
+                    <FormInput id="city" label="City" register={register} errors={errors} required />
+                    <FormInput id="occupation" label="Occupation" register={register} errors={errors} required />
                   </div>
 
-                  <FormInput<VolunteerFormData>
+                  <FormInput
                     id="availability"
                     label="Availability"
                     register={register}
@@ -199,21 +162,21 @@ export default function VolunteerPage() {
                     <Label>Areas of Interest</Label>
                     <div className="grid sm:grid-cols-2 gap-4">
                       {INTEREST_OPTIONS.map((interest) => (
-                        <FormInput<VolunteerFormData>
+                        <FormInput
                           key={interest}
                           id={interest}
                           label={interest}
                           register={register}
                           errors={errors}
                           isCheckbox
-                          checked={watch("interests").includes(interest)}
+                          checked={watch("interests")?.includes(interest) ?? false}
                           onCheckedChange={() => handleInterestChange(interest)}
                         />
                       ))}
                     </div>
                   </div>
 
-                  <FormInput<VolunteerFormData>
+                  <FormInput
                     id="skills"
                     label="Special Skills or Qualifications"
                     register={register}
@@ -222,7 +185,7 @@ export default function VolunteerPage() {
                     placeholder="List any special skills or qualifications you have"
                   />
 
-                  <FormInput<VolunteerFormData>
+                  <FormInput
                     id="experience"
                     label="Previous Volunteer Experience"
                     register={register}
@@ -231,7 +194,7 @@ export default function VolunteerPage() {
                     placeholder="Describe your previous volunteer experience"
                   />
 
-                  <FormInput<VolunteerFormData>
+                  <FormInput
                     id="motivation"
                     label="Why do you want to volunteer with us?"
                     register={register}
@@ -241,7 +204,7 @@ export default function VolunteerPage() {
                     placeholder="Tell us why you'd like to volunteer with our organization"
                   />
 
-                  <FormInput<VolunteerFormData>
+                  <FormInput
                     id="references"
                     label="References"
                     register={register}
@@ -260,24 +223,15 @@ export default function VolunteerPage() {
         </div>
       </section>
 
-      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Volunteer Application</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please confirm that you understand this is an unpaid volunteer position dedicated to serving our community 
-              through faith-based charitable work. Your contribution will be through your time, skills, and dedication 
-              to helping others.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSubmit(onSubmit)}>
-              I Understand & Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={showConfirmDialog}
+        title="Confirm Volunteer Application"
+        description="Please confirm that you understand this is an unpaid volunteer position dedicated to serving our community through faith-based charitable work. Your contribution will be through your time, skills, and dedication to helping others."
+        confirmLabel="I Understand & Confirm"
+        cancelLabel="Cancel"
+        onConfirm={handleSubmit(onSubmit)}
+        onCancel={() => setShowConfirmDialog(false)}
+      />
     </>
   )
-} 
+}

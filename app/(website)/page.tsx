@@ -15,6 +15,7 @@ import { ImpactStat } from "@/components/shared/impact-stat";
 import DepartmentsPage from "./departments/page";
 import GazaPage from "@/components/gaza/page";
 import { HeroSection } from "@/components/Hero/page";
+import Link from "next/link"
 
 export default function HomePage() {
   return (
@@ -175,7 +176,7 @@ export default function HomePage() {
                   variant="secondary"
                   className="font-medium"
                 >
-                  <a href="/donate">Donate Money</a>
+                  <Link href="/donate">Donate Money</Link>
                 </Button>
                 <Button
                   asChild
@@ -183,7 +184,7 @@ export default function HomePage() {
                   variant="outline"
                   className="bg-white/10 text-white border-white/20 font-medium hover:bg-white/20"
                 >
-                  <a href="/volunteer">Volunteer Your Time</a>
+                  <Link href="/volunteer">Volunteer Your Time</Link>
                 </Button>
                 <Button
                   asChild
@@ -191,7 +192,7 @@ export default function HomePage() {
                   variant="outline"
                   className="bg-white/10 text-white border-white/20 font-medium hover:bg-white/20"
                 >
-                  <a href="/apply">Apply for Assistance</a>
+                  <Link href="/apply">Apply for Assistance</Link>
                 </Button>
               </div>
             </CardContent>

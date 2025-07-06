@@ -5,37 +5,9 @@ import { Award, Users, Heart, Lightbulb } from "lucide-react"
 import { TeamSection } from "@/components/features/team-section"
 import { EventsSection } from "@/components/features/events-section"
 import { PageHeader } from "@/components/page-header"
+import { getTeamMembers } from "@/lib/services/team"
+import { getUpcomingEvents } from "@/lib/services/event"
 
-async function getTeamMembers() {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/team`, {
-      next: { revalidate: 60 }, // Revalidate every minute
-    })
-    if (!response.ok) {
-      throw new Error('Failed to fetch team members')
-    }
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Error fetching team members:', error)
-    return [] // Return empty array as fallback
-  }
-}
-
-async function getUpcomingEvents() {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/events`, {
-      next: { revalidate: 60 }, // Revalidate every minute
-    })
-    if (!response.ok) throw new Error('Failed to fetch events')
-    return response.json()
-  } catch (error) {
-    console.error('Error fetching events:', error)
-    return []
-  }
-}
 
 export default async function AboutPage() {
   const teamMembers = await getTeamMembers()

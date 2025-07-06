@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { PageHeader } from "@/components/page-header"
+import { contactFaqs } from '@/lib/data/faqs'
 
 interface ContactFormData {
   name: string
@@ -247,28 +248,7 @@ export default function ContactPage() {
         <div className="container">
           <h2 className="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {[
-              {
-                question: "How can I volunteer with your organization?",
-                answer:
-                  "We welcome volunteers! Please fill out our volunteer application form on the website or contact our Volunteer Coordinator directly.",
-              },
-              {
-                question: "Do you offer services in languages other than English?",
-                answer:
-                  "Yes, we have staff and volunteers who speak multiple languages. Please let us know your language needs when you contact us.",
-              },
-              {
-                question: "How can I make a donation?",
-                answer:
-                  "You can donate online through our secure portal, mail a check, or contact us about in-kind donations.",
-              },
-              {
-                question: "Do you offer services to all community members?",
-                answer:
-                  "Yes, our services are available to anyone in need in our service area, regardless of background or circumstances.",
-              },
-            ].map((faq, index) => (
+            {contactFaqs.map((faq, index) => (
               <div key={index} className="bg-background rounded-lg p-6 shadow-sm">
                 <h3 className="text-lg font-bold mb-2">{faq.question}</h3>
                 <p className="text-muted-foreground">{faq.answer}</p>

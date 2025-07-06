@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import Link from "next/link"
 
 export default function AccessibilityPage() {
   return (
@@ -70,7 +71,7 @@ export default function AccessibilityPage() {
                 <a href="mailto:accessibility@sirat-e-mustaqeem.org">accessibility@sirat-e-mustaqeem.org</a>
               </li>
               <li>
-                Using our <a href="/contact">contact form</a>
+                Using our <Link href="/contact">contact form</Link>
               </li>
               <li>Calling us at +92 123 456 7890</li>
             </ul>

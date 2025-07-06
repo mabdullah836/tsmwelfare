@@ -22,7 +22,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { formatDate } from "@/lib/utils/format"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
-import { fetchMedia, uploadMedia, deleteMedia } from '@/lib/services/media'
+import { uploadMedia, deleteMedia, getMedia } from '@/lib/services/media'
 import type { Media } from '@/lib/types/media'
 import { NoRecords } from '@/components/ui/no-records'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -49,7 +49,7 @@ export default function MediaPage() {
     (async () => {
       setLoading(true)
       try {
-        const items = await fetchMedia('general')
+        const items = await getMedia('general')
         setMediaItems(items)
         setAlert({ message: `Successfully loaded ${items.length} media items`, type: 'success' })
       } catch (error) {
@@ -66,19 +66,27 @@ export default function MediaPage() {
     if (!files?.length) return
     setUploading(true)
     setError(null)
+  
     try {
-      await uploadMedia(Array.from(files), 'general')
-      const items = await fetchMedia('general')
-      setMediaItems(items)
-      event.target.value = ''
-      setAlert({ message: `Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''} to general folder`, type: 'success' })
+      const uploadedItems = await uploadMedia(Array.from(files), 'general')
+      if (!Array.isArray(uploadedItems)) throw new Error('Invalid upload response')
+      setMediaItems(prev => [...uploadedItems, ...prev]) 
+  
+      setAlert({
+        message: `Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''} to general folder`,
+        type: 'success',
+      })
     } catch (error) {
       setError('Failed to upload files. Please try again.')
-      setAlert({ message: error instanceof Error ? error.message : 'Failed to upload files', type: 'error' })
+      setAlert({
+        message: error instanceof Error ? error.message : 'Failed to upload files',
+        type: 'error',
+      })
     } finally {
       setUploading(false)
     }
   }
+  
 
   const handleDelete = async (id: string) => {
     try {

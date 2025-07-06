@@ -1,9 +1,9 @@
-import { Application } from '@/lib/types/application'
+import { Application } from "../types/application"
+import { fetchFromAPI } from "../utils/api"
 
-export async function fetchApplications(): Promise<Application[]> {
-  const response = await fetch('/api/applications')
-  if (!response.ok) throw new Error('Failed to fetch applications')
-  return await response.json()
+export const getApplications = async (): Promise<Application[]> => {
+  const data = await fetchFromAPI<Application[]>('/api/applications')
+  return data ?? []
 }
 
 export async function updateApplicationStatus(applicationId: string, newStatus: 'pending' | 'approved' | 'rejected'): Promise<void> {

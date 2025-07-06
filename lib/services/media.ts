@@ -1,9 +1,9 @@
 import { Media } from '@/lib/types/media'
+import { fetchFromAPI } from '../utils/api'
 
-export async function fetchMedia(folder: string = 'general'): Promise<Media[]> {
-  const response = await fetch(`/api/media?folder=${folder}`)
-  if (!response.ok) throw new Error('Failed to fetch media')
-  const data = await response.json()
+
+export const getMedia = async (folder: string = 'general'): Promise<Media[]> => {
+  const data = await fetchFromAPI<Media[]>(`/api/media?folder=${folder}`)
   return Array.isArray(data) ? data : []
 }
 

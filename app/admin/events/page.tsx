@@ -21,23 +21,14 @@ import { AlertMessage } from "@/components/ui/alert-message"
 import { NoRecords } from '@/components/ui/no-records'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
 import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
 import { GridSkeleton } from "@/components/shared/skeletons/GridSkeleton"
 import { uploadMedia } from '@/lib/services/media'
-
-interface Event {
-  _id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  location: string
-  imageUrl?: string
-  status: 'upcoming' | 'ongoing' | 'completed'
-}
+import { getEventsWithImages } from "@/lib/services/event"
+import { Event } from "@/lib/types/event"
 
 interface MediaItem {
   _id: string
@@ -55,51 +46,40 @@ export default function AdminEventsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [search, setSearch] = useState('')
 
-  useEffect(() => {
-    fetchEvents()
-  }, [])
+ 
+useEffect(() => {
+  loadEvents()
+}, [])
 
-  const fetchEvents = async () => {
-    try {
-     
-      const response = await fetch('/api/events')
-      if (!response.ok) {
-        throw new Error('Failed to fetch events')
-      }
-      const data = await response.json()
+const loadEvents = async () => {
+  try {
+    setIsLoading(true)
+    const data = await getEventsWithImages()
 
-      // Fetch only event images
-      const mediaResponse = await fetch('/api/media?folder=events')
-      if (mediaResponse.ok) {
-        const mediaData: MediaItem[] = await mediaResponse.json()
-        // Map media URLs to events, only using event images
-        const eventsWithImages = data.map((event: Event) => {
-          const eventMedia = mediaData.find(m => m.url === event.imageUrl && m.folder === 'events')
-          return {
-            ...event,
-            imageUrl: eventMedia?.url || event.imageUrl
-          }
-        })
-        setEvents(eventsWithImages)
-      } else {
-        setEvents(data)
-      }
-      if (data.length > 0) {
+    if (data.length > 0) {
+      setEvents(data)
       setAlert({
-          message: `Successfully loaded ${data.length} events`,
-          type: "success"
-        })
-      }
-    } catch (error) {
+        message: `Successfully loaded ${data.length} events`,
+        type: "success"
+      })
+    } else {
+      setEvents([])
       setAlert({
-        message: "Failed to fetch events",
+        message: "No events found",
         type: "error"
       })
-      setEvents([])
-    } finally {
-      setIsLoading(false)
     }
+  } catch (error) {
+    console.error("Error loading events:", error)
+    setEvents([])
+    setAlert({
+      message: "Failed to fetch events",
+      type: "error"
+    })
+  } finally {
+    setIsLoading(false)
   }
+}
 
   const handleEditEvent = async (formData: FormData) => {
     if (!editingEvent) return
@@ -332,7 +312,7 @@ export default function AdminEventsPage() {
     for (const id of ids) {
       await fetch(`/api/events/${id}`, { method: 'DELETE' });
     }
-    setEvents(prev => prev.filter(event => !ids.includes(event._id)));
+    setEvents(prev => prev.filter(event => event._id && !ids.includes(event._id)));
     setSelectedIds([]);
     setAlert({ type: 'success', message: 'Selected events deleted.' });
   };
@@ -426,7 +406,7 @@ export default function AdminEventsPage() {
             <div className={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}>
               {filteredEvents.map((event) => (
                 <div key={event._id} className="relative group">
-                  <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id)} onCheckedChange={() => event._id && toggleSelect(event._id)} />
+                  <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id || '')} onCheckedChange={() => event._id && toggleSelect(event._id)} />
                   <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">
                     <div className="relative h-48 w-full bg-gray-100">
                       {event.imageUrl && (
@@ -439,7 +419,7 @@ export default function AdminEventsPage() {
                       )}
                       <div className="absolute top-2 right-2 flex flex-col items-end gap-2 z-20">
                         <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                          {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                          {(event.status || 'upcoming').charAt(0).toUpperCase() + (event.status || 'upcoming').slice(1)}
                         </span>
                         <span className="bg-white/80 text-xs px-2 py-0.5 rounded shadow text-gray-700">
                           {format(new Date(event.date), 'MMM d, yyyy')}
@@ -465,7 +445,7 @@ export default function AdminEventsPage() {
                             variant="destructive"
                             size="icon"
                             className="hover:bg-destructive/20"
-                            onClick={() => handleDeleteEvent(event._id)}
+                            onClick={() => event._id && handleDeleteEvent(event._id)}
                             disabled={isSubmitting}
                           >
                             {isSubmitting ? <span className="text-xs">...</span> : "✕"}
@@ -486,13 +466,15 @@ export default function AdminEventsPage() {
             </div>
           )}
         </div>
-        <ConfirmDeleteModal
+        <ConfirmDialog
           open={showDeleteConfirm}
           title="Delete Events"
           description="Are you sure you want to delete the selected events? This action cannot be undone."
+          confirmLabel={isSubmitting ? "Deleting..." : "Delete"}
+          cancelLabel="Cancel"
           loading={isSubmitting}
-          onCancel={() => setShowDeleteConfirm(false)}
           onConfirm={handleBulkDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
         />
       </div>
     </div>

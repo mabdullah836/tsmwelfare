@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { PageHeader } from "@/components/page-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Image as ImageIcon, Play, Download, Grid, List, Search } from "lucide-react"
@@ -20,24 +21,18 @@ import { AlertMessage } from "@/components/ui/alert-message"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 import { NoRecords } from '@/components/ui/no-records'
 import { Skeleton } from "@/components/ui/skeleton"
+import { getMedia } from "@/lib/services/media"
+import { Media } from "@/lib/types/media"
 
-interface MediaItem {
-  _id: string;
-  title: string;
-  type: 'image' | 'video';
-  url: string;
-  size: string;
-  createdAt: string;
-}
 
 export default function MediaPage() {
   const [view, setView] = useState<"grid" | "list">("grid")
   const [filterType, setFilterType] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+  const [mediaItems, setMediaItems] = useState<Media[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
+  const [selectedItem, setSelectedItem] = useState<Media | null>(null)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [page, setPage] = useState(1)
   const pageSize = 12
@@ -47,29 +42,18 @@ export default function MediaPage() {
   }, [searchQuery, filterType])
 
   useEffect(() => {
-    fetchMedia()
+    (async () => {
+      setLoading(true)
+      try {
+        const data = await getMedia("general")
+        setMediaItems(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load media')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
-
-  const fetchMedia = async () => {
-    try {
-      setError(null)
-      const response = await fetch('/api/media?folder=general')
-      if (!response.ok) {
-        throw new Error('Failed to fetch media')
-      }
-      const data = await response.json()
-      if (!Array.isArray(data)) {
-        throw new Error('Invalid media data received')
-      }
-      setMediaItems(data)
-    } catch (error) {
-      console.error('Failed to fetch media:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load media items. Please try again.')
-      setMediaItems([]) // Set empty array as fallback
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDelete = async (id: string) => {
     try {
@@ -138,14 +122,21 @@ export default function MediaPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      {alert && (
-        <AlertMessage
-          message={alert.message}
-          type={alert.type}
-          onClose={() => setAlert(null)}
-        />
-      )}
+    <>
+      <PageHeader title="Media Gallery">
+        <p className="text-xl text-white/90">
+          Browse through our collection of images and videos showcasing our work and impact in the community.
+        </p>
+      </PageHeader>
+
+      <div className="container mx-auto py-8 px-4">
+        {alert && (
+          <AlertMessage
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -197,6 +188,11 @@ export default function MediaPage() {
                 <Skeleton key={i} className="h-64 w-full rounded-lg" />
               ))}
             </div>
+          ) : paginatedMedia.length === 0 ? (
+            <NoRecords 
+              title="No Media Found" 
+              description="No media items match your current filters. Try adjusting your search or filter criteria."
+            />
           ) : (
             <>
               <div className="w-full">
@@ -237,7 +233,7 @@ export default function MediaPage() {
                           </div>
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-muted-foreground">
-                              {formatDate(item.createdAt)}
+                              {item.createdAt ? formatDate(item.createdAt) : 'N/A'}
                             </p>
                           </div>
                         </CardContent>
@@ -271,7 +267,7 @@ export default function MediaPage() {
                         <div className="flex-1 min-w-0 p-4">
                           <h3 className="font-medium truncate">{item.title}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {item.size.replace('MB', '').trim()} • {formatDate(item.createdAt)}
+                            {item.size ? item.size.replace('MB', '').trim() : 'N/A'} • {item.createdAt ? formatDate(item.createdAt) : 'N/A'}
                           </p>
                         </div>
                         <Button size="icon" variant="secondary">
@@ -320,11 +316,12 @@ export default function MediaPage() {
           <div className="p-4">
             <h2 className="text-xl font-semibold mb-1">{selectedItem?.title}</h2>
             <p className="text-sm text-muted-foreground">
-              {selectedItem?.size.replace('MB', '').trim()} • {selectedItem && formatDate(selectedItem.createdAt)}
+              {selectedItem?.size ? selectedItem.size.replace('MB', '').trim() : 'N/A'} • {selectedItem?.createdAt ? formatDate(selectedItem.createdAt) : 'N/A'}
             </p>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </>
   )
 }

@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, Users, Award, BookOpen, Handshake, Calendar, MapPin } from "lucide-react"
 import Image from "next/image"
 import { PageHeader } from "@/components/page-header"
+import Link from "next/link"
 
 export default function ServicesPage() {
   return (
@@ -40,7 +41,7 @@ export default function ServicesPage() {
                     create a safety net for vulnerable individuals and families.
                   </p>
                   <Button asChild>
-                    <a href="/contact">Get Support</a>
+                    <Link href="/contact">Get Support</Link>
                   </Button>
                 </div>
                 <div className="relative h-[300px] rounded-lg overflow-hidden">
@@ -114,7 +115,7 @@ export default function ServicesPage() {
                     opportunities for lifelong learning and development.
                   </p>
                   <Button asChild>
-                    <a href="/contact">Join a Program</a>
+                    <Link href="/contact">Join a Program</Link>
                   </Button>
                 </div>
               </div>
@@ -235,7 +236,7 @@ export default function ServicesPage() {
               Contact us today to learn more about how we can help you or your community.
             </p>
             <Button asChild size="lg" variant="secondary" className="font-medium">
-              <a href="/contact">Contact Us</a>
+              <Link href="/contact">Contact Us</Link>
             </Button>
           </div>
         </div>

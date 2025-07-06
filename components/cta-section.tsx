@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface CTASectionProps {
   title: string;
@@ -17,7 +18,7 @@ export function CTASection({ title, description, ctaText, ctaLink, className }: 
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">{title}</h2>
           <p className="text-lg text-primary-foreground/90 mb-8">{description}</p>
           <Button asChild size="lg" variant="secondary" className="font-medium">
-            <a href={ctaLink}>{ctaText}</a>
+            <Link href={ctaLink}>{ctaText}</Link>
           </Button>
         </div>
       </div>
