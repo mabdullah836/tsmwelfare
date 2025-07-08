@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { UniversalDialog } from '@/components/modals/UniversalDialog'
 import { cn } from "@/lib/utils"
 import { formatDate } from "@/lib/utils/format"
 import Image from "next/image"
@@ -21,8 +21,8 @@ import { AlertMessage } from "@/components/ui/alert-message"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 import { NoRecords } from '@/components/ui/no-records'
 import { Skeleton } from "@/components/ui/skeleton"
-import { getMedia } from "@/lib/services/media"
-import { Media } from "@/lib/types/media"
+import type { Media } from '@/lib/types/media'
+import { getMedia } from '@/lib/services/media'
 
 
 export default function MediaPage() {
@@ -82,6 +82,7 @@ export default function MediaPage() {
 
   const filteredMedia = useMemo(() => mediaItems?.filter(item => {
     if (!item) return false;
+    if (item.status && item.status !== 'approved') return false;
     const matchesSearch = item.title?.toLowerCase().includes(searchQuery?.toLowerCase() || '');
     const matchesType = filterType === 'all' || item.type === filterType;
     return matchesSearch && matchesType;
@@ -206,7 +207,7 @@ export default function MediaPage() {
                         )}
                         onClick={() => setSelectedItem(item)}
                       >
-                        <div className="aspect-video relative bg-muted overflow-hidden">
+                        <div className="relative aspect-video bg-muted overflow-hidden">
                           {item.type === 'image' ? (
                             <Image
                               src={item.url}
@@ -215,17 +216,22 @@ export default function MediaPage() {
                               className="object-cover transition-transform duration-300 group-hover:scale-105"
                             />
                           ) : (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                              <Play className="h-12 w-12 text-muted-foreground" />
-                            </div>
+                            <>
+                              <img
+                                src={item.thumbnail || '/placeholder-image.svg'}
+                                alt={item.title}
+                                className="object-cover w-full h-full"
+                              />
+                              <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded z-10 shadow">
+                                {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                              </span>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="bg-primary rounded-full p-3 flex items-center justify-center shadow-lg">
+                                  <Play className="h-8 w-8 text-primary-foreground" />
+                                </span>
+                              </div>
+                            </>
                           )}
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div className="absolute bottom-2 right-2">
-                              <Button size="icon" variant="secondary">
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
                         </div>
                         <CardContent className="p-4">
                           <div className="mb-2">
@@ -233,7 +239,7 @@ export default function MediaPage() {
                           </div>
                           <div className="flex items-center justify-between">
                             <p className="text-sm text-muted-foreground">
-                              {item.createdAt ? formatDate(item.createdAt) : 'N/A'}
+                              {item.createdAt ? formatDate(item.createdAt) : ''}
                             </p>
                           </div>
                         </CardContent>
@@ -267,7 +273,7 @@ export default function MediaPage() {
                         <div className="flex-1 min-w-0 p-4">
                           <h3 className="font-medium truncate">{item.title}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {item.size ? item.size.replace('MB', '').trim() : 'N/A'} • {item.createdAt ? formatDate(item.createdAt) : 'N/A'}
+                            {item.size ? item.size.replace('MB', '').trim() : 'N/A'} • {item.createdAt ? formatDate(item.createdAt) : ''}
                           </p>
                         </div>
                         <Button size="icon" variant="secondary">
@@ -300,28 +306,55 @@ export default function MediaPage() {
         </div>
       </div>
 
-      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-4xl p-0">
-          {selectedItem?.type === 'image' && (
-            <div className="relative aspect-video">
-              <Image
-                src={selectedItem.url}
-                alt={selectedItem.title}
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          )}
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-1">{selectedItem?.title}</h2>
-            <p className="text-sm text-muted-foreground">
-              {selectedItem?.size ? selectedItem.size.replace('MB', '').trim() : 'N/A'} • {selectedItem?.createdAt ? formatDate(selectedItem.createdAt) : 'N/A'}
-            </p>
+      <UniversalDialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)} maxWidth="max-w-4xl p-0">
+        {selectedItem?.type === 'image' && (
+          <div className="relative aspect-video">
+            <Image
+              src={selectedItem.url}
+              alt={selectedItem.title}
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-        </DialogContent>
-      </Dialog>
+        )}
+        {selectedItem?.type === 'video' && (
+          <div className="relative aspect-video bg-black flex items-center justify-center">
+            {/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//.test(selectedItem.url) ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url)}`}
+                title="YouTube video player"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            ) : /^https?:\/\/(www\.)?facebook\.com\//.test(selectedItem.url) ? (
+              <iframe
+                src={selectedItem.url}
+                title="Facebook video player"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="text-white p-8">Invalid video URL</div>
+            )}
+          </div>
+        )}
+        <div className="p-4">
+          <h2 className="text-xl font-semibold mb-1">{selectedItem?.title}</h2>
+          <p className="text-sm text-muted-foreground">
+            {selectedItem?.size?.replace('MB', '').trim()} • {selectedItem && formatDate(selectedItem.createdAt || '')}
+          </p>
+          {selectedItem?.description && <div className="mt-2 text-sm">{selectedItem.description}</div>}
+        </div>
+      </UniversalDialog>
       </div>
     </>
   )
+}
+
+function getYouTubeId(url: string) {
+  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/]\S{11})/);
+  return match ? match[1] : '';
 }

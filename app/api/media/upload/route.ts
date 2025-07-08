@@ -1,86 +1,84 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { v2 as cloudinary } from 'cloudinary'
-import { withDbConnection } from '@/lib/mongodb'
-import Media from '@/models/Media'
+import { NextRequest, NextResponse } from 'next/server';
+import { withDbConnection } from '@/lib/mongodb';
+import Media from '@/models/Media';
+import { uploadImage } from '@/lib/cloudinary';
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
 
-export const config = {
-  api: {
-    bodyParser: false,
+// Media service handlers
+const MediaService = {
+  handleVideoUpload: async (formData: FormData) => {
+    const folder = formData.get('folder')?.toString() || 'general';
+    const videoUrl = formData.get('videoUrl')?.toString();
+    const thumbnail = formData.get('thumbnail');
+    const title = formData.get('title')?.toString() || 'Video';
+
+    let thumbnailUrl = '';
+
+    if (thumbnail instanceof File) {
+      const buffer = Buffer.from(await thumbnail.arrayBuffer());
+      const result = await uploadImage(buffer, 'tsmwelfare/thumbnail');
+      thumbnailUrl = result?.secure_url;
+    } else if (typeof thumbnail === 'string') {
+      thumbnailUrl = thumbnail;
+    }
+
+    return withDbConnection(() =>
+      Media.create({
+        name: title,
+        title,
+        type: 'video',
+        url: videoUrl,
+        publicId: '',
+        size: 'N/A',
+        folder,
+        thumbnail: thumbnailUrl,
+        status: 'pending',
+      })
+    );
+  },
+
+  handleFileUploads: async (files: File[], folder: string) => {
+    const uploadPromises = files.map(async (file) => {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const result = await uploadImage(buffer, `tsmwelfare/${folder}`);
+
+      return withDbConnection(() =>
+        Media.create({
+          name: file.name,
+          title: file.name,
+          type: file.type.startsWith('image/') ? 'image' : 'video',
+          url: result?.secure_url,
+          publicId: result?.public_id,
+          size: `${(result?.bytes / (1024 * 1024)).toFixed(2)} MB`,
+          folder,
+        })
+      );
+    });
+
+    return Promise.all(uploadPromises);
   },
 };
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const files = formData.getAll('files') as File[]
-    console.log("==========>>>>>>",files)
-    const folder = formData.get('folder')?.toString() || 'general'
-    console.log("==============>>>>>>>",formData)
-    console.log('Upload request for folder:', folder)
+    const formData = await request.formData();
+    const folder = formData.get('folder')?.toString() || 'general';
+    const videoUrl = formData.get('videoUrl')?.toString();
+    const files = formData.getAll('files') as File[];
 
-    if (!files?.length) {
-      return NextResponse.json({ error: 'No files provided' }, { status: 400 })
+    if (videoUrl) {
+      const media = await MediaService.handleVideoUpload(formData);
+      return NextResponse.json([media]);
     }
 
-    const uploadPromises = files.map(async (file) => {
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
+    if (!files?.length) {
+      return NextResponse.json({ error: 'No files provided' }, { status: 400 });
+    }
 
-      console.log('Uploading file:', file.name, 'to folder:', folder)
-
-      // Upload to Cloudinary with folder structure
-      const result = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: `tsmwelfare/${folder}`,
-            resource_type: 'auto',
-          },
-          (error: unknown, result: unknown) => {
-            if (error) reject(error)
-            else resolve(result)
-          }
-        )
-
-        uploadStream.end(buffer)
-      })
-
-      console.log('Cloudinary upload result:', {
-        publicId: (result as any).public_id,
-        url: (result as any).secure_url,
-        folder: folder
-      })
-
-      // Save to MongoDB with folder information
-      const media = await withDbConnection(async () => {
-        return await Media.create({
-          name: file.name,
-          title: file.name,
-          type: file.type.startsWith('image/') ? 'image' : 'video',
-          url: (result as any).secure_url,
-          publicId: (result as any).public_id,
-          size: ((result as any).bytes / (1024 * 1024)).toFixed(2) + ' MB',
-          folder: folder,
-        })
-      })
-
-      return media
-    })
-
-    const uploadedFiles = await Promise.all(uploadPromises)
-    console.log('All files uploaded successfully:', uploadedFiles.length)
-
-    return NextResponse.json(uploadedFiles)
+    const uploadedFiles = await MediaService.handleFileUploads(files, folder);
+    return NextResponse.json(uploadedFiles);
   } catch (error) {
-    console.error('Upload error:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload files' },
-      { status: 500 }
-    )
+    console.error('Upload error:', error);
+    return NextResponse.json({ error: 'Failed to upload files' }, { status: 500 });
   }
 }
