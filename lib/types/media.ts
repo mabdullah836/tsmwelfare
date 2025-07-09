@@ -10,4 +10,7 @@ export interface Media {
   folder?: 'events' | 'team-members' | 'general';
   createdAt?: string;
   updatedAt?: string;
+  thumbnail?: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  tag?: string;
 } 

@@ -21,7 +21,8 @@ const mediaSchema = new mongoose.Schema({
   },
   publicId: {
     type: String,
-    required: true,
+    required: false,
+    default: '',
   },
   size: {
     type: String,
@@ -29,8 +30,20 @@ const mediaSchema = new mongoose.Schema({
   },
   folder: {
     type: String,
-    enum: ['events', 'team-members', 'general', 'applications'],
+    enum: ['events', 'team-members', 'general', 'applications', 'thumbnails'],
     default: 'general',
+  },
+  thumbnail: {
+    type: String,
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
+  tag: {
+    type: String,
+    default: '',
   },
 }, {
   timestamps: true,
