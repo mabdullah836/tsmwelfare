@@ -41,6 +41,10 @@ const mediaSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending',
   },
+  tag: {
+    type: String,
+    default: '',
+  },
 }, {
   timestamps: true,
 })

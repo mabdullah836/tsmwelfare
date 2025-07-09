@@ -11,6 +11,7 @@ const MediaService = {
     const videoUrl = formData.get('videoUrl')?.toString();
     const thumbnail = formData.get('thumbnail');
     const title = formData.get('title')?.toString() || 'Video';
+    const tag = typeof formData.get('tag') === 'string' ? formData.get('tag')?.toString().trim() : '';
 
     let thumbnailUrl = '';
 
@@ -33,6 +34,7 @@ const MediaService = {
         folder,
         thumbnail: thumbnailUrl,
         status: 'pending',
+        tag,
       })
     );
   },

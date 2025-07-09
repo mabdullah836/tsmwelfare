@@ -33,6 +33,7 @@ export default function MediaPage() {
   const [url, setUrl] = useState('');
   const [thumbnail, setThumbnail] = useState('');
   const [title, setTitle] = useState('');
+  const [tag, setTag] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -141,12 +142,13 @@ export default function MediaPage() {
 
   const handleSave = async () => {
     try {
-      await uploadVideoByUrl({ videoUrl: url, thumbnail, title });
+      await uploadVideoByUrl({ videoUrl: url, thumbnail, title, tag: tag.trim() });
       setAlert({ message: 'Video added successfully.', type: 'success' });
       setShowAddVideo(false);
       setUrl('');
       setThumbnail('');
       setTitle('');
+      setTag('');
       getMedia('general').then(setMediaItems);
     } catch (error) {
       setAlert({ message: error instanceof Error ? error.message : 'Failed to add video.', type: 'error' });
@@ -220,6 +222,8 @@ export default function MediaPage() {
           setThumbnail={setThumbnail}
           title={title}
           setTitle={setTitle}
+          tag={tag}
+          setTag={setTag}
           onSave={handleSave}
         />
         <VideoPreviewDialog

@@ -24,11 +24,11 @@ export async function deleteMedia(id: string): Promise<void> {
   if (!response.ok) throw new Error('Failed to delete media')
 }
 
-export async function uploadVideoByUrl({ videoUrl, thumbnail, title, description, folder = 'general' }: {
+export async function uploadVideoByUrl({ videoUrl, thumbnail, title, tag, folder = 'general' }: {
   videoUrl: string;
   thumbnail: string;
   title?: string;
-  description?: string;
+  tag?: string;
   folder?: string;
 }): Promise<Media[]> {
   const formData = new FormData();
@@ -36,6 +36,7 @@ export async function uploadVideoByUrl({ videoUrl, thumbnail, title, description
   formData.append('thumbnail', thumbnail);
   if (title) formData.append('title', title);
   formData.append('folder', folder);
+  if (tag) formData.append('tag', tag);
   const response = await fetch('/api/media/upload', {
     method: 'POST',
     body: formData,

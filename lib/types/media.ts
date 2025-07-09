@@ -12,4 +12,5 @@ export interface Media {
   updatedAt?: string;
   thumbnail?: string;
   status?: 'pending' | 'approved' | 'rejected';
+  tag?: string;
 } 
