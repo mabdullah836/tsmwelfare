@@ -1,45 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { withDbConnection } from '@/lib/mongodb'
-import Media from '@/models/Media'
 import { deleteImage } from '@/lib/cloudinary'
+import Media from '@/models/Media'
+import { NextResponse } from 'next/server'
 
 export async function DELETE(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id // Extract id at the start
-  
   try {
-    const media = await withDbConnection(async () => {
-      return Media.findById(id);
-    });
-
+    const media = await withDbConnection(() => Media.findById(params.id));
     if (!media) {
-      return NextResponse.json(
-        { error: 'Media not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Media not found' }, { status: 404 });
     }
-
-    // Delete from Cloudinary first
     if (media.publicId) {
       await deleteImage(media.publicId);
     }
-
-    // Then delete from database
-    await withDbConnection(async () => {
-      return Media.findByIdAndDelete(id);
-    });
-
+    await withDbConnection(() => Media.findByIdAndDelete(params.id));
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete media error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to delete media',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
   }
 } 

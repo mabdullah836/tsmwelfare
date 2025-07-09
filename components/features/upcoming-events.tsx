@@ -8,17 +8,8 @@ import { format } from "date-fns"
 import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Skeleton } from "@/components/ui/skeleton"
-
-interface Event {
-  _id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  location: string
-  imageUrl?: string
-  status: 'upcoming' | 'ongoing' | 'completed'
-}
+import { getUpcomingEvents } from "@/lib/services/event"
+import { Event } from "@/lib/types/event"
 
 export function UpcomingEvents() {
   const [events, setEvents] = useState<Event[]>([])
@@ -26,17 +17,14 @@ export function UpcomingEvents() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const loadUpcomingEvents = async () => {
       try {
-        const response = await fetch('/api/events')
-        if (!response.ok) {
-          throw new Error('Failed to fetch events')
-        }
-        const data = await response.json()
+        const data = await getUpcomingEvents()
         setEvents(data)
       } catch (error) {
+        console.error("Error loading upcoming events:", error)
         setAlert({
-          message: "Failed to fetch events. Please try again later.",
+          message: "Failed to fetch upcoming events. Please try again later.",
           type: "error"
         })
         setEvents([])
@@ -44,9 +32,10 @@ export function UpcomingEvents() {
         setIsLoading(false)
       }
     }
-
-    fetchEvents()
+  
+    loadUpcomingEvents()
   }, [])
+  
 
   if (isLoading) {
     return (

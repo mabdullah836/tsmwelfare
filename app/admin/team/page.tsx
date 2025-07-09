@@ -28,24 +28,10 @@ import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
 import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
 import { GridSkeleton } from "@/components/shared/skeletons/GridSkeleton"
-
-// This interface matches our Mongoose model
-interface TeamMember {
-  _id: string
-  name: string
-  role: string
-  bio: string
-  imageUrl?: string
-  order: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface MediaItem {
-  _id: string
-  url: string
-  folder: string
-}
+import { getTeamMembers } from "@/lib/services/team"
+import { getMedia } from "@/lib/services/media"
+import { TeamMember } from "@/lib/types/team"
+import { Media } from "@/lib/types/media"
 
 export default function AdminTeamPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -58,44 +44,38 @@ export default function AdminTeamPage() {
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
 
-  useEffect(() => {
-    fetchTeamMembers()
-  }, [])
-
-  const fetchTeamMembers = async () => {
+  const fetchTeam = async () => {
     try {
-      const response = await fetch('/api/team')
-      if (!response.ok) {
-        throw new Error('Failed to fetch team members')
-      }
-      const data = await response.json()
-      
-      // Fetch only team member images
-      const mediaResponse = await fetch('/api/media?folder=team-members')
-      if (mediaResponse.ok) {
-        const mediaData: MediaItem[] = await mediaResponse.json()
-        // Map media URLs to team members, only using team-member images
-        const teamWithImages = data.map((member: TeamMember) => {
-          const memberMedia = mediaData.find(m => m.url === member.imageUrl && m.folder === 'team-members')
-          return {
-            ...member,
-            imageUrl: memberMedia?.url || member.imageUrl
-          }
-        })
-        setTeamMembers(teamWithImages)
-      } else {
-        setTeamMembers(data)
-      }
+      const [teamData, mediaData] = await Promise.all([
+        getTeamMembers(),
+        getMedia('team-members'),
+      ])
+
+      const teamWithImages = teamData.map((member: TeamMember) => {
+        const memberMedia = mediaData.find(
+          (m: Media) => m.url === member.imageUrl && m.folder === 'team-members'
+        )
+        return {
+          ...member,
+          imageUrl: memberMedia?.url || member.imageUrl,
+        }
+      })
+
+      setTeamMembers(teamWithImages)
     } catch (error) {
       setAlert({
-        message: "Failed to fetch team members",
-        type: "error"
+        message: 'Failed to fetch team members',
+        type: 'error',
       })
-      setTeamMembers([]) // Set empty array as fallback
+      setTeamMembers([])
     } finally {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchTeam()
+  }, [])
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result?.destination) return
@@ -114,10 +94,12 @@ export default function AdminTeamPage() {
 
     // Update order in database
     try {
-      const updates = updatedItems.map(item => ({
-        id: item._id,
-        order: item.order,
-      }))
+      const updates = updatedItems
+        .filter(item => item._id)
+        .map(item => ({
+          id: item._id!,
+          order: item.order,
+        }))
 
       const response = await fetch('/api/team', {
         method: 'PUT',
@@ -140,7 +122,7 @@ export default function AdminTeamPage() {
         type: "error"
       })
       // Revert the state if update fails
-      await fetchTeamMembers()
+      await fetchTeam()
     }
   }
 
@@ -155,12 +137,10 @@ export default function AdminTeamPage() {
       if (imageFile?.size > 0) {
         const imageData = new FormData()
         imageData.append('files', imageFile)
+        imageData.append('folder', 'team-members')
         const uploadResponse = await fetch('/api/media/upload', {
           method: 'POST',
           body: imageData,
-          headers: {
-            'folder': 'team-members'
-          },
         })
         
         if (!uploadResponse.ok) {
@@ -221,12 +201,10 @@ export default function AdminTeamPage() {
       if (imageFile?.size > 0) {
         const imageData = new FormData()
         imageData.append('files', imageFile)
+        imageData.append('folder', 'team-members')
         const uploadResponse = await fetch('/api/media/upload', {
           method: 'POST',
           body: imageData,
-          headers: {
-            'folder': 'team-members'
-          },
         })
         
         if (!uploadResponse.ok) {
@@ -386,7 +364,7 @@ export default function AdminTeamPage() {
     for (const id of ids) {
       await fetch(`/api/team/${id}`, { method: 'DELETE' });
     }
-    setTeamMembers(prev => prev.filter(member => !ids.includes(member._id)));
+    setTeamMembers(prev => prev.filter(member => member._id && !ids.includes(member._id)));
     setSelectedIds([]);
     setAlert({ type: 'success', message: 'Selected team members deleted.' });
   };
@@ -496,7 +474,7 @@ export default function AdminTeamPage() {
                 {(provided) => (
                   <div ref={provided.innerRef} {...provided.droppableProps}>
                     {filteredTeamMembers.map((member, idx) => (
-                      <Draggable key={member._id} draggableId={member._id} index={idx}>
+                      <Draggable key={member._id || idx} draggableId={member._id || ''} index={idx}>
                       {(provided) => (
                         <div
                           ref={provided.innerRef}
@@ -504,7 +482,7 @@ export default function AdminTeamPage() {
                           {...provided.dragHandleProps}
                             className="relative"
                         >
-                            <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(member._id)} onCheckedChange={() => toggleSelect(member._id)} />
+                            <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(member._id || '')} onCheckedChange={() => member._id && toggleSelect(member._id)} />
                           <Card>
                             {viewMode === 'grid' ? (
                               <>
@@ -530,7 +508,7 @@ export default function AdminTeamPage() {
                                     <Button
                                       variant="destructive"
                                       size="sm"
-                                      onClick={() => handleDeleteMember(member._id)}
+                                      onClick={() => member._id && handleDeleteMember(member._id)}
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? "..." : "Delete"}
@@ -576,7 +554,7 @@ export default function AdminTeamPage() {
                                     <Button
                                       variant="destructive"
                                       size="sm"
-                                      onClick={() => handleDeleteMember(member._id)}
+                                      onClick={() => member._id && handleDeleteMember(member._id)}
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? "Deleting..." : "Delete"}

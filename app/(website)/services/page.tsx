@@ -4,20 +4,17 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, Users, Award, BookOpen, Handshake, Calendar, MapPin } from "lucide-react"
 import Image from "next/image"
+import { PageHeader } from "@/components/page-header"
+import Link from "next/link"
 
 export default function ServicesPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Our Services</h1>
-            <p className="text-xl text-white/90">
-              Discover the various ways we're working to make a positive impact in our community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Our Services">
+        <p className="text-xl text-white/90">
+          Discover the various ways we're working to make a positive impact in our community.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container">
@@ -44,7 +41,7 @@ export default function ServicesPage() {
                     create a safety net for vulnerable individuals and families.
                   </p>
                   <Button asChild>
-                    <a href="/contact">Get Support</a>
+                    <Link href="/contact">Get Support</Link>
                   </Button>
                 </div>
                 <div className="relative h-[300px] rounded-lg overflow-hidden">
@@ -118,7 +115,7 @@ export default function ServicesPage() {
                     opportunities for lifelong learning and development.
                   </p>
                   <Button asChild>
-                    <a href="/contact">Join a Program</a>
+                    <Link href="/contact">Join a Program</Link>
                   </Button>
                 </div>
               </div>
@@ -239,7 +236,7 @@ export default function ServicesPage() {
               Contact us today to learn more about how we can help you or your community.
             </p>
             <Button asChild size="lg" variant="secondary" className="font-medium">
-              <a href="/contact">Contact Us</a>
+              <Link href="/contact">Contact Us</Link>
             </Button>
           </div>
         </div>

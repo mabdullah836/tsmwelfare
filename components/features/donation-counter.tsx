@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function DonationCounter() {
   const [progress, setProgress] = useState(0)
@@ -41,7 +42,7 @@ export function DonationCounter() {
           </p>
 
           <Button asChild size="lg">
-            <a href="/donate">Help Us Today</a>
+            <Link href="/donate">Help Us Today</Link>
           </Button>
         </div>
       </div>

@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Heart, CreditCard, Landmark, Smartphone } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { PageHeader } from "@/components/page-header"
+import Link from "next/link"
 
 export default function DonatePage() {
   const [donationAmount, setDonationAmount] = useState<string>("")
@@ -78,16 +80,11 @@ export default function DonatePage() {
           onClose={() => setAlert(null)}
         />
       )}
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Donate</h1>
-            <p className="text-xl text-white/90">
-              Your generosity can change lives. Support our mission to serve the community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Donate">
+        <p className="text-xl text-white/90">
+          Your generosity can change lives. Support our mission to serve the community.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">
@@ -115,7 +112,7 @@ export default function DonatePage() {
                     </p>
                   </div>
                   <Button asChild>
-                    <a href="/">Return to Homepage</a>
+                    <Link href="/">Return to Homepage</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -403,7 +400,7 @@ export default function DonatePage() {
                   Join our team of dedicated volunteers and contribute your time and skills to make a difference.
                 </p>
                 <Button asChild variant="outline" className="w-full">
-                  <a href="/volunteer">Become a Volunteer</a>
+                  <Link href="/volunteer">Become a Volunteer</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -417,7 +414,7 @@ export default function DonatePage() {
                   Become a monthly donor and provide sustainable support for our ongoing programs and services.
                 </p>
                 <Button asChild variant="outline" className="w-full">
-                  <a href="/monthly-giving">Join Monthly Giving</a>
+                  <Link href="/monthly-giving">Join Monthly Giving</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -431,7 +428,7 @@ export default function DonatePage() {
                   Donate goods, supplies, or services that can help us serve our community more effectively.
                 </p>
                 <Button asChild variant="outline" className="w-full">
-                  <a href="/in-kind">Learn More</a>
+                  <Link href="/in-kind">Learn More</Link>
                 </Button>
               </CardContent>
             </Card>

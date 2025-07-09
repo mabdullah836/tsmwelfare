@@ -28,4 +28,19 @@ export async function DELETE(request: Request) {
       if (media.publicId) await deleteImage(media.publicId)
   }
   }))
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { id, status, thumbnail } = await request.json();
+    if (!id) return NextResponse.json({ error: 'Media ID required' }, { status: 400 });
+    const update: any = {};
+    if (status) update.status = status;
+    if (thumbnail) update.thumbnail = thumbnail;
+    const updated = await withDbConnection(() => Media.findByIdAndUpdate(id, update, { new: true }));
+    if (!updated) return NextResponse.json({ error: 'Media not found' }, { status: 404 });
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update media' }, { status: 500 });
+  }
 } 

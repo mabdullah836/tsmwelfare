@@ -1,4 +1,5 @@
 import { Schema } from 'mongoose';
+import mongoose from 'mongoose';
 
 const VolunteerSchema = new Schema({
   firstName: {
@@ -73,4 +74,4 @@ const VolunteerSchema = new Schema({
   timestamps: true
 });
 
-export { VolunteerSchema }; 
+export const VolunteerModel = mongoose.models.Volunteer || mongoose.model('Volunteer', VolunteerSchema);

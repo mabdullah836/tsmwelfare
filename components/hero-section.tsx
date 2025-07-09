@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface HeroSectionProps {
   title: string
@@ -25,7 +26,7 @@ export function HeroSection({
           <p className="text-xl text-white/90 mb-8 text-balance">{subtitle}</p>
           <div className="flex flex-wrap gap-4">
             <Button asChild size="lg" className="font-medium">
-              <a href={ctaLink}>{ctaText}</a>
+              <Link href={ctaLink}>{ctaText}</Link>
             </Button>
             {secondaryCtaText && secondaryCtaLink && (
               <Button
@@ -34,7 +35,7 @@ export function HeroSection({
                 size="lg"
                 className="bg-white/10 text-white border-white/20 hover:bg-white/20 font-medium"
               >
-                <a href={secondaryCtaLink}>{secondaryCtaText}</a>
+                <Link href={secondaryCtaLink}>{secondaryCtaText}</Link>
               </Button>
             )}
           </div>

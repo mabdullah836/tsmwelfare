@@ -1,5 +1,6 @@
 "use client"
 
+import { PageHeader } from "@/components/page-header"
 import {
   Accordion,
   AccordionContent,
@@ -11,18 +12,11 @@ import { faqs } from "@/lib/data/faqs"
 export default function FAQPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">
-              Frequently Asked Questions
-            </h1>
-            <p className="text-xl text-white/90">
-              Find answers to common questions about our organization, programs, and how you can get involved in our mission of serving humanity.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Frequently Asked Questions">
+        <p className="text-xl text-white/90">
+          Find answers to common questions about our organization, programs, and how you can get involved in our mission of serving humanity.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">

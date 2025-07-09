@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { PageHeader } from "@/components/page-header"
+import { contactFaqs } from '@/lib/data/faqs'
 
 interface ContactFormData {
   name: string
@@ -68,16 +70,11 @@ export default function ContactPage() {
           onClose={() => setAlert(null)}
         />
       )}
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Contact Us</h1>
-            <p className="text-xl text-white/90">
-              We'd love to hear from you. Reach out with questions, feedback, or to learn more about our services.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Contact Us">
+        <p className="text-xl text-white/90">
+          We'd love to hear from you. Reach out with questions, feedback, or to learn more about our services.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container">
@@ -251,28 +248,7 @@ export default function ContactPage() {
         <div className="container">
           <h2 className="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {[
-              {
-                question: "How can I volunteer with your organization?",
-                answer:
-                  "We welcome volunteers! Please fill out our volunteer application form on the website or contact our Volunteer Coordinator directly.",
-              },
-              {
-                question: "Do you offer services in languages other than English?",
-                answer:
-                  "Yes, we have staff and volunteers who speak multiple languages. Please let us know your language needs when you contact us.",
-              },
-              {
-                question: "How can I make a donation?",
-                answer:
-                  "You can donate online through our secure portal, mail a check, or contact us about in-kind donations.",
-              },
-              {
-                question: "Do you offer services to all community members?",
-                answer:
-                  "Yes, our services are available to anyone in need in our service area, regardless of background or circumstances.",
-              },
-            ].map((faq, index) => (
+            {contactFaqs.map((faq, index) => (
               <div key={index} className="bg-background rounded-lg p-6 shadow-sm">
                 <h3 className="text-lg font-bold mb-2">{faq.question}</h3>
                 <p className="text-muted-foreground">{faq.answer}</p>

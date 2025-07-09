@@ -1,16 +1,14 @@
+import { PageHeader } from "@/components/page-header";
+import Link from "next/link"
+
 export default function AccessibilityPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Accessibility</h1>
-            <p className="text-xl text-white/90">
-              We are committed to ensuring our website is accessible to everyone, regardless of ability or technology, as we believe in serving all members of our community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Accessibility">
+        <p className="text-xl text-white/90">
+        We are committed to ensuring our website is accessible to everyone, regardless of ability or technology, as we believe in serving all members of our community.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">
@@ -73,7 +71,7 @@ export default function AccessibilityPage() {
                 <a href="mailto:accessibility@sirat-e-mustaqeem.org">accessibility@sirat-e-mustaqeem.org</a>
               </li>
               <li>
-                Using our <a href="/contact">contact form</a>
+                Using our <Link href="/contact">contact form</Link>
               </li>
               <li>Calling us at +92 123 456 7890</li>
             </ul>

@@ -5,17 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import { NoRecords } from "@/components/ui/no-records"
 import { useState } from "react"
-
-interface TeamMember {
-  _id: string
-  name: string
-  role: string
-  bio: string
-  imageUrl?: string
-  order: number
-  createdAt: Date
-  updatedAt: Date
-}
+import { TeamMember } from "@/lib/types/team"
 
 interface TeamSectionProps {
   title?: string
@@ -51,14 +41,14 @@ export const TeamSection = React.memo(function TeamSection({
               <Card key={member._id} className="overflow-hidden flex flex-col">
                 <div className="aspect-square relative bg-muted">
                   <Image
-                    src={imageErrors[member._id] 
+                    src={imageErrors[member._id || ''] 
                       ? `/placeholder.svg?height=400&width=400&text=${member.name.split(" ")[0]}`
                       : member.imageUrl || `/placeholder.svg?height=400&width=400&text=${member.name.split(" ")[0]}`
                     }
                     alt={member.name}
                     fill
                     className="object-cover"
-                    onError={() => handleImageError(member._id)}
+                    onError={() => handleImageError(member._id || '')}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 </div>

@@ -16,13 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatDate } from "@/lib/utils/format"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 import { Checkbox } from "@/components/ui/checkbox"
-import { fetchApplications, updateApplicationStatus } from '@/lib/services/application'
+import { updateApplicationStatus } from '@/lib/services/application'
 import type { Application } from '@/lib/types/application'
-import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
 import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
 import { AdminTable } from "@/components/shared/AdminTable"
+import { getApplications } from "@/lib/services/application"
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
@@ -83,18 +84,25 @@ export default function ApplicationsPage() {
   useEffect(() => {
     (async () => {
       setLoading(true)
-      try {
-        const data = await fetchApplications()
-        console.log("========>>>>>>",data)
-        setApplications(data)
-        setAlert({ message: `Successfully loaded ${data.length} applications`, type: 'success' })
-      } catch (error) {
-        setAlert({ message: 'Failed to fetch applications', type: 'error' })
-      } finally {
-        setLoading(false)
+  
+      const data = await getApplications()
+      setApplications(data)
+  
+      if (data.length > 0) {
+        setAlert({
+          message: `Successfully loaded ${data.length} applications`,
+          type: 'success',
+        })
+      } else {
+        setAlert({
+          message: 'No applications found',
+          type: 'error',
+        })
       }
+      setLoading(false)
     })()
   }, [])
+  
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -272,13 +280,15 @@ export default function ApplicationsPage() {
         </DialogContent>
       </Dialog>
 
-      <ConfirmDeleteModal
+      <ConfirmDialog
         open={showDeleteConfirm}
         title="Delete Applications"
         description="Are you sure you want to delete the selected applications? This action cannot be undone."
+        confirmLabel={deleting ? "Deleting..." : "Delete"}
+        cancelLabel="Cancel"
         loading={deleting}
-        onCancel={() => setShowDeleteConfirm(false)}
         onConfirm={handleBulkDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
       />
     </div>
   )

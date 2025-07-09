@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import {
+  contactAdminText,
+  contactAdminHtml,
+  contactAutoReplyText,
+  contactAutoReplyHtml,
+} from '@/lib/emailTemplates/contact';
 
 export async function POST(request: Request) {
   try {
@@ -22,21 +28,8 @@ export async function POST(request: Request) {
       to: process.env.CONTACT_EMAIL,
       replyTo: email,
       subject: `Contact Form: ${subject}`,
-      text: `
-Name: ${name}
-Email: ${email}
-Subject: ${subject}
-
-Message:
-${message}
-      `,
-      html: `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>From:</strong> ${name} (${email})</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-      `,
+      text: contactAdminText({ name, email, subject, message }),
+      html: contactAdminHtml({ name, email, subject, message }),
     });
 
     // Send an auto-reply to the user
@@ -44,28 +37,8 @@ ${message}
       from: `"Sirat-e-Mustaqeem Welfare Trust" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Thank you for contacting us",
-      text: `
-Dear ${name},
-
-Thank you for contacting Sirat-e-Mustaqeem Welfare Trust. We have received your message and will get back to you as soon as possible.
-
-Your message details:
-Subject: ${subject}
-Message: ${message}
-
-Best regards,
-Sirat-e-Mustaqeem Welfare Trust Team
-      `,
-      html: `
-        <h2>Thank you for contacting us</h2>
-        <p>Dear ${name},</p>
-        <p>Thank you for contacting Sirat-e-Mustaqeem Welfare Trust. We have received your message and will get back to you as soon as possible.</p>
-        <h3>Your message details:</h3>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-        <p>Best regards,<br>Sirat-e-Mustaqeem Welfare Trust Team</p>
-      `,
+      text: contactAutoReplyText({ name, subject, message }),
+      html: contactAutoReplyHtml({ name, subject, message }),
     });
 
     return NextResponse.json(

@@ -6,17 +6,7 @@ import { NoRecords } from "@/components/ui/no-records"
 import Image from "next/image"
 import { format } from "date-fns"
 import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react"
-
-interface Event {
-  _id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  location: string
-  imageUrl?: string
-  status: 'upcoming' | 'ongoing' | 'completed'
-}
+import { Event } from "@/lib/types/event"
 
 interface EventsSectionProps {
   title?: string
