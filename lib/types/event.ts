@@ -1,4 +1,7 @@
+import { ReactNode } from "react";
+
 export interface Event {
+  type: ReactNode;
   _id?: string;
   title: string;
   description: string;
