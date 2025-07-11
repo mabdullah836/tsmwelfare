@@ -21,6 +21,7 @@ import { AdminTable } from "@/components/shared/AdminTable";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
 import { getVolunteers } from "@/lib/services/volunteer"
 import { VolunteerFormData } from "@/lib/types/volunteer"
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
 export default function VolunteersPage() {
   const [volunteers, setVolunteers] = useState<VolunteerFormData[]>([])
@@ -29,29 +30,26 @@ export default function VolunteersPage() {
   const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerFormData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const debouncedSearch = useDebounce(search, 400)
   const [statusFilter, setStatusFilter] = useState("all")
 
+  // Fetch volunteers from API
   useEffect(() => {
-    (async () => {
-      setIsLoading(true)
-      const data = await getVolunteers()
-      setVolunteers(data)
-  
-      if (data.length > 0) {
-        setAlert({
-          type: 'success',
-          message: `Successfully loaded ${data.length} volunteers`,
-        })
-      } else {
-        setAlert({
-          type: 'error',
-          message: 'No volunteers found',
-        })
-      }
-  
+    setIsLoading(true)
+    getVolunteers({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
+      setVolunteers(res.data)
+      setMeta(res.meta)
       setIsLoading(false)
-    })()
-  }, [])
+      setAlert(null)
+    }).catch(() => {
+      setVolunteers([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
+      setIsLoading(false)
+      setAlert({ type: 'error', message: 'Failed to fetch volunteers' })
+    })
+  }, [page, meta.limit, debouncedSearch])
   
 
   const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected') => {
@@ -121,27 +119,8 @@ export default function VolunteersPage() {
     setSelectedVolunteer(null)
   }
 
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalPages,
-    filtered: filteredVolunteers,
-    paginated: paginatedVolunteers,
-  } = usePaginationFilter(volunteers, {
-    pageSize: 10,
-    searchValue: search,
-    filterFn: (v, search) =>
-      v.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      v.lastName.toLowerCase().includes(search.toLowerCase()) ||
-      v.email.toLowerCase().includes(search.toLowerCase()) ||
-      v.phone.toLowerCase().includes(search.toLowerCase()),
-    extraFilters: { statusFilter },
-    extraFilterFn: (v, { statusFilter }) => statusFilter === 'all' || v.status === statusFilter,
-  });
-
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(
-    filteredVolunteers.filter(v => v._id) as { _id: string }[]
+    volunteers.filter(v => v._id) as { _id: string }[]
   );
 
   const deleteVolunteers = async (ids: string[]) => {
@@ -208,9 +187,9 @@ export default function VolunteersPage() {
           <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <CardTitle>Volunteers</CardTitle>
-            <CardDescription>
-              Manage and review volunteer applications
-            </CardDescription>
+              <CardDescription>
+                Manage and review volunteer applications
+              </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {selectedIds.length > 0 && (
@@ -227,45 +206,34 @@ export default function VolunteersPage() {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
               <div className="flex items-center gap-2 flex-1 flex-wrap">
                 <Input
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Search volunteers..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full md:w-72"
                 />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <AdminTable
               columns={columns}
-              data={paginatedVolunteers}
+              data={volunteers}
               loading={isLoading}
               emptyState={{
                 title: "No volunteers found",
-                description: search || statusFilter !== 'all' ? 'Try adjusting your filters or search terms' : 'No volunteer applications available yet.'
+                description: search ? 'Try adjusting your search terms' : 'No volunteer applications available yet.'
               }}
-              pagination={totalPages > 1 && (
+              pagination={meta.pages > 1 && (
                 <Pagination className="mt-8 flex justify-center">
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
                     </PaginationItem>
-                    {[...Array(totalPages)].map((_, i) => (
+                    {[...Array(meta.pages)].map((_, i) => (
                       <PaginationItem key={i}>
                         <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
                       </PaginationItem>
                     ))}
                     <PaginationItem>
-                      <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                      <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
