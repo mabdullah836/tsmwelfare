@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/card";
 import { NewsletterSignup } from "@/components/features/newsletter-signup";
 import { DonationCounter } from "@/components/features/donation-counter";
-import { UpcomingEvents } from "@/components/features/upcoming-events";
+import { EventsSection } from "@/components/features/events-section";
+import { getUpcomingEvents } from "@/lib/services/event";
 import { CustomImage } from "@/components/shared/custom-image";
 import { ImpactStat } from "@/components/shared/impact-stat";
 import DepartmentsPage from "./departments/page";
@@ -17,7 +18,17 @@ import GazaPage from "@/components/gaza/page";
 import { HeroSection } from "@/components/Hero/page";
 import Link from "next/link"
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fetch events server-side
+  let events: any[] = [];
+  let error: string | null = null;
+  try {
+    const res = await getUpcomingEvents({ page: 1, limit: 10 });
+    events = Array.isArray(res?.data) ? res.data : [];
+  } catch (e) {
+    error = "Failed to load events.";
+  }
+
   return (
     <>
       <HeroSection/>
@@ -151,7 +162,13 @@ export default function HomePage() {
 
       <DonationCounter />
 
-      <UpcomingEvents />
+      <EventsSection
+        events={events}
+        rowLimit={3}
+        title="Upcoming Events"
+        description="Join us in making a difference. Here are our upcoming events where you can participate and contribute to our cause."
+        error={error}
+      />
 
       <NewsletterSignup />
 

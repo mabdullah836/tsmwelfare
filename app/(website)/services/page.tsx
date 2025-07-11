@@ -6,6 +6,7 @@ import { Heart, Users, Award, BookOpen, Handshake, Calendar, MapPin } from "luci
 import Image from "next/image"
 import { PageHeader } from "@/components/page-header"
 import Link from "next/link"
+import { AdminGrid } from "@/components/shared/AdminGrid";
 
 export default function ServicesPage() {
   return (
@@ -56,8 +57,8 @@ export default function ServicesPage() {
 
               <div className="mt-12">
                 <h3 className="text-2xl font-bold mb-6">Upcoming Community Events</h3>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[
+                <AdminGrid
+                  items={[
                     {
                       title: "Food Distribution",
                       date: "June 15, 2025",
@@ -76,7 +77,12 @@ export default function ServicesPage() {
                       location: "Neighborhood Streets",
                       description: "Join us in beautifying our community. Tools and refreshments provided.",
                     },
-                  ].map((event, index) => (
+                  ]}
+                  loading={false}
+                  emptyState={{ title: "No events found.", description: "Check back later for upcoming events." }}
+                  skeletonItems={3}
+                  gridClassName="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                  renderItem={(event, index) => (
                     <div key={index} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
                       <h4 className="text-xl font-bold mb-2">{event.title}</h4>
                       <div className="flex items-center text-muted-foreground mb-1">
@@ -89,8 +95,8 @@ export default function ServicesPage() {
                       </div>
                       <p>{event.description}</p>
                     </div>
-                  ))}
-                </div>
+                  )}
+                />
               </div>
             </TabsContent>
 
