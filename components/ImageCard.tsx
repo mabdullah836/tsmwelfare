@@ -3,14 +3,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils/format';
 import type { Media } from '@/lib/types/media';
 
-export const ImageCard = ({ media, selected, onSelect }: { media: Media; selected: boolean; onSelect: () => void }) => (
+export const ImageCard = ({ media, selected, onSelect, onClick }: { media: Media; selected: boolean; onSelect: () => void; onClick?: () => void }) => (
   <div className="relative group">
     <Checkbox
       className="absolute top-2 left-2 z-10"
       checked={selected}
       onCheckedChange={onSelect}
+      onClick={e => e.stopPropagation()}
     />
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden cursor-pointer" onClick={onClick}>
       <CardContent className="p-0">
         <img
           src={media.url ?? ''}
