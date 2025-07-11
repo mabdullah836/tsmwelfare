@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { departments } from "@/lib/constants/departments"
+import { AdminGrid } from "@/components/shared/AdminGrid";
 
 export default function DepartmentsPage() {
   return (
@@ -13,8 +14,13 @@ export default function DepartmentsPage() {
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-        {departments.map((department, index) => (
+      <AdminGrid
+        items={departments}
+        loading={false}
+        emptyState={{ title: "No departments found.", description: "Check back later for updates." }}
+        skeletonItems={6}
+        gridClassName="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
+        renderItem={(department, index) => (
           <Card key={index} className="flex flex-col">
             <CardHeader>
               <div className="flex items-center gap-4 mb-4">
@@ -28,8 +34,8 @@ export default function DepartmentsPage() {
               <p className="text-muted-foreground">{department.description}</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        )}
+      />
     </div>
   )
 }

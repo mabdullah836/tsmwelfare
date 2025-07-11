@@ -13,28 +13,21 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
-import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
+import { GridIcon, ListIcon } from "lucide-react"
 import { format } from "date-fns"
 import { AlertMessage } from "@/components/ui/alert-message"
-import { NoRecords } from '@/components/ui/no-records'
-import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
-import { GridSkeleton } from "@/components/shared/skeletons/GridSkeleton"
 import { uploadMedia } from '@/lib/services/media'
-import { getEventsWithImages } from "@/lib/services/event"
+import { getUpcomingEvents } from '@/lib/services/event'
 import { Event } from "@/lib/types/event"
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
-interface MediaItem {
-  _id: string
-  url: string
-  folder: string
-}
+import { AdminGrid } from "@/components/shared/AdminGrid"
 
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<Event[]>([])
@@ -45,41 +38,25 @@ export default function AdminEventsPage() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const debouncedSearch = useDebounce(search, 400)
 
- 
-useEffect(() => {
-  loadEvents()
-}, [])
-
-const loadEvents = async () => {
-  try {
+  // Fetch events from API
+  useEffect(() => {
     setIsLoading(true)
-    const data = await getEventsWithImages()
-
-    if (data.length > 0) {
-      setEvents(data)
-      setAlert({
-        message: `Successfully loaded ${data.length} events`,
-        type: "success"
-      })
-    } else {
+    getUpcomingEvents({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
+      setEvents(res.data)
+      setMeta(res.meta)
+      setIsLoading(false)
+      setAlert(null)
+    }).catch(() => {
       setEvents([])
-      setAlert({
-        message: "No events found",
-        type: "error"
-      })
-    }
-  } catch (error) {
-    console.error("Error loading events:", error)
-    setEvents([])
-    setAlert({
-      message: "Failed to fetch events",
-      type: "error"
+      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
+      setIsLoading(false)
+      setAlert({ message: 'Failed to fetch events', type: 'error' })
     })
-  } finally {
-    setIsLoading(false)
-  }
-}
+  }, [page, meta.limit, debouncedSearch])
 
   const handleEditEvent = async (formData: FormData) => {
     if (!editingEvent) return
@@ -290,22 +267,7 @@ const loadEvents = async () => {
     )
   }
 
-  const {
-    page,
-    setPage,
-    pageSize,
-    totalPages,
-    filtered: filteredEvents,
-    paginated: paginatedEvents,
-  } = usePaginationFilter(events, {
-    pageSize: 12,
-    searchValue: search,
-    filterFn: (e, search) =>
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      e.location.toLowerCase().includes(search.toLowerCase()),
-  });
-
-  const selectableEvents = filteredEvents.filter(event => typeof event._id === 'string') as { _id: string }[];
+  const selectableEvents = events.filter(event => typeof event._id === 'string') as { _id: string }[];
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableEvents);
 
   const deleteEvents = async (ids: string[]) => {
@@ -397,75 +359,43 @@ const loadEvents = async () => {
             </Dialog>
           </div>
         </div>
-        <div className="relative min-h-[200px]">
-          {isLoading ? (
-            <GridSkeleton items={3} itemHeight={256} gridClassName={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'} />
-          ) : filteredEvents.length === 0 ? (
-            <NoRecords title="No events scheduled" description="Add your first event to get started." />
-          ) : (
-            <div className={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}>
-              {filteredEvents.map((event) => (
-                <div key={event._id} className="relative group">
-                  <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id || '')} onCheckedChange={() => event._id && toggleSelect(event._id)} />
-                  <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">
-                    <div className="relative h-48 w-full bg-gray-100">
-                      {event.imageUrl && (
-                        <Image
-                          src={event.imageUrl}
-                          alt={event.title}
-                          fill
-                          className="object-cover w-full h-full"
-                        />
-                      )}
-                      <div className="absolute top-2 right-2 flex flex-col items-end gap-2 z-20">
-                        <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                          {(event.status || 'upcoming').charAt(0).toUpperCase() + (event.status || 'upcoming').slice(1)}
-                        </span>
-                        <span className="bg-white/80 text-xs px-2 py-0.5 rounded shadow text-gray-700">
-                          {format(new Date(event.date), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                    </div>
-                    <CardHeader className="flex flex-col gap-2 p-4 pb-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <CardTitle className="text-lg font-bold truncate w-3/4">{event.title}</CardTitle>
-                        <div className="flex gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="hover:bg-primary/10"
-                            onClick={() => {
-                              setEditingEvent(event)
-                              setIsDialogOpen(true)
-                            }}
-                          >
-                            <Edit2Icon className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            className="hover:bg-destructive/20"
-                            onClick={() => event._id && handleDeleteEvent(event._id)}
-                            disabled={isSubmitting}
-                          >
-                            {isSubmitting ? <span className="text-xs">...</span> : "✕"}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                        <span className="inline-flex items-center gap-1"><span className="font-medium">Time:</span> {event.time}</span>
-                        <span className="inline-flex items-center gap-1"><span className="font-medium">Location:</span> {event.location}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-2">
-                      <p className="text-sm text-gray-700 line-clamp-3">{event.description}</p>
-                    </CardContent>
-                  </Card>
+        <AdminGrid
+          items={events}
+          loading={isLoading}
+          emptyState={{ title: "No events scheduled", description: "Add your first event to get started." }}
+          skeletonItems={meta.limit}
+          gridClassName={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}
+          renderItem={(event) => (
+            <div key={event._id} className="relative group">
+              <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id || '')} onCheckedChange={() => event._id && toggleSelect(event._id)} />
+              <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">
+                <div className="relative h-48 w-full bg-gray-100">
+                  {event.imageUrl && (
+                    <Image
+                      src={event.imageUrl}
+                      alt={event.title}
+                      fill
+                      className="object-cover w-full h-full"
+                    />
+                  )}
+                  <div className="absolute top-2 right-2 flex flex-col items-end gap-2 z-20">
+                    <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                      {(event.status || 'upcoming').charAt(0).toUpperCase() + (event.status || 'upcoming').slice(1)}
+                    </span>
+                    <span className="bg-white/80 text-xs px-2 py-0.5 rounded shadow text-gray-700">
+                      {format(new Date(event.date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
                 </div>
-              ))}
+                <CardContent>
+                  <h3 className="font-bold mb-1">{event.title}</h3>
+                  <p className="text-primary text-sm font-medium mb-2">{event.type}</p>
+                  <p className="text-muted-foreground text-sm line-clamp-3">{event.description}</p>
+                </CardContent>
+              </Card>
             </div>
           )}
-        </div>
+        />
         <ConfirmDialog
           open={showDeleteConfirm}
           title="Delete Events"

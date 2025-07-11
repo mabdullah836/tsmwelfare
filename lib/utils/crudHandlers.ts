@@ -67,4 +67,36 @@ export async function handlePatchOrPut({ model, id, data, preUpdate }: {
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
   }
+}
+
+// Generic paginated GET handler
+export async function handleGetPaginated({ model, sort = {}, query = {}, page = 1, limit = 10, search = '', searchFields = [] }: {
+  model: any,
+  sort?: any,
+  query?: any,
+  page?: number,
+  limit?: number,
+  search?: string,
+  searchFields?: string[],
+}) {
+  try {
+    const skip = (page - 1) * limit;
+    let finalQuery = { ...query };
+    if (search && searchFields.length > 0) {
+      finalQuery.$or = searchFields.map(field => ({
+        [field]: { $regex: search, $options: 'i' }
+      }));
+    }
+    const [total, data] = await Promise.all([
+      model.countDocuments(finalQuery),
+      model.find(finalQuery).sort(sort).skip(skip).limit(limit)
+    ]);
+    const pages = Math.ceil(total / limit);
+    return NextResponse.json({
+      data,
+      meta: { total, page, pages, limit }
+    });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
+  }
 } 

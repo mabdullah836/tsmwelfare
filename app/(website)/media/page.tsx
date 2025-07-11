@@ -22,6 +22,9 @@
     import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
     import { X } from 'lucide-react'
     import { getYouTubeId } from "@/lib/utils/format"
+    import { useDebounce } from '@/lib/hooks/use-debounce'
+    import { GridSkeleton } from '@/components/shared/skeletons/GridSkeleton'
+    import { AdminGrid } from "@/components/shared/AdminGrid";
 
     export default function MediaPage() {
       const [view, setView] = useState<"grid" | "list">("grid")
@@ -33,25 +36,27 @@
       const [selectedItem, setSelectedItem] = useState<Media | null>(null)
       const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
       const [page, setPage] = useState(1)
-      const pageSize = 12
+      const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 24 })
+      const debouncedSearch = useDebounce(searchQuery, 400)
 
       useEffect(() => {
         setPage(1)
-      }, [searchQuery, activeTab])
+      }, [debouncedSearch, activeTab])
 
       useEffect(() => {
-        (async () => {
-          setLoading(true)
-          try {
-            const data = await getMedia("general")
-            setMediaItems(data)
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load media')
-          } finally {
-            setLoading(false)
-          }
-        })()
-      }, [])
+        setLoading(true)
+        getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' }).then(res => {
+          setMediaItems(res.data.filter(item => item.type === activeTab && (item.type !== 'video' || !item.status || item.status === 'approved')))
+          setMeta(res.meta)
+          setLoading(false)
+          setAlert(null)
+        }).catch((err) => {
+          setMediaItems([])
+          setMeta({ total: 0, page: 1, pages: 1, limit: 24 })
+          setLoading(false)
+          setError(err instanceof Error ? err.message : 'Failed to load media')
+        })
+      }, [page, meta.limit, debouncedSearch, activeTab])
 
 
       const images = useMemo(() => mediaItems.filter(item => item.type === 'image'), [mediaItems]);
@@ -65,17 +70,15 @@
         return matchesSearch && matchesType;
       }) || [], [mediaItems, searchQuery, activeTab]);
 
-      const totalPages = Math.ceil(filteredMedia.length / pageSize);
-
       const paginatedMedia = useMemo(() => {
-        return filteredMedia.slice((page - 1) * pageSize, page * pageSize);
-      }, [filteredMedia, page, pageSize]);
+        return filteredMedia.slice((page - 1) * meta.limit, page * meta.limit);
+      }, [filteredMedia, page, meta.limit]);
 
       useEffect(() => {
-        if (page > totalPages && totalPages > 0) {
-          setPage(totalPages)
+        if (page > meta.pages && meta.pages > 0) {
+          setPage(meta.pages)
         }
-      }, [page, totalPages])
+      }, [page, meta.pages])
 
 
 
@@ -147,160 +150,131 @@
                 </div>
               </div>
 
-              <div className="relative min-h-[200px]">
-                {loading ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
-                    {[...Array(4)].map((_, i) => (
-                      <Skeleton key={i} className="h-64 w-full rounded-lg" />
-                    ))}
-                  </div>
-                ) : paginatedMedia.length === 0 ? (
-                  <NoRecords
-                    title={`No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`}
-                    description={`No ${activeTab === 'image' ? 'images' : 'videos'} match your current filters. Try adjusting your search or check back later.`}
-                  />
-                ) : (
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeTab + view}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -16 }}
-                      transition={{ duration: 0.25 }}
-                      className="w-full"
-                    >
-                      {view === "grid" ? (
-                        <div
-                          className={activeTab === 'image'
-                            ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6'
-                            : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6'}
-                        >
-                          {paginatedMedia.map((item) => (
-                            <Card
-                              key={item._id}
-                              className={cn(
-                                "overflow-hidden group cursor-pointer transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 h-full flex flex-col bg-white dark:bg-zinc-900 border border-muted/40",
-                                activeTab === 'image' ? 'hover:ring-2 hover:ring-primary/30' : ''
-                              )}
-                              onClick={() => setSelectedItem(item)}
-                              tabIndex={0}
-                              aria-label={item.title}
-                              role="button"
-                              onKeyDown={e => { if (e.key === 'Enter') setSelectedItem(item) }}
-                            >
-                              <div className="relative aspect-video bg-muted overflow-hidden">
-                                {activeTab === 'image' ? (
-                                  <Image
-                                    src={item.url}
-                                    alt={item.title}
-                                    fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                    sizes="(max-width: 768px) 100vw, 33vw"
-                                    priority={false}
-                                  />
-                                ) : (
-                                  <>
-                                    <img
-                                      src={item.thumbnail || '/placeholder-image.svg'}
-                                      alt={item.title}
-                                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                                    />
-                                    <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded z-10 shadow">
-                                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                                    </span>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                      <span className="bg-black/60 rounded-full p-3 flex items-center justify-center shadow-lg">
-                                        <Play className="h-8 w-8 text-white" />
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                              <CardContent className="p-4">
-                                {item.type === 'video' && (
-                                  <div className="mb-2">
-                                    <h3 className="font-medium truncate">{item.title}</h3>
-                                  </div>
-                                )}
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm text-muted-foreground">
-                                    {item.createdAt ? formatDate(item.createdAt) : ''}
-                                  </p>
-                                </div>
-                                {item.tag && (
-                                  <div className="flex flex-wrap gap-2 mt-2">
-                                    <span className="bg-muted px-2 py-1 rounded text-xs">{item.tag}</span>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-4">
-                          {paginatedMedia.map((item) => (
-                            <Card
-                              key={item._id}
-                              className={cn(
-                                "overflow-hidden group cursor-pointer transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center bg-white dark:bg-zinc-900 border border-muted/40",
-                                activeTab === 'image' ? 'hover:ring-2 hover:ring-primary/30' : ''
-                              )}
-                              onClick={() => setSelectedItem(item)}
-                              tabIndex={0}
-                              aria-label={item.title}
-                              role="button"
-                              onKeyDown={e => { if (e.key === 'Enter') setSelectedItem(item) }}
-                            >
-                              <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
-                                {activeTab === 'image' ? (
-                                  <Image
-                                    src={item.url}
-                                    alt={item.title}
-                                    fill
-                                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                    sizes="64px"
-                                    priority={false}
-                                  />
-                                ) : (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                                    <Play className="h-8 w-8 text-muted-foreground" />
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0 p-4">
-                                {item.type === 'video' && (
-                                  <h3 className="font-medium truncate">{item.title}</h3>
-                                )}
-                                <p className="text-sm text-muted-foreground">
-                                  {item.size ? item.size.replace('MB', '').trim() : 'N/A'} • {item.createdAt ? formatDate(item.createdAt) : ''}
-                                </p>
-                                {item.tag && (
-                                  <div className="flex flex-wrap gap-2 mt-2">
-                                    <span className="bg-muted px-2 py-1 rounded text-xs">{item.tag}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </Card>
-                          ))}
-                        </div>
+              <AdminGrid
+                items={mediaItems}
+                loading={loading}
+                emptyState={{ title: `No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`, description: `No ${activeTab === 'image' ? 'images' : 'videos'} match your current filters. Try adjusting your search or check back later.` }}
+                skeletonItems={meta.limit}
+                gridClassName={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6' : 'flex flex-col gap-4'}
+                renderItem={(item) => (
+                  view === 'grid' ? (
+                    <Card
+                      key={item._id}
+                      className={cn(
+                        "overflow-hidden group cursor-pointer transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 h-full flex flex-col bg-white dark:bg-zinc-900 border border-muted/40",
+                        activeTab === 'image' ? 'hover:ring-2 hover:ring-primary/30' : ''
                       )}
-                    </motion.div>
-                  </AnimatePresence>
+                      onClick={() => setSelectedItem(item)}
+                      tabIndex={0}
+                      aria-label={item.title}
+                      role="button"
+                      onKeyDown={e => { if (e.key === 'Enter') setSelectedItem(item) }}
+                    >
+                      <div className="relative aspect-video bg-muted overflow-hidden">
+                        {activeTab === 'image' ? (
+                          <Image
+                            src={item.url}
+                            alt={item.title}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            sizes="(max-width: 768px) 100vw, 33vw"
+                            priority={false}
+                          />
+                        ) : (
+                          <>
+                            <img
+                              src={item.thumbnail || '/placeholder-image.svg'}
+                              alt={item.title}
+                              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded z-10 shadow">
+                              {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                            </span>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="bg-black/60 rounded-full p-3 flex items-center justify-center shadow-lg">
+                                <Play className="h-8 w-8 text-white" />
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <CardContent className="p-4">
+                        {item.type === 'video' && (
+                          <div className="mb-2">
+                            <h3 className="font-medium truncate">{item.title}</h3>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-muted-foreground">
+                            {item.createdAt ? formatDate(item.createdAt) : ''}
+                          </p>
+                        </div>
+                        {item.tag && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="bg-muted px-2 py-1 rounded text-xs">{item.tag}</span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card
+                      key={item._id}
+                      className={cn(
+                        "overflow-hidden group cursor-pointer transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center bg-white dark:bg-zinc-900 border border-muted/40",
+                        activeTab === 'image' ? 'hover:ring-2 hover:ring-primary/30' : ''
+                      )}
+                      onClick={() => setSelectedItem(item)}
+                      tabIndex={0}
+                      aria-label={item.title}
+                      role="button"
+                      onKeyDown={e => { if (e.key === 'Enter') setSelectedItem(item) }}
+                    >
+                      <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
+                        {activeTab === 'image' ? (
+                          <Image
+                            src={item.url}
+                            alt={item.title}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                            sizes="64px"
+                            priority={false}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+                            <Play className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 p-4">
+                        {item.type === 'video' && (
+                          <h3 className="font-medium truncate">{item.title}</h3>
+                        )}
+                        <p className="text-sm text-muted-foreground">
+                          {item.size ? item.size.replace('MB', '').trim() : 'N/A'} • {item.createdAt ? formatDate(item.createdAt) : ''}
+                        </p>
+                        {item.tag && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="bg-muted px-2 py-1 rounded text-xs">{item.tag}</span>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  )
                 )}
-              </div>
-              {totalPages > 1 && (
+              />
+              {meta.pages > 1 && (
                 <Pagination className="mt-8 flex justify-center">
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
                     </PaginationItem>
-                    {[...Array(totalPages)].map((_, i) => (
+                    {[...Array(meta.pages)].map((_, i) => (
                       <PaginationItem key={i}>
                         <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
                       </PaginationItem>
                     ))}
                     <PaginationItem>
-                      <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                      <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>

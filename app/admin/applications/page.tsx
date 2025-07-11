@@ -24,6 +24,7 @@ import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
 import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
 import { AdminTable } from "@/components/shared/AdminTable"
 import { getApplications } from "@/lib/services/application"
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
@@ -33,15 +34,18 @@ export default function ApplicationsPage() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const debouncedSearch = useDebounce(search, 400)
 
   // Selection hook
   const { selectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(applications.filter((app): app is Application & { _id: string } => typeof app._id === 'string'))
 
   // Pagination and filtering
   const {
-    page,
-    setPage,
-    totalPages,
+    pageSize: limit,
+    setPage: setPageSize,
+    totalPages: totalPages,
     paginated: paginatedApplications
   } = usePaginationFilter(applications, {
     pageSize: 10,
@@ -81,27 +85,21 @@ export default function ApplicationsPage() {
     handleBulkDelete
   } = useBulkDelete(deleteApplications, selectedIds)
 
+  // Fetch applications from API
   useEffect(() => {
-    (async () => {
-      setLoading(true)
-  
-      const data = await getApplications()
-      setApplications(data)
-  
-      if (data.length > 0) {
-        setAlert({
-          message: `Successfully loaded ${data.length} applications`,
-          type: 'success',
-        })
-      } else {
-        setAlert({
-          message: 'No applications found',
-          type: 'error',
-        })
-      }
+    setLoading(true)
+    getApplications({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
+      setApplications(res.data)
+      setMeta(res.meta)
       setLoading(false)
-    })()
-  }, [])
+      setAlert(null)
+    }).catch(() => {
+      setApplications([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
+      setLoading(false)
+      setAlert({ message: 'Failed to fetch applications', type: 'error' })
+    })
+  }, [page, meta.limit, debouncedSearch])
   
 
   const getStatusBadgeColor = (status: string) => {
@@ -171,40 +169,30 @@ export default function ApplicationsPage() {
                 onChange={e => setSearch(e.target.value)}
                 className="w-full md:w-72"
               />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Status filter can be added to API if needed */}
             </div>
           </div>
           <AdminTable
             columns={columns}
-            data={paginatedApplications}
+            data={applications}
             loading={loading}
             emptyState={{
               title: "No applications found",
-              description: search || statusFilter !== 'all' ? 'Try adjusting your filters or search terms' : 'No applications available yet.'
+              description: search ? 'Try adjusting your search terms' : 'No applications available yet.'
             }}
-            pagination={totalPages > 1 && (
+            pagination={meta.pages > 1 && (
             <Pagination className="mt-8 flex justify-center">
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
                 </PaginationItem>
-                {[...Array(totalPages)].map((_, i) => (
+                {[...Array(meta.pages)].map((_, i) => (
                   <PaginationItem key={i}>
                     <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
                   </PaginationItem>
                 ))}
                 <PaginationItem>
-                  <PaginationNext onClick={() => setPage(p => Math.min(totalPages, p + 1))} isActive={page < totalPages} />
+                  <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
