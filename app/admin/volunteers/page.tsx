@@ -9,59 +9,48 @@ import { formatDate } from "@/lib/utils/format"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface Volunteer {
-  _id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  status: 'pending' | 'approved' | 'rejected'
-  createdAt: string
-  address?: string
-  city?: string
-  occupation?: string
-  availability?: string
-  interests?: string[]
-  skills?: string
-  experience?: string
-  motivation?: string
-  references?: string
-}
+import { NoRecords } from '@/components/ui/no-records'
+import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
+import { TableSkeleton } from "@/components/shared/skeletons/TableSkeleton";
+import { AdminTable } from "@/components/shared/AdminTable";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
+import { getVolunteers } from "@/lib/services/volunteer"
+import { VolunteerFormData } from "@/lib/types/volunteer"
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
 export default function VolunteersPage() {
-  const [volunteers, setVolunteers] = useState<Volunteer[]>([])
+  const [volunteers, setVolunteers] = useState<VolunteerFormData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null)
-  const [selectedVolunteer, setSelectedVolunteer] = useState<Volunteer | null>(null)
+  const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerFormData | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const debouncedSearch = useDebounce(search, 400)
   const [statusFilter, setStatusFilter] = useState("all")
 
+  // Fetch volunteers from API
   useEffect(() => {
-    fetchVolunteers()
-  }, [])
-
-  const fetchVolunteers = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/volunteer')
-      const data = await response.json()
-      if (response.ok && data.success) {
-        console.log(data.data)  
-        setVolunteers(data.data)
-      } else {
-        throw new Error('Failed to fetch volunteers')
-      }
-    } catch (error) {
-      setAlert({
-        type: 'error',
-        message: 'Failed to fetch volunteers'
-      })
-    } finally {
+    setIsLoading(true)
+    getVolunteers({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
+      setVolunteers(res.data)
+      setMeta(res.meta)
       setIsLoading(false)
-    }
-  }
+      setAlert(null)
+    }).catch(() => {
+      setVolunteers([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
+      setIsLoading(false)
+      setAlert({ type: 'error', message: 'Failed to fetch volunteers' })
+    })
+  }, [page, meta.limit, debouncedSearch])
+  
 
   const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected') => {
     try {
@@ -121,7 +110,7 @@ export default function VolunteersPage() {
     }
   }
 
-  const openModal = (volunteer: Volunteer) => {
+  const openModal = (volunteer: VolunteerFormData) => {
     setSelectedVolunteer(volunteer)
     setIsModalOpen(true)
   }
@@ -130,16 +119,59 @@ export default function VolunteersPage() {
     setSelectedVolunteer(null)
   }
 
-  // Filtered volunteers
-  const filteredVolunteers = volunteers.filter((v) => {
-    const matchesSearch =
-      v.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      v.lastName.toLowerCase().includes(search.toLowerCase()) ||
-      v.email.toLowerCase().includes(search.toLowerCase()) ||
-      v.phone.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = statusFilter === "all" || v.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(
+    volunteers.filter(v => v._id) as { _id: string }[]
+  );
+
+  const deleteVolunteers = async (ids: string[]) => {
+    for (const id of ids) {
+      await fetch(`/api/volunteer/${id}`, { method: 'DELETE' });
+    }
+    setVolunteers(prev => prev.filter(v => !ids.includes(v._id || '')));
+    setSelectedIds([]);
+    setAlert({ type: 'success', message: 'Selected volunteers deleted.' });
+  };
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteVolunteers, selectedIds);
+
+  const columns = [
+    { key: "select", label: selectedIds.length > 0 ? (
+      <>
+        <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
+        <Checkbox
+          id="select-all-checkbox"
+          checked={allSelected}
+          onCheckedChange={toggleSelectAll}
+        />
+      </>
+    ) : null, className: "w-8 flex-shrink-0 flex items-center justify-center" },
+    { key: "name", label: "Name", className: "flex-[2]" },
+    { key: "email", label: "Email", className: "flex-[2]" },
+    { key: "phone", label: "Phone", className: "flex-[2]" },
+    { key: "status", label: "Status", className: "flex-[1]" },
+    { key: "appliedOn", label: "Applied On", className: "flex-[2]" },
+    { key: "actions", label: "Actions", className: "flex-[1]" },
+  ];
+
+  const renderVolunteerRow = (v: VolunteerFormData) => {
+    const isSelected = selectedIds.includes(v._id || '');
+    return (
+      <div key={v._id} className="flex items-center border-b" role="row">
+        <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="cell">
+          <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(v._id || '')} />
+        </div>
+        <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.firstName} {v.lastName}</div>
+        <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.email}</div>
+        <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{v.phone}</div>
+        <div className="p-4 flex-[1]" role="cell">
+          <Badge className={getStatusBadgeColor(v.status || 'pending')}>{v.status || 'pending'}</Badge>
+        </div>
+        <div className="p-4 flex-[2]" role="cell">{v.createdAt ? formatDate(v.createdAt) : 'N/A'}</div>
+        <div className="p-4 flex-[1]" role="cell">
+          <Button size="sm" onClick={() => openModal(v)}>View</Button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen">
@@ -152,106 +184,62 @@ export default function VolunteersPage() {
           />
         )}
         <Card>
-          <CardHeader>
-            <CardTitle>Volunteer Applications</CardTitle>
-            <CardDescription>
-              Manage and review volunteer applications
-            </CardDescription>
+          <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle>Volunteers</CardTitle>
+              <CardDescription>
+                Manage and review volunteer applications
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedIds.length > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  {`Delete Selected ${selectedIds.length}`}
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
               <div className="flex items-center gap-2 flex-1 flex-wrap">
                 <Input
-                  placeholder="Search by name, email, or phone..."
+                  placeholder="Search volunteers..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full md:w-72"
                 />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="h-12 px-4 text-left align-middle font-medium">Name</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Email</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Phone</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Status</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Applied On</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">View</th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                        Loading volunteers...
-                      </td>
-                    </tr>
-                  ) : filteredVolunteers.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                        No volunteer applications found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredVolunteers.map((volunteer) => (
-                      <tr key={volunteer._id} className="border-b">
-                        <td className="p-4 align-middle">{volunteer.firstName} {volunteer.lastName}</td>
-                        <td className="p-4 align-middle">{volunteer.email}</td>
-                        <td className="p-4 align-middle">{volunteer.phone}</td>
-                        <td className="p-4 align-middle">
-                          <Badge className={getStatusBadgeColor(volunteer.status)}>
-                            {volunteer.status}
-                          </Badge>
-                        </td>
-                        <td className="p-4 align-middle">{formatDate(volunteer.createdAt)}</td>
-                        <td className="p-4 align-middle">
-                          <Button size="sm" variant="outline" onClick={() => openModal(volunteer)}>
-                            View
-                          </Button>
-                        </td>
-                        <td className="p-4 align-middle">
-                          <div className="flex gap-2">
-                            {volunteer.status === 'pending' ? (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleStatusChange(volunteer._id, 'approved')}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleStatusChange(volunteer._id, 'rejected')}
-                                >
-                                  Reject
-                                </Button>
-                              </>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <AdminTable
+              columns={columns}
+              data={volunteers}
+              loading={isLoading}
+              emptyState={{
+                title: "No volunteers found",
+                description: search ? 'Try adjusting your search terms' : 'No volunteer applications available yet.'
+              }}
+              pagination={meta.pages > 1 && (
+                <Pagination className="mt-8 flex justify-center">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+                    </PaginationItem>
+                    {[...Array(meta.pages)].map((_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+              renderRow={renderVolunteerRow}
+            />
           </CardContent>
         </Card>
         <Dialog open={isModalOpen} onOpenChange={closeModal}>
@@ -265,7 +253,7 @@ export default function VolunteersPage() {
                 <div><b>Email:</b> {selectedVolunteer.email}</div>
                 <div><b>Phone:</b> {selectedVolunteer.phone}</div>
                 <div><b>Status:</b> {selectedVolunteer.status}</div>
-                <div><b>Applied On:</b> {formatDate(selectedVolunteer.createdAt)}</div>
+                <div><b>Applied On:</b> {selectedVolunteer.createdAt ? formatDate(selectedVolunteer.createdAt) : 'N/A'}</div>
                 {selectedVolunteer.address && <div><b>Address:</b> {selectedVolunteer.address}</div>}
                 {selectedVolunteer.city && <div><b>City:</b> {selectedVolunteer.city}</div>}
                 {selectedVolunteer.occupation && <div><b>Occupation:</b> {selectedVolunteer.occupation}</div>}
@@ -279,6 +267,16 @@ export default function VolunteersPage() {
             )}
           </DialogContent>
         </Dialog>
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          title="Delete Volunteers"
+          description="Are you sure you want to delete the selected volunteers? This action cannot be undone."
+          confirmLabel={deleting ? "Deleting..." : "Delete"}
+          cancelLabel="Cancel"
+          loading={deleting}
+          onConfirm={handleBulkDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       </div>
     </div>
   )

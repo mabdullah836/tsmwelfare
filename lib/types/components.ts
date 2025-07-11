@@ -1,4 +1,5 @@
 import { StaticImageData } from 'next/image';
+import { LucideIcon } from 'lucide-react';
 
 export interface FeatureCardProps {
   title: string;
@@ -33,13 +34,10 @@ export interface Event {
 }
 
 export interface Department {
-  id: string;
-  name: string;
+  icon: LucideIcon;
+  title: string;
   description: string;
-  image?: string;
-  contactPerson?: string;
-  email?: string;
-  phone?: string;
+  color: string;
 }
 
 export interface ImpactStatProps {

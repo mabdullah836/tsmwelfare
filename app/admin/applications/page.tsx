@@ -1,42 +1,30 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { AlertMessage } from "@/components/ui/alert-message"
-import { NoRecords } from "@/components/ui/no-records"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface Application {
-  _id: string
-  type: string
-  name: string
-  email: string
-  phone: string
-  address: string
-  description: string
-  documents: string[]
-  status: string
-  createdAt: string
-  cnic: string
-}
+import { formatDate } from "@/lib/utils/format"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
+import { Checkbox } from "@/components/ui/checkbox"
+import { updateApplicationStatus } from '@/lib/services/application'
+import type { Application } from '@/lib/types/application'
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
+import { AdminTable } from "@/components/shared/AdminTable"
+import { getApplications } from "@/lib/services/application"
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
@@ -46,61 +34,73 @@ export default function ApplicationsPage() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const debouncedSearch = useDebounce(search, 400)
 
-  useEffect(() => {
-    fetchApplications()
+  // Selection hook
+  const { selectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(applications.filter((app): app is Application & { _id: string } => typeof app._id === 'string'))
+
+  // Pagination and filtering
+  const {
+    pageSize: limit,
+    setPage: setPageSize,
+    totalPages: totalPages,
+    paginated: paginatedApplications
+  } = usePaginationFilter(applications, {
+    pageSize: 10,
+    searchValue: search,
+    filterFn: (item, search) => {
+      const s = search.toLowerCase()
+      return (
+        item.name.toLowerCase().includes(s) ||
+        item.email.toLowerCase().includes(s) ||
+        item.type.toLowerCase().includes(s)
+      )
+    },
+    extraFilters: { status: statusFilter },
+    extraFilterFn: (item, filters) => {
+      if (!filters || !filters.status || filters.status === 'all') return true
+      return item.status === filters.status
+    }
+  })
+
+  // Delete function for API
+  const deleteApplications = useCallback(async (ids: string[]) => {
+    await fetch("/api/applications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids })
+    })
+    // Refresh applications after delete
+    setApplications(apps => apps.filter(app => !ids.includes(app._id!)))
+    setAlert({ message: "Applications deleted successfully", type: "success" })
   }, [])
 
-  const fetchApplications = async () => {
-    try {
-      const response = await fetch('/api/applications')
-      const data = await response.json()
-      console.log(data)
-      if (data.length) {
-        setApplications(data)
-        setAlert({
-          message: `Successfully loaded ${data.length} applications`,
-          type: "success"
-        })
-      }
-    } catch (error) {
-      setAlert({
-        message: "Failed to fetch applications",
-        type: "error"
-      })
-    } finally {
+  // Bulk delete hook
+  const {
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    deleting,
+    handleBulkDelete
+  } = useBulkDelete(deleteApplications, selectedIds)
+
+  // Fetch applications from API
+  useEffect(() => {
+    setLoading(true)
+    getApplications({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
+      setApplications(res.data)
+      setMeta(res.meta)
       setLoading(false)
-    }
-  }
-
-  const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
-    try {
-      const response = await fetch(`/api/applications/${applicationId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
-        setApplications(applications.map(a => 
-          a._id === applicationId ? { ...a, status: newStatus } : a
-        ))
-        setAlert({
-          message: "Application status has been updated",
-          type: "success"
-        })
-      }
-    } catch (error) {
-      setAlert({
-        message: "Failed to update application status",
-        type: "error"
-      })
-    }
-  }
+      setAlert(null)
+    }).catch(() => {
+      setApplications([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
+      setLoading(false)
+      setAlert({ message: 'Failed to fetch applications', type: 'error' })
+    })
+  }, [page, meta.limit, debouncedSearch])
+  
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -113,23 +113,24 @@ export default function ApplicationsPage() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-  }
-
-  // Filtered applications
-  const filteredApplications = applications.filter((a) => {
-    const matchesSearch =
-      a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.email.toLowerCase().includes(search.toLowerCase()) ||
-      a.type.toLowerCase().includes(search.toLowerCase())
-    const matchesStatus = statusFilter === "all" || a.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const columns = [
+    { key: "select", label: selectedIds.length > 0 ? (
+      <>
+        <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
+        <Checkbox
+          id="select-all-checkbox"
+          checked={allSelected}
+          onCheckedChange={toggleSelectAll}
+        />
+      </>
+    ) : null, className: "w-8 flex-shrink-0 flex items-center justify-center" },
+    { key: "name", label: "Name", className: "flex-[2]" },
+    { key: "type", label: "Type", className: "flex-[2]" },
+    { key: "contact", label: "Contact", className: "flex-[3]" },
+    { key: "appliedOn", label: "Applied On", className: "flex-[2]" },
+    { key: "status", label: "Status", className: "flex-[1]" },
+    { key: "actions", label: "Actions", className: "flex-[1]" },
+  ];
 
   return (
     <div className="container py-10">
@@ -141,11 +142,23 @@ export default function ApplicationsPage() {
         />
       )}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
           <CardTitle>Applications</CardTitle>
           <CardDescription>
             Manage and review assistance applications
           </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                {`Delete Selected ${selectedIds.length}`}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
@@ -156,147 +169,82 @@ export default function ApplicationsPage() {
                 onChange={e => setSearch(e.target.value)}
                 className="w-full md:w-72"
               />
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Status filter can be added to API if needed */}
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <Table className="min-w-[700px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Applied On</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10">Loading...</TableCell>
-                  </TableRow>
-                ) : filteredApplications.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10">No applications found</TableCell>
-                  </TableRow>
-                ) : (
-                  filteredApplications.map((application) => (
-                    <TableRow key={application._id}>
-                      <TableCell className="whitespace-nowrap">{application.name}</TableCell>
-                      <TableCell className="whitespace-nowrap capitalize">
-                        {application.type.replace("_", " ")}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="whitespace-nowrap">{application.email}</div>
-                          <div className="whitespace-nowrap">{application.phone}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">{formatDate(application.createdAt)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusBadgeColor(application.status)}>
-                          {application.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedApplication(application)
-                              setShowDetails(true)
-                            }}
-                          >
-                            View
-                          </Button>
-                          {application.status === 'pending' && (
-                            <>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => updateApplicationStatus(application._id, 'approved')}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => updateApplicationStatus(application._id, 'rejected')}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <AdminTable
+            columns={columns}
+            data={applications}
+            loading={loading}
+            emptyState={{
+              title: "No applications found",
+              description: search ? 'Try adjusting your search terms' : 'No applications available yet.'
+            }}
+            pagination={meta.pages > 1 && (
+            <Pagination className="mt-8 flex justify-center">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+                </PaginationItem>
+                {[...Array(meta.pages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+            renderRow={(application) => {
+              const isSelected = application._id ? selectedIds.includes(application._id) : false;
+              return (
+                <div key={application._id} className="flex items-center border-b" role="row">
+                  <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="cell">
+                    <Checkbox checked={isSelected} onCheckedChange={() => application._id && toggleSelect(application._id)} />
+                  </div>
+                  <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{application.name}</div>
+                  <div className="p-4 flex-[2] whitespace-nowrap capitalize" role="cell">{application.type.replace("_", " ")}</div>
+                  <div className="p-4 flex-[3]" role="cell">
+                    <div className="space-y-1">
+                      <div>{application.email}</div>
+                      <div>{application.phone}</div>
+                    </div>
+                  </div>
+                  <div className="p-4 flex-[2]" role="cell">{formatDate(application.createdAt || '')}</div>
+                  <div className="p-4 flex-[1]" role="cell">
+                    <Badge className={getStatusBadgeColor(application.status)}>{application.status}</Badge>
+                  </div>
+                  <div className="p-4 flex-[1]" role="cell">
+                    <Button size="sm" onClick={() => { setSelectedApplication(application); setShowDetails(true); }}>
+                      View
+                    </Button>
+                  </div>
+                </div>
+              );
+            }}
+          />
         </CardContent>
       </Card>
 
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Application Details</DialogTitle>
+          </DialogHeader>
           {selectedApplication && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Application Details</DialogTitle>
-                <DialogDescription>
-                  Submitted on {formatDate(selectedApplication.createdAt)}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-6 py-4">
-                <div>
-                  <h3 className="font-medium mb-2">Personal Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Name</p>
-                      <p>{selectedApplication.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p>{selectedApplication.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p>{selectedApplication.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">CNIC</p>
-                      <p>{selectedApplication.cnic}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Address</p>
-                      <p>{selectedApplication.address}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Type</p>
-                      <p className="capitalize">{selectedApplication.type.replace("_", " ")}</p>
-                    </div>
-                  </div>
-                </div>
-
+            <div className="space-y-2 mt-4">
+              <div><b>Name:</b> {selectedApplication.name}</div>
+              <div><b>Email:</b> {selectedApplication.email}</div>
+              <div><b>Phone:</b> {selectedApplication.phone}</div>
+              <div><b>Status:</b> {selectedApplication.status}</div>
+              <div><b>Type:</b> {selectedApplication.type.replace("_", " ")}</div>
+              <div><b>Applied On:</b> {formatDate(selectedApplication.createdAt || '')}</div>
                 <div>
                   <h3 className="font-medium mb-2">Description</h3>
                   <p className="text-sm">{selectedApplication.description}</p>
                 </div>
-
                 {selectedApplication.documents.length > 0 && (
                   <div>
                     <h3 className="font-medium mb-2">Documents</h3>
@@ -316,10 +264,20 @@ export default function ApplicationsPage() {
                   </div>
                 )}
               </div>
-            </>
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Delete Applications"
+        description="Are you sure you want to delete the selected applications? This action cannot be undone."
+        confirmLabel={deleting ? "Deleting..." : "Delete"}
+        cancelLabel="Cancel"
+        loading={deleting}
+        onConfirm={handleBulkDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   )
 }

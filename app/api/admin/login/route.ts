@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const response = NextResponse.json({ success: true });
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      path: '/admin', // Match the middleware path
+      path: '/', // Match the middleware path
       maxAge: 60 * 60 * 24 * 7,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production', // Secure in production

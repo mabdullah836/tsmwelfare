@@ -1,47 +1,25 @@
-import { NextResponse } from 'next/server'
+import { handlePatchOrPut } from '@/lib/utils/crudHandlers'
 import { withDbConnection } from '@/lib/mongodb'
 import { deleteImage } from '@/lib/cloudinary'
 import Event from '@/models/Event'
+import { NextResponse } from 'next/server'
 
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // First, get the event to access its imageUrl
-    const event = await withDbConnection(async () => {
-      return Event.findById(params.id)
-    })
-
+    const event = await withDbConnection(() => Event.findById(params.id));
     if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
-
-    // If there's an image, delete it from Cloudinary
     if (event.imageUrl) {
-      try {
-        await deleteImage(event.imageUrl)
-      } catch (cloudinaryError) {
-        console.error('Error deleting image from Cloudinary:', cloudinaryError)
-        // Continue with event deletion even if image deletion fails
-      }
+      await deleteImage(event.imageUrl);
     }
-
-    // Delete the event from the database
-    await withDbConnection(async () => {
-      return Event.findByIdAndDelete(params.id)
-    })
-
-    return NextResponse.json({ message: 'Event deleted successfully' })
+    await withDbConnection(() => Event.findByIdAndDelete(params.id));
+    return NextResponse.json({ message: 'Event deleted successfully' });
   } catch (error) {
-    console.error('Error deleting event:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete event' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
   }
 }
 
@@ -75,30 +53,6 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const data = await request.json()
-
-    const event = await withDbConnection(async () => {
-      return Event.findByIdAndUpdate(
-        params.id,
-        data,
-        { new: true }
-      )
-    })
-
-    if (!event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(event)
-  } catch (error) {
-    console.error('Error updating event:', error)
-    return NextResponse.json(
-      { error: 'Failed to update event' },
-      { status: 500 }
-    )
-  }
+  const data = await request.json();
+  return await withDbConnection(() => handlePatchOrPut({ model: Event, id: params.id, data }));
 } 

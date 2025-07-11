@@ -3,13 +3,14 @@ import { withDbConnection } from '@/lib/mongodb';
 import Admin from '@/models/Admin';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.split(' ')[1];
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth-token')?.value;
     if (!token) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }

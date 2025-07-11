@@ -1,11 +1,13 @@
 "use client"
 
+import { PageHeader } from "@/components/page-header"
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calculator, HelpCircle } from "lucide-react"
+import Link from "next/link"
 
 export default function ZakatCalculatorPage() {
   const [goldValue, setGoldValue] = useState<number>(0)
@@ -46,14 +48,9 @@ export default function ZakatCalculatorPage() {
 
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Zakat Calculator</h1>
-            <p className="text-xl text-white/90">Calculate your Zakat accurately with our easy-to-use calculator.</p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Zakat Calculator">
+        <p className="text-xl text-white/90">Calculate your Zakat accurately with our easy-to-use calculator.</p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">
@@ -317,7 +314,7 @@ export default function ZakatCalculatorPage() {
                           )}
                           {calculatedZakat > 0 && (
                             <Button asChild className="mt-4">
-                              <a href="/donate?amount={calculatedZakat}&type=zakat">Pay Zakat Now</a>
+                              <Link href={`/donate?amount=${calculatedZakat}&type=zakat`}>Pay Zakat Now</Link>
                             </Button>
                           )}
                         </div>
@@ -404,9 +401,9 @@ export default function ZakatCalculatorPage() {
                   <div className="pt-4 border-t">
                     <p className="font-medium">
                       If you have any questions about Zakat or need assistance with your calculation, please{" "}
-                      <a href="/contact" className="text-primary hover:underline">
+                      <Link href="/contact" className="text-primary hover:underline">
                         contact us
-                      </a>
+                      </Link>
                       .
                     </p>
                   </div>

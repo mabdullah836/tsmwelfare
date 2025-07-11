@@ -1,9 +1,9 @@
-import type React from "react"
+import React from "react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FeatureCardProps } from "@/lib/types/components"
 
-export function FeatureCard({ title, description, icon, className }: FeatureCardProps) {
+export const FeatureCard = React.memo(function FeatureCard({ title, description, icon, className }: FeatureCardProps) {
   return (
     <Card className={cn("feature-card", className)}>
       <CardHeader className="pb-2">
@@ -17,4 +17,4 @@ export function FeatureCard({ title, description, icon, className }: FeatureCard
       </CardContent>
     </Card>
   )
-}
+});

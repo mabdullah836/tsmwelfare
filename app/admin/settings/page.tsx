@@ -59,7 +59,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30">
+    <div className="h-[calc(100vh-150px)] flex items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Admin Settings</CardTitle>

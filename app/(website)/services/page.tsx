@@ -1,23 +1,21 @@
 import { FeatureCard } from "@/components/shared/feature-card"
-import { Carousel } from "@/components/carousel"
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Heart, Users, Award, BookOpen, Handshake, Calendar, MapPin } from "lucide-react"
 import Image from "next/image"
+import { PageHeader } from "@/components/page-header"
+import Link from "next/link"
+import { AdminGrid } from "@/components/shared/AdminGrid";
 
 export default function ServicesPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Our Services</h1>
-            <p className="text-xl text-white/90">
-              Discover the various ways we're working to make a positive impact in our community.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Our Services">
+        <p className="text-xl text-white/90">
+          Discover the various ways we're working to make a positive impact in our community.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container">
@@ -44,7 +42,7 @@ export default function ServicesPage() {
                     create a safety net for vulnerable individuals and families.
                   </p>
                   <Button asChild>
-                    <a href="/contact">Get Support</a>
+                    <Link href="/contact">Get Support</Link>
                   </Button>
                 </div>
                 <div className="relative h-[300px] rounded-lg overflow-hidden">
@@ -59,8 +57,8 @@ export default function ServicesPage() {
 
               <div className="mt-12">
                 <h3 className="text-2xl font-bold mb-6">Upcoming Community Events</h3>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[
+                <AdminGrid
+                  items={[
                     {
                       title: "Food Distribution",
                       date: "June 15, 2025",
@@ -79,7 +77,12 @@ export default function ServicesPage() {
                       location: "Neighborhood Streets",
                       description: "Join us in beautifying our community. Tools and refreshments provided.",
                     },
-                  ].map((event, index) => (
+                  ]}
+                  loading={false}
+                  emptyState={{ title: "No events found.", description: "Check back later for upcoming events." }}
+                  skeletonItems={3}
+                  gridClassName="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                  renderItem={(event, index) => (
                     <div key={index} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
                       <h4 className="text-xl font-bold mb-2">{event.title}</h4>
                       <div className="flex items-center text-muted-foreground mb-1">
@@ -92,8 +95,8 @@ export default function ServicesPage() {
                       </div>
                       <p>{event.description}</p>
                     </div>
-                  ))}
-                </div>
+                  )}
+                />
               </div>
             </TabsContent>
 
@@ -118,7 +121,7 @@ export default function ServicesPage() {
                     opportunities for lifelong learning and development.
                   </p>
                   <Button asChild>
-                    <a href="/contact">Join a Program</a>
+                    <Link href="/contact">Join a Program</Link>
                   </Button>
                 </div>
               </div>
@@ -176,53 +179,58 @@ export default function ServicesPage() {
             </p>
           </div>
 
-          <Carousel
-            className="h-[400px] max-w-4xl mx-auto"
-            items={[
-              <div key="1" className="h-full rounded-lg overflow-hidden relative">
-                <Image
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Service highlight"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">Community Garden Project</h3>
-                  <p className="text-white/90">
-                    Our community garden provides fresh produce and a space for neighbors to connect and learn.
-                  </p>
+          <Carousel className="h-[400px] max-w-4xl mx-auto">
+            <CarouselContent>
+              <CarouselItem>
+                <div className="h-full rounded-lg overflow-hidden relative">
+                  <Image
+                    src="/placeholder.svg?height=400&width=800"
+                    alt="Service highlight"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">Community Garden Project</h3>
+                    <p className="text-white/90">
+                      Our community garden provides fresh produce and a space for neighbors to connect and learn.
+                    </p>
+                  </div>
                 </div>
-              </div>,
-              <div key="2" className="h-full rounded-lg overflow-hidden relative">
-                <Image
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Service highlight"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">Youth Mentorship Program</h3>
-                  <p className="text-white/90">
-                    Our mentorship program pairs young people with caring adults who provide guidance and support.
-                  </p>
+              </CarouselItem>
+              <CarouselItem>
+                <div className="h-full rounded-lg overflow-hidden relative">
+                  <Image
+                    src="/placeholder.svg?height=400&width=800"
+                    alt="Service highlight"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">Youth Mentorship Program</h3>
+                    <p className="text-white/90">
+                      Our mentorship program pairs young people with caring adults who provide guidance and support.
+                    </p>
+                  </div>
                 </div>
-              </div>,
-              <div key="3" className="h-full rounded-lg overflow-hidden relative">
-                <Image
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Service highlight"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
-                  <h3 className="text-2xl font-bold text-white mb-2">Senior Support Services</h3>
-                  <p className="text-white/90">
-                    We help older adults remain independent and connected through various support services.
-                  </p>
+              </CarouselItem>
+              <CarouselItem>
+                <div className="h-full rounded-lg overflow-hidden relative">
+                  <Image
+                    src="/placeholder.svg?height=400&width=800"
+                    alt="Service highlight"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">Senior Support Services</h3>
+                    <p className="text-white/90">
+                      We help older adults remain independent and connected through various support services.
+                    </p>
+                  </div>
                 </div>
-              </div>,
-            ]}
-          />
+              </CarouselItem>
+            </CarouselContent>
+          </Carousel>
         </div>
       </section>
 
@@ -234,7 +242,7 @@ export default function ServicesPage() {
               Contact us today to learn more about how we can help you or your community.
             </p>
             <Button asChild size="lg" variant="secondary" className="font-medium">
-              <a href="/contact">Contact Us</a>
+              <Link href="/contact">Contact Us</Link>
             </Button>
           </div>
         </div>

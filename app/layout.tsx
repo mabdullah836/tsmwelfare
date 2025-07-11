@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/shared/theme-provider"
 import { cn } from "@/lib/utils"
+import SecretAdminAccess from "@/components/SecretAdminAccess"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,8 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)}>
+      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <SecretAdminAccess />
           <div className="flex min-h-screen flex-col">
             <main className="flex-1">{children}</main>
           </div>

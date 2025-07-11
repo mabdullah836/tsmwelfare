@@ -13,83 +13,50 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
-import { Edit2Icon, Loader2Icon } from "lucide-react"
+import { GridIcon, ListIcon } from "lucide-react"
 import { format } from "date-fns"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { uploadMedia } from '@/lib/services/media'
+import { getUpcomingEvents } from '@/lib/services/event'
+import { Event } from "@/lib/types/event"
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
-interface Event {
-  _id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  location: string
-  imageUrl?: string
-  status: 'upcoming' | 'ongoing' | 'completed'
-}
-
-interface MediaItem {
-  _id: string
-  url: string
-  folder: string
-}
+import { AdminGrid } from "@/components/shared/AdminGrid"
 
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const debouncedSearch = useDebounce(search, 400)
 
+  // Fetch events from API
   useEffect(() => {
-    fetchEvents()
-  }, [])
-
-  const fetchEvents = async () => {
-    try {
-     
-      const response = await fetch('/api/events')
-      if (!response.ok) {
-        throw new Error('Failed to fetch events')
-      }
-      const data = await response.json()
-
-      // Fetch only event images
-      const mediaResponse = await fetch('/api/media?folder=events')
-      if (mediaResponse.ok) {
-        const mediaData: MediaItem[] = await mediaResponse.json()
-        // Map media URLs to events, only using event images
-        const eventsWithImages = data.map((event: Event) => {
-          const eventMedia = mediaData.find(m => m.url === event.imageUrl && m.folder === 'events')
-          return {
-            ...event,
-            imageUrl: eventMedia?.url || event.imageUrl
-          }
-        })
-        setEvents(eventsWithImages)
-      } else {
-        setEvents(data)
-      }
-      if (data.length > 0) {
-      setAlert({
-          message: `Successfully loaded ${data.length} events`,
-          type: "success"
-        })
-      }
-    } catch (error) {
-      setAlert({
-        message: "Failed to fetch events",
-        type: "error"
-      })
-      setEvents([])
-    } finally {
+    setIsLoading(true)
+    getUpcomingEvents({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
+      setEvents(res.data)
+      setMeta(res.meta)
       setIsLoading(false)
-    }
-  }
+      setAlert(null)
+    }).catch(() => {
+      setEvents([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
+      setIsLoading(false)
+      setAlert({ message: 'Failed to fetch events', type: 'error' })
+    })
+  }, [page, meta.limit, debouncedSearch])
 
   const handleEditEvent = async (formData: FormData) => {
     if (!editingEvent) return
@@ -100,24 +67,8 @@ export default function AdminEventsPage() {
       let imageUrl = editingEvent.imageUrl
 
       if (imageFile?.size > 0) {
-        const imageData = new FormData()
-        imageData.append('files', imageFile)
-        const uploadResponse = await fetch('/api/media/upload', {
-          method: 'POST',
-          body: imageData,
-          headers: {
-            'folder': 'events',
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json()
-          throw new Error(error.message || 'Failed to upload image')
-        }
-        
-        const uploadResult = await uploadResponse.json()
-        imageUrl = uploadResult[0]?.url
+        const uploaded = await uploadMedia([imageFile], 'events')
+        imageUrl = uploaded[0]?.url
       }
 
       const updatedEvent = {
@@ -169,24 +120,8 @@ export default function AdminEventsPage() {
       let imageUrl = undefined
 
       if (imageFile?.size > 0) {
-        const imageData = new FormData()
-        imageData.append('files', imageFile)
-        const uploadResponse = await fetch('/api/media/upload', {
-          method: 'POST',
-          body: imageData,
-          headers: {
-            'folder': 'events',
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json()
-          throw new Error(error.message || 'Failed to upload image')
-        }
-        
-        const uploadResult = await uploadResponse.json()
-        imageUrl = uploadResult[0]?.url
+        const uploaded = await uploadMedia([imageFile], 'events')
+        imageUrl = uploaded[0]?.url
       }
 
       const newEvent = {
@@ -229,7 +164,7 @@ export default function AdminEventsPage() {
   }
 
   const handleDeleteEvent = async (id: string) => {
-    setIsDeleting(id)
+    setIsSubmitting(true)
     try {
       const response = await fetch(`/api/events/${id}`, {
         method: 'DELETE',
@@ -251,7 +186,7 @@ export default function AdminEventsPage() {
         type: "error"
       })
     } finally {
-      setIsDeleting(null)
+      setIsSubmitting(false)
     }
   }
 
@@ -332,18 +267,18 @@ export default function AdminEventsPage() {
     )
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <div className="container py-10">
-          <div className="flex items-center justify-center">
-            <Loader2Icon className="h-6 w-6 animate-spin" />
-            <span className="ml-2">Loading events...</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const selectableEvents = events.filter(event => typeof event._id === 'string') as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableEvents);
+
+  const deleteEvents = async (ids: string[]) => {
+    for (const id of ids) {
+      await fetch(`/api/events/${id}`, { method: 'DELETE' });
+    }
+    setEvents(prev => prev.filter(event => event._id && !ids.includes(event._id)));
+    setSelectedIds([]);
+    setAlert({ type: 'success', message: 'Selected events deleted.' });
+  };
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteEvents, selectedIds);
 
   return (
     <div className="min-h-screen">
@@ -355,91 +290,122 @@ export default function AdminEventsPage() {
             onClose={() => setAlert(null)}
           />
         )}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <h1 className="text-3xl font-bold">Manage Events</h1>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open)
-            if (!open) setEditingEvent(null)
-          }}>
-            <DialogTrigger asChild>
-              <Button>Add Event</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingEvent ? "Edit Event" : "Add New Event"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingEvent 
-                    ? "Update the event's information below."
-                    : "Add a new event to your calendar. Fill in the details below."
-                  }
-                </DialogDescription>
-              </DialogHeader>
-              <EventForm event={editingEvent || undefined} />
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Input
+              placeholder="Search events..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-48"
+            />
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="h-8 w-8 p-0"
+            >
+              <GridIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="h-8 w-8 p-0"
+            >
+              <ListIcon className="h-4 w-4" />
+            </Button>
+            <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="columnheader">
+              {selectedIds.length > 0 && (
+                <>
+                  <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
+                  <Checkbox
+                    id="select-all-checkbox"
+                    checked={allSelected}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </>
+              )}
+            </div>
+            {selectedIds.length > 0 && (
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete Selected
+              </Button>
+            )}
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open)
+              if (!open) setEditingEvent(null)
+            }}>
+              <DialogTrigger asChild>
+                <Button>Add Event</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingEvent ? "Edit Event" : "Add New Event"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingEvent 
+                      ? "Update the event's information below."
+                      : "Add a new event to your calendar. Fill in the details below."
+                    }
+                  </DialogDescription>
+                </DialogHeader>
+                <EventForm event={editingEvent || undefined} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-
-        <div className="grid gap-6">
-          {events.length === 0 ? (
-            <Card className="p-8 text-center">
-              <CardContent>
-                <p className="text-muted-foreground">No events scheduled. Add your first event to get started.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            events.map((event) => (
-              <Card key={event._id}>
-                <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+        <AdminGrid
+          items={events}
+          loading={isLoading}
+          emptyState={{ title: "No events scheduled", description: "Add your first event to get started." }}
+          skeletonItems={meta.limit}
+          gridClassName={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}
+          renderItem={(event) => (
+            <div key={event._id} className="relative group">
+              <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id || '')} onCheckedChange={() => event._id && toggleSelect(event._id)} />
+              <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">
+                <div className="relative h-48 w-full bg-gray-100">
                   {event.imageUrl && (
-                    <div className="relative h-20 w-32 rounded overflow-hidden flex-shrink-0">
-                      <Image
-                        src={event.imageUrl}
-                        alt={event.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                    <Image
+                      src={event.imageUrl}
+                      alt={event.title}
+                      fill
+                      className="object-cover w-full h-full"
+                    />
                   )}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="mb-1">{event.title}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingEvent(event)
-                            setIsDialogOpen(true)
-                          }}
-                        >
-                          <Edit2Icon className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteEvent(event._id)}
-                          disabled={isDeleting === event._id}
-                        >
-                          {isDeleting === event._id ? "Deleting..." : "Delete"}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{format(new Date(event.date), 'MMMM d, yyyy')}</span>
-                      <span>{event.time}</span>
-                      <span>{event.location}</span>
-                    </div>
+                  <div className="absolute top-2 right-2 flex flex-col items-end gap-2 z-20">
+                    <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                      {(event.status || 'upcoming').charAt(0).toUpperCase() + (event.status || 'upcoming').slice(1)}
+                    </span>
+                    <span className="bg-white/80 text-xs px-2 py-0.5 rounded shadow text-gray-700">
+                      {format(new Date(event.date), 'MMM d, yyyy')}
+                    </span>
                   </div>
-                </CardHeader>
+                </div>
                 <CardContent>
-                  <p className="text-muted-foreground">{event.description}</p>
+                  <h3 className="font-bold mb-1">{event.title}</h3>
+                  <p className="text-primary text-sm font-medium mb-2">{event.type}</p>
+                  <p className="text-muted-foreground text-sm line-clamp-3">{event.description}</p>
                 </CardContent>
               </Card>
-            ))
+            </div>
           )}
-        </div>
+        />
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          title="Delete Events"
+          description="Are you sure you want to delete the selected events? This action cannot be undone."
+          confirmLabel={isSubmitting ? "Deleting..." : "Delete"}
+          cancelLabel="Cancel"
+          loading={isSubmitting}
+          onConfirm={handleBulkDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       </div>
     </div>
   )

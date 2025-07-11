@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
 import { withDbConnection } from '@/lib/mongodb';
 import Donation from '@/models/Donation';
+import { handleGetPaginated } from '@/lib/utils/crudHandlers';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const donations = await withDbConnection(async () => {
-      return Donation.find().sort({ createdAt: -1 });
-    });
-    return NextResponse.json(donations);
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '10', 10)
+    const search = searchParams.get('q') || ''
+    return await withDbConnection(() => handleGetPaginated({
+      model: Donation,
+      sort: { createdAt: -1 },
+      page,
+      limit,
+      search,
+      searchFields: ['donor', 'email', 'type', 'status']
+    }))
   } catch (error) {
     console.error('Error fetching donations:', error);
     return NextResponse.json({ 

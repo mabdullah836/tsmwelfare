@@ -1,59 +1,29 @@
-import { NextResponse } from 'next/server';
-import { withDbConnection } from '@/lib/mongodb';
-import { VolunteerModel } from '@/models';
+import { NextRequest } from 'next/server'
+import { VolunteerModel } from '@/models/volunteer'
+import { handleBulkDelete, handleGetAll, handlePost, handleGetPaginated } from '@/lib/utils/crudHandlers'
+import { withDbConnection } from '@/lib/mongodb'
 
-export async function POST(request: Request) {
-  try {
-    const formData = await request.json();
-    
-    // Create new volunteer application using withDbConnection
-    const volunteer = await withDbConnection(async () => {
-      return VolunteerModel.create({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        occupation: formData.occupation,
-        availability: formData.availability,
-        interests: formData.interests,
-        skills: formData.skills || '',
-        experience: formData.experience || '',
-        motivation: formData.motivation,
-        references: formData.references || '',
-        status: 'pending'
-      });
-    });
-
-    return NextResponse.json(
-      { success: true, message: "Volunteer application submitted successfully" },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error processing volunteer application:", error);
-    return NextResponse.json(
-      { success: false, message: "Failed to submit volunteer application" },
-      { status: 500 }
-    );
-  }
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const limit = parseInt(searchParams.get('limit') || '10', 10)
+  const search = searchParams.get('q') || ''
+  return await withDbConnection(() => handleGetPaginated({
+    model: VolunteerModel,
+    sort: { createdAt: -1 },
+    page,
+    limit,
+    search,
+    searchFields: ['name', 'email', 'phone', 'city']
+  }))
 }
 
-export async function GET() {
-  try {
-    const volunteers = await withDbConnection(async () => {
-      return VolunteerModel.find().sort({ createdAt: -1 });
-    });
-    
-    return NextResponse.json(
-      { success: true, data: volunteers },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error fetching volunteer applications:", error);
-    return NextResponse.json(
-      { success: false, message: "Failed to fetch volunteer applications" },
-      { status: 500 }
-    );
-  }
+export async function POST(request: NextRequest) {
+  const data = await request.json()
+  return await withDbConnection(() => handlePost({ model: VolunteerModel, data }))
+}
+
+export async function DELETE(request: Request) {
+  const { ids } = await request.json()
+  return await withDbConnection(() => handleBulkDelete({ model: VolunteerModel, ids }))
 } 

@@ -20,11 +20,6 @@ export const faqs: FAQ[] = [
       "We run several key programs: 1) Free medical camps at our head office and emergency medical assistance during disasters (like the recent floods in Balochistan and Sindh), 2) Weekly food distribution to needy families, 3) Educational support including school fees and supplies, 4) Marriage support for orphan girls, 5) Financial assistance for emergencies, and 6) Special Ramadan ration distribution to over 500 families. Each program is designed to address specific community needs.",
   },
   {
-    question: "How can I volunteer with your organization?",
-    answer:
-      "We welcome volunteers who want to contribute their time and skills. You can volunteer in various capacities: helping at our medical camps, assisting in food distribution, teaching at educational programs, or supporting our administrative work. Sign up through our website or contact our volunteer coordinator for more information. All volunteer positions are unpaid, focusing on community service and spiritual fulfillment.",
-  },
-  {
     question: "How is my donation used?",
     answer:
       "Your donations are used transparently to support our core programs: 40% for food distribution and emergency relief, 25% for healthcare initiatives, 20% for educational support, 10% for marriage support programs, and 5% for administrative costs. We maintain detailed records and provide regular reports on fund utilization to ensure accountability.",
@@ -54,4 +49,27 @@ export const faqs: FAQ[] = [
     answer:
       "We are a registered non-profit organization in Pakistan. You can verify our authenticity through: 1) Our registration documents available at our office, 2) Our transparent financial reports published annually, 3) Our physical presence in Landhi, Karachi, and 4) Our track record of serving the community since 2016. We welcome visitors to our office to see our work firsthand.",
   },
-] 
+];
+
+export const contactFaqs: FAQ[] = [
+  {
+    question: "How can I volunteer with your organization?",
+    answer:
+      "We welcome volunteers! Please fill out our volunteer application form on the website or contact our Volunteer Coordinator directly.",
+  },
+  {
+    question: "Do you offer services in languages other than English?",
+    answer:
+      "Yes, we have staff and volunteers who speak multiple languages. Please let us know your language needs when you contact us.",
+  },
+  {
+    question: "How can I make a donation?",
+    answer:
+      "You can donate online through our secure portal, mail a check, or contact us about in-kind donations.",
+  },
+  {
+    question: "Do you offer services to all community members?",
+    answer:
+      "Yes, our services are available to anyone in need in our service area, regardless of background or circumstances.",
+  },
+]; 

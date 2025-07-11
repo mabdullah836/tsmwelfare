@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-header"
 import { ApplicationForm } from "@/components/application-form"
 
 export const metadata = {
@@ -9,18 +10,11 @@ export const metadata = {
 export default function ApplyPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">
-              Apply for Assistance
-            </h1>
-            <p className="text-xl text-white/90">
-              Submit your application for various types of assistance. We are here to help you in your time of need.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Apply for Assistance">
+        <p className="text-xl text-white/90">
+          Submit your application for various types of assistance. We are here to help you in your time of need.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-2xl">

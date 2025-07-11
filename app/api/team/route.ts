@@ -1,65 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withDbConnection } from '@/lib/mongodb'
 import Team from '@/models/Team'
+import { deleteImage } from '@/lib/cloudinary'
+import { handleBulkDelete, handleGetAll, handlePost, handleGetPaginated } from '@/lib/utils/crudHandlers'
+import { withDbConnection } from '@/lib/mongodb'
 
 // GET all team members
-export async function GET() {
-  try {
-    const teamMembers = await withDbConnection(async () => {
-      return Team.find().sort({ order: 1 })
-    })
-    
-    return NextResponse.json(teamMembers)
-  } catch (error) {
-    console.error('Error fetching team members:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch team members' },
-      { status: 500 }
-    )
-  }
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const limit = parseInt(searchParams.get('limit') || '10', 10)
+  const search = searchParams.get('q') || ''
+  return await withDbConnection(() => handleGetPaginated({
+    model: Team,
+    sort: { order: 1 },
+    page,
+    limit,
+    search,
+    searchFields: ['name', 'role', 'bio']
+  }))
 }
 
 // POST new team member
 export async function POST(request: NextRequest) {
-  try {
     const data = await request.json()
-    
-    const teamMember = await withDbConnection(async () => {
-      // Get the highest order number and add 1
+  // Add order logic (highest order + 1)
       const maxOrder = await Team.findOne().sort('-order')
       const order = maxOrder ? maxOrder.order + 1 : 1
-      
-      return Team.create({ ...data, order })
-    })
-    
-    return NextResponse.json(teamMember)
-  } catch (error) {
-    console.error('Error creating team member:', error)
-    return NextResponse.json(
-      { error: 'Failed to create team member' },
-      { status: 500 }
-    )
-  }
+  return await withDbConnection(() => handlePost({ model: Team, data: { ...data, order } }))
 }
 
 // PUT update team member order
 export async function PUT(request: NextRequest) {
   try {
     const updates = await request.json()
-    
-    await withDbConnection(async () => {
-      // Update each team member's order
       for (const update of updates) {
         await Team.findByIdAndUpdate(update.id, { order: update.order })
       }
-    })
-    
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating team member order:', error)
-    return NextResponse.json(
-      { error: 'Failed to update team member order' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to update team member order' }, { status: 500 })
   }
+}
+
+// DELETE bulk team members
+export async function DELETE(request: Request) {
+  const { ids } = await request.json()
+  return await withDbConnection(() => handleBulkDelete({
+    model: Team,
+    ids,
+    perItemCleanup: async (member) => {
+      if (member.imageUrl) await deleteImage(member.imageUrl)
+  }
+  }))
 } 

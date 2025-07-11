@@ -1,16 +1,13 @@
+import { PageHeader } from "@/components/page-header"
+
 export default function PrivacyPolicyPage() {
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">Privacy Policy</h1>
-            <p className="text-xl text-white/90">
-              Learn about how we collect, use, and protect your personal information at The Sirat-e-Mustaqeem Welfare Trust.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="Privacy Policy">
+        <p className="text-xl text-white/90">
+          Learn about how we collect, use, and protect your personal information at The Sirat-e-Mustaqeem Welfare Trust.
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">

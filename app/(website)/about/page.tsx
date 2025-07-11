@@ -2,58 +2,28 @@ import Image from "next/image"
 import { Typewriter } from "@/components/shared/typewriter"
 import { Card, CardContent } from "@/components/ui/card"
 import { Award, Users, Heart, Lightbulb } from "lucide-react"
-import { TeamSection } from "@/components/features/team-section"
-import { EventsSection } from "@/components/features/events-section"
 
-async function getTeamMembers() {
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/team`, {
-      next: { revalidate: 60 }, // Revalidate every minute
-    })
-    if (!response.ok) {
-      throw new Error('Failed to fetch team members')
-    }
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('Error fetching team members:', error)
-    return [] // Return empty array as fallback
-  }
-}
-
-async function getUpcomingEvents() {
-  try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/events`, {
-      next: { revalidate: 60 }, // Revalidate every minute
-    })
-    if (!response.ok) throw new Error('Failed to fetch events')
-    return response.json()
-  } catch (error) {
-    console.error('Error fetching events:', error)
-    return []
-  }
-}
+import { PageHeader } from "@/components/page-header"
+import TeamGrid from "./TeamGrid"
 
 export default async function AboutPage() {
-  const teamMembers = await getTeamMembers()
-  const events = await getUpcomingEvents()
 
   return (
     <>
-      <section className="bg-primary text-white py-16 md:py-24">
-        <div className="container">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-6">About Our Organization</h1>
-            <p className="text-xl text-white/90">
-              We are dedicated to{" "}
-              <Typewriter
-                words={["empowering communities", "creating change", "building futures", "inspiring hope"]}
-                className="text-secondary-foreground font-medium"
-              />
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHeader title="About Our Organization">
+        <p className="text-xl text-white/90">
+          We are dedicated to{" "}
+          <Typewriter
+            words={[
+              "empowering communities",
+              "creating change",
+              "building futures",
+              "inspiring hope",
+            ]}
+            className="text-secondary-foreground font-medium"
+          />
+        </p>
+      </PageHeader>
 
       <section className="py-16">
         <div className="container">
@@ -128,13 +98,13 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <TeamSection teamMembers={teamMembers} />
+      <section className="py-16 bg-muted/50">
+        <div className="container">
+          <h2 className="text-3xl font-bold mb-12 text-center">Meet Our Team</h2>
+          <TeamGrid />
+        </div>
+      </section>
 
-      <EventsSection 
-        title="Our Events"
-        description="Join us in making a difference. Here are our upcoming events where you can participate and contribute to our cause."
-        events={events} 
-      />
     </>
   )
 }

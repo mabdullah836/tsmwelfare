@@ -1,83 +1,62 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { NoRecords } from "@/components/ui/no-records"
-import Image from "next/image"
-import { format } from "date-fns"
-import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react"
-
-interface Event {
-  _id: string
-  title: string
-  description: string
-  date: string
-  time: string
-  location: string
-  imageUrl?: string
-  status: 'upcoming' | 'ongoing' | 'completed'
-}
+import React from "react"
+import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AlertMessage } from '@/components/ui/alert-message';
+import { EventCard } from './EventCard';
 
 interface EventsSectionProps {
-  title?: string
-  description?: string
-  events: Event[]
+  title?: string;
+  description?: string;
+  events: any[];
+  rowLimit?: number;
+  loading?: boolean;
+  error?: string | null;
 }
 
-export function EventsSection({ 
-  title = "Upcoming Events", 
-  description = "Join us in our upcoming events and be part of our mission.", 
-  events 
+export function EventsSection({
+  title = 'Upcoming Events',
+  description = 'Join us in making a difference. Here are our upcoming events where you can participate and contribute to our cause.',
+  events = [],
+  rowLimit = 3,
+  loading = false,
+  error = null,
 }: EventsSectionProps) {
+  const showViewAll = events.length > rowLimit;
+  const visibleEvents = events.slice(0, rowLimit);
+
   return (
     <section className="py-16">
       <div className="container">
-        <h2 className="text-3xl font-bold mb-12 text-center">{title}</h2>
-        {description && (
-          <p className="text-lg text-muted-foreground text-center max-w-3xl mx-auto mb-12">
-            {description}
-          </p>
+        <h2 className="text-3xl font-bold mb-6 text-center">{title}</h2>
+        {description && <p className="text-lg text-muted-foreground text-center max-w-3xl mx-auto mb-12">{description}</p>}
+        {error && (
+          <AlertMessage message={error} type="error" />
         )}
-        {events.length === 0 ? (
-          <NoRecords 
-            title="No Events Scheduled"
-            description="There are no upcoming events at the moment. Please check back later for new events."
-          />
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {events.map((event) => (
-              <Card key={event._id} className="overflow-hidden flex flex-col">
-                <div className="aspect-video relative bg-muted">
-                  <Image
-                    src={event.imageUrl || `/placeholder.svg?height=400&width=600&text=Event`}
-                    alt={event.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-                <CardContent className="pt-6 flex-1 flex flex-col">
-                  <h3 className="text-xl font-bold mb-3">{event.title}</h3>
-                  <p className="text-muted-foreground mb-4 flex-1">{event.description}</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      <span>{format(new Date(event.date), 'MMMM d, yyyy')}</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <ClockIcon className="h-4 w-4 mr-2" />
-                      <span>{event.time}</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <MapPinIcon className="h-4 w-4 mr-2" />
-                      <span>{event.location}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+          {loading ? (
+            Array.from({ length: rowLimit }).map((_, i) => (
+              <Skeleton key={i} className="h-64 w-full rounded-lg" />
+            ))
+          ) : visibleEvents.length === 0 ? (
+            <div className="col-span-full text-center text-muted-foreground py-12">No events found.</div>
+          ) : (
+            visibleEvents.map(event => (
+              <EventCard key={event._id} event={event} />
+            ))
+          )}
+        </div>
+        {showViewAll && !loading && (
+          <div className="flex justify-center">
+            <Link href="/events">
+              <button className="px-6 py-2 rounded bg-primary text-white font-semibold hover:bg-primary/90 transition">View All Events</button>
+            </Link>
           </div>
         )}
       </div>
     </section>
-  )
+  );
 } 
+
+export { EventCard };

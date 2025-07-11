@@ -24,4 +24,21 @@ export const slugify = (text: string): string => {
     .toLowerCase()
     .replace(/[^\w ]+/g, '')
     .replace(/ +/g, '-');
-}; 
+};
+
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+export function isValidVideoUrl(url: string): boolean {
+  return /^(https?:\/\/(www\.)?(youtube\.com|youtu\.be|facebook\.com)\/)/.test(url);
+}
+
+export function getYouTubeId(url: string): string {
+  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/]\S{11})/);
+  return match ? match[1] : '';
+} 

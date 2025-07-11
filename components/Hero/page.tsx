@@ -3,6 +3,7 @@ import { Typewriter } from '../shared/typewriter'
 import { Button } from '../ui/button'
 import { ArrowRightIcon } from 'lucide-react'
 import { CustomImage } from '../shared/custom-image'
+import Link from "next/link"
 
 export const HeroSection = () => {
   return (
@@ -48,13 +49,13 @@ export const HeroSection = () => {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="font-medium">
-                  <a href="/services">See Our Work</a>
+                  <Link href="/services">See Our Work</Link>
                 </Button>
                 <Button variant="outline" size="lg" className="font-medium">
-                  <a href="/donate" className="flex items-center gap-2">
+                  <Link href="/donate" className="flex items-center gap-2">
                     Join Our Mission
                     <ArrowRightIcon className="w-4 h-4" />
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>

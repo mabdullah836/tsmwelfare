@@ -1,176 +1,165 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Image, Upload, Grid, List, Search, AlertCircle, Trash2 } from "lucide-react"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { cn } from "@/lib/utils"
-import { formatDate } from "@/lib/utils/format"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { AlertMessage } from "@/components/ui/alert-message"
-  
-interface MediaItem {
-  _id: string;
-  name: string;
-  title: string;
-  description?: string;
-  type: 'image' | 'video';
-  url: string;
-  size: string;
-  publicId: string;
-  folder?: string;
-  createdAt: string;
-}
+import { useState, useEffect, useMemo } from "react"
+import { AlertMessage } from '@/components/ui/alert-message'
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { getMedia, deleteMedia, updateMediaStatus, uploadVideoByUrl } from '@/lib/services/media'
+import type { Media } from '@/lib/types/media'
+import { useDebounce } from '@/lib/hooks/use-debounce'
+
+import { MediaStats } from '@/components/media/MediaStats'
+import { MediaToolbar } from '@/components/media/MediaToolbar'
+import { AddVideoDialog } from '@/components/media/AddVideoDialog'
+import { VideoPreviewDialog } from '@/components/media/VideoPreviewDialog'
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
+import { AdminGrid } from "@/components/shared/AdminGrid";
+import { ImageCard } from '@/components/ImageCard';
+import { VideoCard } from '@/components/VideoCard';
+import { UniversalDialog } from '@/components/modals/UniversalDialog';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function MediaPage() {
-  const [view, setView] = useState<"grid" | "list">("grid")
-  const [filterType, setFilterType] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+  const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [filterType, setFilterType] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [mediaItems, setMediaItems] = useState<Media[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
+  const [deletingSingle, setDeletingSingle] = useState(false)
+  const [showAddVideo, setShowAddVideo] = useState(false)
+  const [showVideoModal, setShowVideoModal] = useState(false)
+  const [activeVideo, setActiveVideo] = useState<Media | null>(null)
+  const [approving, setApproving] = useState(false)
+  const [url, setUrl] = useState('');
+  const [thumbnail, setThumbnail] = useState('');
+  const [title, setTitle] = useState('');
+  const [tag, setTag] = useState('');
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 12 })
+  const debouncedSearch = useDebounce(searchQuery, 400)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [activeImage, setActiveImage] = useState<Media | null>(null)
 
+  // Fetch media from API
   useEffect(() => {
-    fetchMedia()
-  }, [])
-
-  const fetchMedia = async () => {
-    try {
-      setError(null)
-      setAlert({
-        message: "Fetching media items...",
-        type: "success"
-      })
-      const response = await fetch('/api/media?folder=general')
-      if (!response.ok) throw new Error('Failed to fetch media')
-      const data = await response.json()
-      const generalMedia = data.filter((item: MediaItem) => item.folder === 'general' || !item.folder)
-      setMediaItems(generalMedia)
-      setAlert({
-        message: `Successfully loaded ${generalMedia.length} media items`,
-        type: "success"
-      })
-    } catch (error) {
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to load media items",
-        type: "error"
-      })
-      setMediaItems([])
-    } finally {
+    setLoading(true)
+    getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' }).then(res => {
+      setMediaItems(res.data)
+      setMeta(res.meta)
       setLoading(false)
-    }
-  }
+      setAlert(null)
+    }).catch(() => {
+      setMediaItems([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 12 })
+      setLoading(false)
+      setAlert({ message: 'Failed to fetch media', type: 'error' })
+    })
+  }, [page, meta.limit, debouncedSearch])
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-    if (!files?.length) return
-
-    setUploading(true)
-    setError(null)
-    try {
-      const formData = new FormData()
-      Array.from(files).forEach(file => {
-        formData.append('files', file)
-      })
-
-      const response = await fetch('/api/media/upload', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'folder': 'general',
-        },
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Upload failed')
-      }
-      
-      await fetchMedia()
-      event.target.value = ''
-      setAlert({
-        message: `Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''} to general folder`,
-        type: "success"
-      })
-    } catch (error) {
-      console.error('Upload failed:', error)
-      setError('Failed to upload files. Please try again.')
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to upload files",
-        type: "error"
-      })
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const handleDelete = async (id: string) => {
-    try {
-      const response = await fetch(`/api/media/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete media')
-      }
-
-      setMediaItems(prev => prev.filter(item => item._id !== id))
-      setAlert({
-        message: "Media item has been permanently removed",
-        type: "success"
-      })
-    } catch (error) {
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to delete media item",
-        type: "error"
-      })
-    }
-  }
-
-  const filteredMedia = mediaItems.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesType = filterType === 'all' || item.type === filterType
-    return matchesSearch && matchesType
-  })
-
-  const stats = {
+  const stats = useMemo(() => ({
     total: mediaItems.length,
     images: mediaItems.filter(item => item.type === 'image').length,
     videos: mediaItems.filter(item => item.type === 'video').length,
     totalSize: mediaItems.reduce((acc, item) => {
-      const size = parseFloat(item.size)
+      const size = parseFloat(String(item.size ?? ''))
       return isNaN(size) ? acc : acc + size
     }, 0)
+  }), [mediaItems])
+
+  const selectableMedia = mediaItems.filter(item => typeof item._id === 'string') as { _id: string }[]
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableMedia)
+
+  const deleteMediaItems = async (ids: string[]) => {
+    const response = await fetch('/api/media/bulk-delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    })
+    const data = await response.json()
+    if (response.ok && data.success) {
+      setMediaItems(prev => prev.filter(item => !ids.includes(item._id!)))
+      setSelectedIds([])
+      setAlert({ message: 'Selected media items deleted.', type: 'success' })
+    } else {
+      setAlert({ message: data.message || 'Failed to delete media items.', type: 'error' })
+    }
+  }
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteMediaItems, selectedIds)
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMedia(id)
+      setMediaItems(prev => prev.filter(item => item._id !== id))
+      setAlert({ message: 'Media item has been permanently removed', type: 'success' })
+    } catch (error) {
+      setAlert({ message: error instanceof Error ? error.message : 'Failed to delete media item', type: 'error' })
+    }
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  const handleDeleteWithModal = async () => {
+    if (!mediaToDelete) return
+    setDeletingSingle(true)
+    await handleDelete(mediaToDelete)
+    setDeletingSingle(false)
+    setMediaToDelete(null)
   }
+
+  async function handleApprove(media: Media) {
+    setApproving(true)
+    try {
+      await updateMediaStatus(media._id!, 'approved')
+      setAlert({ message: 'Video approved.', type: 'success' })
+      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' })
+      setMediaItems(res.data)
+    } catch {
+      setAlert({ message: 'Failed to approve video.', type: 'error' })
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  async function handleReject(media: Media) {
+    setApproving(true)
+    try {
+      await deleteMedia(media._id!);
+      setAlert({ message: 'Video rejected and removed.', type: 'success' });
+      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' });
+      setMediaItems(res.data);
+    } catch {
+      setAlert({ message: 'Failed to reject and remove video.', type: 'error' });
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      await uploadVideoByUrl({ videoUrl: url, thumbnail, title, tag: tag.trim() });
+      setAlert({ message: 'Video added successfully.', type: 'success' });
+      setShowAddVideo(false);
+      setUrl('');
+      setThumbnail('');
+      setTitle('');
+      setTag('');
+      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' });
+      setMediaItems(res.data);
+    } catch (error) {
+      setAlert({ message: error instanceof Error ? error.message : 'Failed to add video.', type: 'error' });
+    }
+  };
+
+  // Filter media by type
+  const filteredMedia = useMemo(() => {
+    if (filterType === 'all') return mediaItems;
+    return mediaItems.filter(item => item.type === filterType);
+  }, [mediaItems, filterType]);
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="container space-y-8 py-8">
         {alert && (
           <AlertMessage
@@ -179,312 +168,99 @@ export default function MediaPage() {
             onClose={() => setAlert(null)}
           />
         )}
-        <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-bold tracking-tight">Media Library</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Files</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.total}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Images</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.images}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Videos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.videos}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Size</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatFileSize(stats.totalSize * 1024 * 1024)}</div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex flex-1 items-center space-x-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search media files..." 
-                    className="pl-8"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="image">Images</SelectItem>
-                    <SelectItem value="video">Videos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button 
-                        variant={view === "grid" ? "default" : "outline"} 
-                        size="icon"
-                        onClick={() => setView("grid")}
-                      >
-                        <Grid className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Grid view</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Button 
-                        variant={view === "list" ? "default" : "outline"} 
-                        size="icon"
-                        onClick={() => setView("list")}
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>List view</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <div className="relative">
-                  <input
-                    type="file"
-                    id="file-upload"
-                    multiple
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={handleUpload}
-                    disabled={uploading}
-                  />
-                  <label htmlFor="file-upload">
-                    <Button 
-                      type="button"
-                      disabled={uploading}
-                      onClick={() => document.getElementById('file-upload')?.click()}
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {uploading ? 'Uploading...' : 'Upload Files'}
-                    </Button>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {loading ? (
-          <div className="flex items-center justify-center h-[200px]">
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-muted-foreground">Loading media items...</p>
-            </div>
-          </div>
-        ) : filteredMedia.length === 0 ? (
-          <Card className="flex items-center justify-center h-[200px] border-dashed">
-            <CardContent className="text-center">
-              <Image className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-3" />
-              <h3 className="font-medium mb-1">No media items found</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {searchQuery || filterType !== 'all'
-                  ? 'Try adjusting your filters or search terms'
-                  : 'Upload your first media file to get started'}
-              </p>
-              <div className="relative inline-block">
-                <input
-                  type="file"
-                  id="empty-state-upload"
-                  multiple
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={handleUpload}
-                  disabled={uploading}
+        <MediaStats stats={stats} />
+        <MediaToolbar
+          view={view}
+          setView={setView}
+          filterType={filterType}
+          setFilterType={setFilterType}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          uploading={loading}
+          selectedIds={selectedIds}
+          setShowAddVideo={setShowAddVideo}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          allSelected={allSelected}
+          toggleSelectAll={toggleSelectAll}
+        />
+        <ConfirmDeleteModal
+          open={showDeleteConfirm || !!mediaToDelete}
+          title="Delete Media"
+          description="Are you sure you want to delete the selected media file(s)? This action cannot be undone."
+          loading={mediaToDelete ? deletingSingle : deleting}
+          onCancel={() => {
+            mediaToDelete ? setMediaToDelete(null) : setShowDeleteConfirm(false)
+          }}
+          onConfirm={mediaToDelete ? handleDeleteWithModal : handleBulkDelete}
+        />
+        {error && <div className="text-red-600 text-sm">{error}</div>}
+        <AdminGrid
+          items={filteredMedia}
+          loading={loading}
+          emptyState={{ title: "No media items found", description: searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started' }}
+          skeletonItems={meta.limit}
+          gridClassName={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full' : 'flex flex-col gap-4'}
+          renderItem={(item) => (
+            item.type === 'image'
+              ? <ImageCard
+                  key={item._id}
+                  media={item}
+                  selected={selectedIds.includes(item._id!)}
+                  onSelect={() => toggleSelect(item._id!)}
+                  onClick={() => { setActiveImage(item); setShowImageModal(true); setShowVideoModal(false); }}
                 />
-                <Button 
-                  asChild
-                  variant="outline"
-                  disabled={uploading}
-                >
-                  <label htmlFor="empty-state-upload" className="cursor-pointer">
-                    <Upload className="mr-2 h-4 w-4" />
-                    {uploading ? 'Uploading...' : 'Upload Files'}
-                  </label>
-                </Button>
+              : <VideoCard
+                  key={item._id}
+                  media={item}
+                  selected={selectedIds.includes(item._id!)}
+                  onSelect={() => toggleSelect(item._id!)}
+                  onClick={() => { setActiveVideo(item); setShowVideoModal(true); setShowImageModal(false); }}
+                  onApprove={() => handleApprove(item)}
+                  onReject={() => handleReject(item)}
+                  approving={approving}
+                />
+          )}
+        />
+        <UniversalDialog open={showImageModal} onOpenChange={setShowImageModal}>
+          {activeImage && (
+            <div className="space-y-4">
+              <DialogHeader>
+                <DialogTitle>{activeImage.name || 'Image'}</DialogTitle>
+              </DialogHeader>
+              <div className="w-full flex justify-center items-center bg-black rounded overflow-hidden">
+                <img
+                  src={activeImage.url ?? ''}
+                  alt={activeImage.name ?? 'Media'}
+                  className="object-contain max-h-[70vh] max-w-full"
+                />
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredMedia.length} of {mediaItems.length} items
-              </p>
+              {activeImage.description && <div className="text-sm text-muted-foreground">{activeImage.description}</div>}
             </div>
-            <div className={cn(
-              "grid gap-6",
-              view === "grid" ? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1"
-            )}>
-              {filteredMedia.map((item) => (
-                <Card key={item._id} className={cn(
-                  "overflow-hidden",
-                  view === "list" && "flex items-center"
-                )}>
-                  {view === "grid" ? (
-                    <>
-                      <div className="aspect-video relative bg-muted">
-                        {item.type === 'image' ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.url}
-                            alt={item.title}
-                            className="absolute inset-0 h-full w-full object-cover"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              if (!target.src.endsWith('/placeholder-image.svg')) {
-                                target.src = '/placeholder-image.svg';
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Image className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <CardHeader className="p-4">
-                        <CardTitle className="text-sm">{item.title}</CardTitle>
-                        <CardDescription>{formatDate(item.createdAt)}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">{item.size}</span>
-                          <div className="flex items-center gap-2">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Media</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this media? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-red-500 hover:bg-red-600"
-                                    onClick={() => handleDelete(item._id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </>
-                  ) : (
-                    <div className="flex w-full items-center gap-4 p-4">
-                      <div className="h-12 w-12 relative bg-muted rounded flex-shrink-0">
-                        {item.type === 'image' ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.url}
-                            alt={item.title}
-                            className="absolute inset-0 h-full w-full object-cover rounded"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              if (!target.src.endsWith('/placeholder-image.svg')) {
-                                target.src = '/placeholder-image.svg';
-                              }
-                            }}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Image className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium truncate">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground">{item.size} • {formatDate(item.createdAt)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Media</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this media? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-red-500 hover:bg-red-600"
-                                onClick={() => handleDelete(item._id)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  )}
-                </Card>
+          )}
+        </UniversalDialog>
+        <VideoPreviewDialog
+          open={showVideoModal}
+          onOpenChange={setShowVideoModal}
+          media={activeVideo}
+        />
+        {meta.pages > 1 && (
+          <Pagination className="mt-8 flex justify-center">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+              </PaginationItem>
+              {[...Array(meta.pages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                </PaginationItem>
               ))}
-            </div>
-          </>
+              <PaginationItem>
+                <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         )}
       </div>
     </div>
   )
-} 
+}

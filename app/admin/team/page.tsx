@@ -13,113 +13,73 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { AdminGrid } from "@/components/shared/AdminGrid"
 import Image from "next/image"
-import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
-import type { DropResult } from "@hello-pangea/dnd"
-import { uploadImage } from "@/lib/cloudinary"
+import { Draggable, DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd"
 import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-// This interface matches our Mongoose model
-interface TeamMember {
-  _id: string
-  name: string
-  role: string
-  bio: string
-  imageUrl?: string
-  order: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface TeamMemberFormData {
-  name: string
-  role: string
-  bio: string
-  imageUrl?: string
-}
-
-interface MediaItem {
-  _id: string
-  url: string
-  folder: string
-}
+import { NoRecords } from '@/components/ui/no-records'
+import { Checkbox } from "@/components/ui/checkbox"
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
+import { useSelection } from '@/lib/hooks/use-selection'
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
+import { GridSkeleton } from "@/components/shared/skeletons/GridSkeleton"
+import { getTeamMembers } from "@/lib/services/team"
+import { TeamMember } from "@/lib/types/team"
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
 export default function AdminTeamPage() {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [team, setTeam] = useState<TeamMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const debouncedSearch = useDebounce(search, 400)
 
+  // Fetch team from API
   useEffect(() => {
-    fetchTeamMembers()
-  }, [])
-
-  const fetchTeamMembers = async () => {
-    try {
-      const response = await fetch('/api/team')
-      if (!response.ok) {
-        throw new Error('Failed to fetch team members')
-      }
-      const data = await response.json()
-      
-      // Fetch only team member images
-      const mediaResponse = await fetch('/api/media?folder=team-members')
-      if (mediaResponse.ok) {
-        const mediaData: MediaItem[] = await mediaResponse.json()
-        // Map media URLs to team members, only using team-member images
-        const teamWithImages = data.map((member: TeamMember) => {
-          const memberMedia = mediaData.find(m => m.url === member.imageUrl && m.folder === 'team-members')
-          return {
-            ...member,
-            imageUrl: memberMedia?.url || member.imageUrl
-          }
-        })
-        setTeamMembers(teamWithImages)
-      } else {
-        setTeamMembers(data)
-      }
-    } catch (error) {
-      setAlert({
-        message: "Failed to fetch team members",
-        type: "error"
-      })
-      setTeamMembers([]) // Set empty array as fallback
-    } finally {
+    setIsLoading(true)
+    getTeamMembers({ page: 1, limit: meta.limit, q: debouncedSearch }).then(res => {
+      setTeam(res.data)
+      setMeta(res.meta)
       setIsLoading(false)
-    }
-  }
+      setAlert(null)
+    }).catch(() => {
+      setTeam([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
+      setIsLoading(false)
+      setAlert({ message: 'Failed to fetch team members', type: 'error' })
+    })
+  }, [meta.limit, debouncedSearch])
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result?.destination) return
 
-    const items = Array.from(teamMembers)
+    const items = Array.from(team)
     const [reorderedItem] = items.splice(result.source.index, 1)
     items.splice(result.destination.index, 0, reorderedItem)
 
-    // Update order numbers
     const updatedItems = items.map((item, index) => ({
       ...item,
       order: index + 1,
     }))
 
-    setTeamMembers(updatedItems)
+    setTeam(updatedItems)
 
-    // Update order in database
     try {
-      const updates = updatedItems.map(item => ({
-        id: item._id,
-        order: item.order,
-      }))
+      const updates = updatedItems
+        .filter(item => item._id)
+        .map(item => ({
+          id: item._id!,
+          order: item.order,
+        }))
 
       const response = await fetch('/api/team', {
         method: 'PUT',
@@ -141,8 +101,6 @@ export default function AdminTeamPage() {
         message: error instanceof Error ? error.message : "Failed to update team member order",
         type: "error"
       })
-      // Revert the state if update fails
-      await fetchTeamMembers()
     }
   }
 
@@ -157,12 +115,10 @@ export default function AdminTeamPage() {
       if (imageFile?.size > 0) {
         const imageData = new FormData()
         imageData.append('files', imageFile)
+        imageData.append('folder', 'team-members')
         const uploadResponse = await fetch('/api/media/upload', {
           method: 'POST',
           body: imageData,
-          headers: {
-            'folder': 'team-members'
-          },
         })
         
         if (!uploadResponse.ok) {
@@ -193,7 +149,7 @@ export default function AdminTeamPage() {
       }
 
       const updated = await response.json()
-      setTeamMembers(prev => prev.map(member => 
+      setTeam(prev => prev.map(member => 
         member._id === editingMember._id ? updated : member
       ))
 
@@ -223,12 +179,10 @@ export default function AdminTeamPage() {
       if (imageFile?.size > 0) {
         const imageData = new FormData()
         imageData.append('files', imageFile)
+        imageData.append('folder', 'team-members')
         const uploadResponse = await fetch('/api/media/upload', {
           method: 'POST',
           body: imageData,
-          headers: {
-            'folder': 'team-members'
-          },
         })
         
         if (!uploadResponse.ok) {
@@ -237,7 +191,7 @@ export default function AdminTeamPage() {
         }
         
         const uploadResult = await uploadResponse.json()
-        imageUrl = uploadResult[0]?.url // Access first uploaded file's URL
+        imageUrl = uploadResult[0]?.url
       }
 
       const newMember = {
@@ -259,7 +213,7 @@ export default function AdminTeamPage() {
       }
 
       const createdMember = await response.json()
-      setTeamMembers(prev => [...prev, createdMember])
+      setTeam(prev => [...prev, createdMember])
 
       setAlert({
         message: `Successfully added ${createdMember.name} to the team`,
@@ -278,7 +232,7 @@ export default function AdminTeamPage() {
   }
 
   const handleDeleteMember = async (id: string) => {
-    setIsDeleting(id)
+    setIsSubmitting(true)
     try {
       const response = await fetch(`/api/team/${id}`, {
         method: 'DELETE',
@@ -289,7 +243,7 @@ export default function AdminTeamPage() {
         throw new Error(error.message || 'Failed to delete team member')
       }
 
-      setTeamMembers(prev => prev.filter(member => member._id !== id))
+      setTeam(prev => prev.filter(member => member._id !== id))
       setAlert({
         message: "Team member has been permanently removed",
         type: "success"
@@ -300,7 +254,7 @@ export default function AdminTeamPage() {
         type: "error"
       })
     } finally {
-      setIsDeleting(null)
+      setIsSubmitting(false)
     }
   }
 
@@ -361,29 +315,20 @@ export default function AdminTeamPage() {
     )
   }
 
-  // Unique roles for filter dropdown
-  const uniqueRoles = ["all", ...Array.from(new Set(teamMembers.map(m => m.role)))]
-  // Filtered team members
-  const filteredTeamMembers = teamMembers.filter((m) => {
-    const matchesSearch =
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.role.toLowerCase().includes(search.toLowerCase())
-    const matchesRole = roleFilter === "all" || m.role === roleFilter
-    return matchesSearch && matchesRole
-  })
+  const uniqueRoles = ["all", ...Array.from(new Set(team.map(m => m.role)))]
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-muted/30">
-        <div className="container py-10">
-          <div className="flex items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="ml-2">Loading team members...</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const selectableTeam = team.filter(member => typeof member._id === 'string') as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableTeam);
+
+  const deleteTeamMembers = async (ids: string[]) => {
+    for (const id of ids) {
+      await fetch(`/api/team/${id}`, { method: 'DELETE' });
+    }
+    setTeam(prev => prev.filter(member => member._id && !ids.includes(member._id)));
+    setSelectedIds([]);
+    setAlert({ type: 'success', message: 'Selected team members deleted.' });
+  };
+  const { showDeleteConfirm, setShowDeleteConfirm, handleBulkDelete } = useBulkDelete(deleteTeamMembers, selectedIds);
 
   return (
     <div className="min-h-screen">
@@ -433,9 +378,9 @@ export default function AdminTeamPage() {
             </Dialog>
           </div>
         </div>
-
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
           <div className="flex items-center gap-2 flex-1 flex-wrap">
+            <span className="font-medium">Filter by role:</span>
             <Input
               placeholder="Search by name or role..."
               value={search}
@@ -444,137 +389,86 @@ export default function AdminTeamPage() {
             />
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter by role" />
+                <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
                 {uniqueRoles.map(role => (
-                  <SelectItem key={role} value={role}>{role === "all" ? "All Roles" : role}</SelectItem>
+                  <SelectItem key={role} value={role}>{role}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="team-members">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className={cn(
-                  "space-y-4",
-                  viewMode === 'grid' && "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 space-y-0"
-                )}
-              >
-                {filteredTeamMembers.length === 0 ? (
-                  <Card className="p-8 text-center">
-                    <CardContent>
-                      <p className="text-muted-foreground">No team members yet. Add your first team member to get started.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  filteredTeamMembers.map((member, index) => (
-                    <Draggable key={member._id} draggableId={member._id} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          <Card>
-                            {viewMode === 'grid' ? (
-                              <>
-                                <div className="aspect-square relative bg-muted">
-                                  <Image
-                                    src={member.imageUrl || `/placeholder.svg?height=400&width=400&text=${member.name.split(" ")[0]}`}
-                                    alt={member.name}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                                  <div className="absolute top-2 right-2 flex items-center gap-2">
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      onClick={() => {
-                                        setEditingMember(member)
-                                        setIsDialogOpen(true)
-                                      }}
-                                    >
-                                      <Edit2Icon className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => handleDeleteMember(member._id)}
-                                      disabled={isDeleting === member._id}
-                                    >
-                                      {isDeleting === member._id ? "..." : "Delete"}
-                                    </Button>
-                                  </div>
-                                </div>
-                                <CardContent className="pt-4">
-                                  <h3 className="font-bold mb-1">{member.name}</h3>
-                                  <p className="text-primary text-sm font-medium mb-2">{member.role}</p>
-                                  <p className="text-muted-foreground text-sm line-clamp-3">{member.bio}</p>
-                                </CardContent>
-                              </>
-                            ) : (
-                              <>
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                  <div className="flex items-center gap-4">
-                                    {member.imageUrl && (
-                                      <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
-                                        <Image
-                                          src={member.imageUrl}
-                                          alt={member.name}
-                                          fill
-                                          className="object-cover"
-                                        />
-                                      </div>
-                                    )}
-                                    <div>
-                                      <CardTitle>{member.name}</CardTitle>
-                                      <p className="text-primary text-sm font-medium">{member.role}</p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setEditingMember(member)
-                                        setIsDialogOpen(true)
-                                      }}
-                                    >
-                                      <Edit2Icon className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => handleDeleteMember(member._id)}
-                                      disabled={isDeleting === member._id}
-                                    >
-                                      {isDeleting === member._id ? "Deleting..." : "Delete"}
-                                    </Button>
-                                  </div>
-                                </CardHeader>
-                                <CardContent>
-                                  <p className="text-muted-foreground">{member.bio}</p>
-                                </CardContent>
-                              </>
-                            )}
-                          </Card>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))
-                )}
-                {provided.placeholder}
+          {selectedIds.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex bg-muted/50 font-medium" role="rowgroup">
+                <div className="p-4 w-auto flex-shrink-0 flex items-center justify-center" role="columnheader">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="select-all-checkbox"
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    <label htmlFor="select-all-checkbox" className="cursor-pointer">Select all</label>
+                  </div>
+                </div>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                Delete Selected
+              </Button>
+            </div>
+          )}
+        </div>
+        <AdminGrid
+          items={team}
+          loading={isLoading}
+          emptyState={{ title: "No team members yet", description: "Add your first team member to get started." }}
+          skeletonItems={meta.limit}
+          gridClassName="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          renderItem={(member, idx) => (
+            <div key={member._id || idx} className="relative">
+              <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(member._id || '')} onCheckedChange={() => member._id && toggleSelect(member._id)} />
+              <Card>
+                <div className="aspect-square relative bg-muted">
+                  <Image
+                    src={member.imageUrl || `/placeholder.svg?height=400&width=400&text=${member.name.split(" ")[0]}`}
+                    alt={member.name}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  <div className="absolute top-2 right-2 flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setEditingMember(member)
+                        setIsDialogOpen(true)
+                      }}
+                    >
+                      <Edit2Icon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => member._id && handleDeleteMember(member._id)}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "..." : "Delete"}
+                    </Button>
+                  </div>
+                </div>
+                <CardContent className="pt-4">
+                  <h3 className="font-bold mb-1">{member.name}</h3>
+                  <p className="text-primary text-sm font-medium mb-2">{member.role}</p>
+                  <p className="text-muted-foreground text-sm line-clamp-3">{member.bio}</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        />
       </div>
       {alert && (
         <AlertMessage
@@ -583,6 +477,14 @@ export default function AdminTeamPage() {
           onClose={() => setAlert(null)}
         />
       )}
+      <ConfirmDeleteModal
+        open={showDeleteConfirm}
+        title="Delete Team Members"
+        description="Are you sure you want to delete the selected team members? This action cannot be undone."
+        loading={isSubmitting}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+      />
     </div>
   )
 } 

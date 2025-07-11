@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -58,7 +59,7 @@ const donations = [
   },
 ]
 
-export function DonationRecords() {
+export const DonationRecords = React.memo(function DonationRecords() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredDonations, setFilteredDonations] = useState(donations)
   const [startDate, setStartDate] = useState<Date | null>(null)
@@ -231,4 +232,4 @@ export function DonationRecords() {
       </Card>
     </div>
   )
-}
+})

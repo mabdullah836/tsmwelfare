@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -15,7 +15,7 @@ interface FeatureSectionProps {
   className?: string
 }
 
-export function FeatureSection({ title, description, features, className }: FeatureSectionProps) {
+export const FeatureSection = React.memo(function FeatureSection({ title, description, features, className }: FeatureSectionProps) {
   return (
     <section className={cn("section-padding", className)}>
       <div className="container">
@@ -42,4 +42,4 @@ export function FeatureSection({ title, description, features, className }: Feat
       </div>
     </section>
   )
-}
+});
