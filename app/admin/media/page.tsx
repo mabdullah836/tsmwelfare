@@ -3,18 +3,22 @@
 import { useState, useEffect, useMemo } from "react"
 import { AlertMessage } from '@/components/ui/alert-message'
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
-import { NoRecords } from '@/components/ui/no-records'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
 import { getMedia, deleteMedia, updateMediaStatus, uploadVideoByUrl } from '@/lib/services/media'
 import type { Media } from '@/lib/types/media'
+import { useDebounce } from '@/lib/hooks/use-debounce'
 
 import { MediaStats } from '@/components/media/MediaStats'
 import { MediaToolbar } from '@/components/media/MediaToolbar'
-import { MediaView } from '@/components/media/MediaView'
 import { AddVideoDialog } from '@/components/media/AddVideoDialog'
 import { VideoPreviewDialog } from '@/components/media/VideoPreviewDialog'
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
+import { AdminGrid } from "@/components/shared/AdminGrid";
+import { ImageCard } from '@/components/ImageCard';
+import { VideoCard } from '@/components/VideoCard';
+import { UniversalDialog } from '@/components/modals/UniversalDialog';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function MediaPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid')
@@ -34,35 +38,27 @@ export default function MediaPage() {
   const [thumbnail, setThumbnail] = useState('');
   const [title, setTitle] = useState('');
   const [tag, setTag] = useState('');
+  const [page, setPage] = useState(1)
+  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 12 })
+  const debouncedSearch = useDebounce(searchQuery, 400)
+  const [showImageModal, setShowImageModal] = useState(false)
+  const [activeImage, setActiveImage] = useState<Media | null>(null)
 
+  // Fetch media from API
   useEffect(() => {
-    (async () => {
-      setLoading(true)
-      try {
-        const items = await getMedia('general')
-        setMediaItems(items)
-        setAlert({ message: `Successfully loaded ${items.length} media items`, type: 'success' })
-      } catch (error) {
-        setAlert({ message: error instanceof Error ? error.message : 'Failed to load media items', type: 'error' })
-        setMediaItems([])
-      } finally {
-        setLoading(false)
-      }
-    })()
-  }, [])
-
-  const {
-    page,
-    setPage,
-    totalPages,
-    paginated: paginatedMedia,
-  } = usePaginationFilter<Media>(mediaItems, {
-    pageSize: 12,
-    searchValue: searchQuery,
-    filterFn: (item, search) => item.title.toLowerCase().includes(search.toLowerCase()),
-    extraFilters: { filterType },
-    extraFilterFn: (item, { filterType }) => filterType === 'all' || item.type === filterType,
-  })
+    setLoading(true)
+    getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' }).then(res => {
+      setMediaItems(res.data)
+      setMeta(res.meta)
+      setLoading(false)
+      setAlert(null)
+    }).catch(() => {
+      setMediaItems([])
+      setMeta({ total: 0, page: 1, pages: 1, limit: 12 })
+      setLoading(false)
+      setAlert({ message: 'Failed to fetch media', type: 'error' })
+    })
+  }, [page, meta.limit, debouncedSearch])
 
   const stats = useMemo(() => ({
     total: mediaItems.length,
@@ -74,7 +70,7 @@ export default function MediaPage() {
     }, 0)
   }), [mediaItems])
 
-  const selectableMedia = paginatedMedia.filter(item => typeof item._id === 'string') as { _id: string }[]
+  const selectableMedia = mediaItems.filter(item => typeof item._id === 'string') as { _id: string }[]
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableMedia)
 
   const deleteMediaItems = async (ids: string[]) => {
@@ -117,8 +113,8 @@ export default function MediaPage() {
     try {
       await updateMediaStatus(media._id!, 'approved')
       setAlert({ message: 'Video approved.', type: 'success' })
-      const items = await getMedia('general')
-      setMediaItems(items)
+      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' })
+      setMediaItems(res.data)
     } catch {
       setAlert({ message: 'Failed to approve video.', type: 'error' })
     } finally {
@@ -131,8 +127,8 @@ export default function MediaPage() {
     try {
       await deleteMedia(media._id!);
       setAlert({ message: 'Video rejected and removed.', type: 'success' });
-      const items = await getMedia('general');
-      setMediaItems(items);
+      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' });
+      setMediaItems(res.data);
     } catch {
       setAlert({ message: 'Failed to reject and remove video.', type: 'error' });
     } finally {
@@ -149,11 +145,18 @@ export default function MediaPage() {
       setThumbnail('');
       setTitle('');
       setTag('');
-      getMedia('general').then(setMediaItems);
+      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' });
+      setMediaItems(res.data);
     } catch (error) {
       setAlert({ message: error instanceof Error ? error.message : 'Failed to add video.', type: 'error' });
     }
   };
+
+  // Filter media by type
+  const filteredMedia = useMemo(() => {
+    if (filterType === 'all') return mediaItems;
+    return mediaItems.filter(item => item.type === filterType);
+  }, [mediaItems, filterType]);
 
   return (
     <div className="min-h-screen">
@@ -191,46 +194,72 @@ export default function MediaPage() {
           onConfirm={mediaToDelete ? handleDeleteWithModal : handleBulkDelete}
         />
         {error && <div className="text-red-600 text-sm">{error}</div>}
-        {paginatedMedia.length === 0 && !loading ? (
-          <NoRecords
-            title="No media items found"
-            description={searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started'}
-          />
-        ) : (
-          <MediaView
-            view={view}
-            media={paginatedMedia}
-            onClick={(item) => {
-              if (item.type === 'video') {
-                setActiveVideo(item)
-                setShowVideoModal(true)
-              }
-            }}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            approving={approving}
-          />
-        )}
-        <AddVideoDialog
-          open={showAddVideo}
-          onOpenChange={setShowAddVideo}
-          setAlert={setAlert}
-          refreshMedia={() => getMedia('general').then(setMediaItems)}
-          url={url}
-          setUrl={setUrl}
-          thumbnail={thumbnail}
-          setThumbnail={setThumbnail}
-          title={title}
-          setTitle={setTitle}
-          tag={tag}
-          setTag={setTag}
-          onSave={handleSave}
+        <AdminGrid
+          items={filteredMedia}
+          loading={loading}
+          emptyState={{ title: "No media items found", description: searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started' }}
+          skeletonItems={meta.limit}
+          gridClassName={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full' : 'flex flex-col gap-4'}
+          renderItem={(item) => (
+            item.type === 'image'
+              ? <ImageCard
+                  key={item._id}
+                  media={item}
+                  selected={selectedIds.includes(item._id!)}
+                  onSelect={() => toggleSelect(item._id!)}
+                  onClick={() => { setActiveImage(item); setShowImageModal(true); setShowVideoModal(false); }}
+                />
+              : <VideoCard
+                  key={item._id}
+                  media={item}
+                  selected={selectedIds.includes(item._id!)}
+                  onSelect={() => toggleSelect(item._id!)}
+                  onClick={() => { setActiveVideo(item); setShowVideoModal(true); setShowImageModal(false); }}
+                  onApprove={() => handleApprove(item)}
+                  onReject={() => handleReject(item)}
+                  approving={approving}
+                />
+          )}
         />
+        <UniversalDialog open={showImageModal} onOpenChange={setShowImageModal}>
+          {activeImage && (
+            <div className="space-y-4">
+              <DialogHeader>
+                <DialogTitle>{activeImage.name || 'Image'}</DialogTitle>
+              </DialogHeader>
+              <div className="w-full flex justify-center items-center bg-black rounded overflow-hidden">
+                <img
+                  src={activeImage.url ?? ''}
+                  alt={activeImage.name ?? 'Media'}
+                  className="object-contain max-h-[70vh] max-w-full"
+                />
+              </div>
+              {activeImage.description && <div className="text-sm text-muted-foreground">{activeImage.description}</div>}
+            </div>
+          )}
+        </UniversalDialog>
         <VideoPreviewDialog
           open={showVideoModal}
           onOpenChange={setShowVideoModal}
           media={activeVideo}
         />
+        {meta.pages > 1 && (
+          <Pagination className="mt-8 flex justify-center">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
+              </PaginationItem>
+              {[...Array(meta.pages)].map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
     </div>
   )
