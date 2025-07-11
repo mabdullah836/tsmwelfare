@@ -28,7 +28,7 @@ export const VideoCard = ({ media, selected, onSelect, onClick, onApprove, onRej
           alt={media.name ?? 'Video thumbnail'}
           className="object-cover w-full h-48"
         />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
           <PlayCircle className="h-16 w-16 text-white drop-shadow-lg" />
         </div>
         {media.status === 'approved' && <CheckCircle className="absolute top-2 right-2 text-green-500" />}

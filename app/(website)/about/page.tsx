@@ -2,16 +2,11 @@ import Image from "next/image"
 import { Typewriter } from "@/components/shared/typewriter"
 import { Card, CardContent } from "@/components/ui/card"
 import { Award, Users, Heart, Lightbulb } from "lucide-react"
-import { TeamSection } from "@/components/features/team-section"
-import { EventsSection } from "@/components/features/events-section"
-import { PageHeader } from "@/components/page-header"
-import { getTeamMembers } from "@/lib/services/team"
-import { getUpcomingEvents } from "@/lib/services/event"
 
+import { PageHeader } from "@/components/page-header"
+import TeamGrid from "./TeamGrid"
 
 export default async function AboutPage() {
-  const teamMembers = await getTeamMembers()
-  const events = await getUpcomingEvents()
 
   return (
     <>
@@ -103,13 +98,13 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <TeamSection teamMembers={teamMembers} />
+      <section className="py-16 bg-muted/50">
+        <div className="container">
+          <h2 className="text-3xl font-bold mb-12 text-center">Meet Our Team</h2>
+          <TeamGrid />
+        </div>
+      </section>
 
-      <EventsSection 
-        title="Our Events"
-        description="Join us in making a difference. Here are our upcoming events where you can participate and contribute to our cause."
-        events={events} 
-      />
     </>
   )
 }

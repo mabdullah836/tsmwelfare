@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Team from '@/models/Team'
 import { deleteImage } from '@/lib/cloudinary'
-import { handleBulkDelete, handleGetAll, handlePost } from '@/lib/utils/crudHandlers'
+import { handleBulkDelete, handleGetAll, handlePost, handleGetPaginated } from '@/lib/utils/crudHandlers'
 import { withDbConnection } from '@/lib/mongodb'
 
 // GET all team members
-export async function GET() {
-  return await withDbConnection(() => handleGetAll({ model: Team, sort: { order: 1 } }))
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const page = parseInt(searchParams.get('page') || '1', 10)
+  const limit = parseInt(searchParams.get('limit') || '10', 10)
+  const search = searchParams.get('q') || ''
+  return await withDbConnection(() => handleGetPaginated({
+    model: Team,
+    sort: { order: 1 },
+    page,
+    limit,
+    search,
+    searchFields: ['name', 'role', 'bio']
+  }))
 }
 
 // POST new team member

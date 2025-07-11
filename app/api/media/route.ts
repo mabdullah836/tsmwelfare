@@ -1,19 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Media from '@/models/Media'
 import { deleteImage } from '@/lib/cloudinary'
-import { handleBulkDelete, handleGetAll } from '@/lib/utils/crudHandlers'
+import { handleBulkDelete, handleGetAll, handleGetPaginated } from '@/lib/utils/crudHandlers'
 import { withDbConnection } from '@/lib/mongodb'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const folder = searchParams.get('folder')
-      const query = folder === 'general' 
-        ? { $or: [{ folder: 'general' }, { folder: null }, { folder: { $exists: false } }] }
-        : folder 
-          ? { folder } 
-          : {}
-    return await withDbConnection(() => handleGetAll({ model: Media, sort: { createdAt: -1 }, query }))
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '12', 10)
+    const search = searchParams.get('q') || ''
+    const query = folder === 'general' 
+      ? { $or: [{ folder: 'general' }, { folder: null }, { folder: { $exists: false } }] }
+      : folder 
+        ? { folder } 
+        : {}
+    return await withDbConnection(() => handleGetPaginated({
+      model: Media,
+      sort: { createdAt: -1 },
+      query,
+      page,
+      limit,
+      search,
+      searchFields: ['title', 'name', 'type']
+    }))
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch media' }, { status: 500 })
   }
