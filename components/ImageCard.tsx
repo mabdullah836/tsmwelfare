@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils/format';
 import type { Media } from '@/lib/types/media';
+import Image from 'next/image';
 
 export const ImageCard = ({ media, selected, onSelect, onClick }: { media: Media; selected: boolean; onSelect: () => void; onClick?: () => void }) => (
   <div className="relative group">
@@ -13,9 +14,11 @@ export const ImageCard = ({ media, selected, onSelect, onClick }: { media: Media
     />
     <Card className="overflow-hidden cursor-pointer" onClick={onClick}>
       <CardContent className="p-0">
-        <img
+        <Image
           src={media.url ?? ''}
           alt={media.name ?? 'Media'}
+          width={400}
+          height={192}
           className="object-cover w-full h-48"
         />
       </CardContent>

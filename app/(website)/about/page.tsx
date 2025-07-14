@@ -6,10 +6,38 @@ import { Award, Users, Heart, Lightbulb } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
 import TeamGrid from "./TeamGrid"
 
-export default async function AboutPage() {
+export const metadata = {
+  title: "About Us | Sirat-e-Mustaqeem Welfare Trust | Charity in Pakistan",
+  description:
+    "Learn about Sirat-e-Mustaqeem Welfare Trust, a non-profit organization in Pakistan dedicated to empowering communities through education, healthcare, food distribution, and social welfare initiatives.",
+  keywords: [
+    "welfare trust",
+    "charity in Pakistan",
+    "non-profit organization",
+    "community service",
+    "about welfare trust"
+  ]
+};
 
+export default async function AboutPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Sirat-e-Mustaqeem Welfare Trust",
+            "url": "https://www.smwelfare.org/",
+            "logo": "/images/smw-logo-transparent.png",
+            "description": "A non-profit organization in Pakistan dedicated to community service, education, healthcare, and food distribution.",
+            "sameAs": [
+              "https://www.facebook.com/smwelfare/"
+            ]
+          })
+        }}
+      />
       <PageHeader title="About Our Organization">
         <p className="text-xl text-white/90">
           We are dedicated to{" "}

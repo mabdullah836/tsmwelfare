@@ -1,3 +1,15 @@
+export const metadata = {
+  title: "Events | Sirat-e-Mustaqeem Welfare Trust | Community Service in Pakistan",
+  description:
+    "Explore upcoming events by Sirat-e-Mustaqeem Welfare Trust. Join our charity events, community service, and social welfare initiatives in Pakistan.",
+  keywords: [
+    "welfare trust events",
+    "charity events Pakistan",
+    "community service",
+    "non-profit events"
+  ]
+};
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -40,6 +52,34 @@ export default function EventsPage() {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Event",
+            "name": "Sirat-e-Mustaqeem Welfare Trust Events",
+            "startDate": "2024-12-01", // Example date, replace with real event data
+            "location": {
+              "@type": "Place",
+              "name": "Pakistan",
+              "address": {
+                "@type": "PostalAddress",
+                "addressCountry": "PK"
+              }
+            },
+            "image": [
+              "/images/smw-logo-transparent.png"
+            ],
+            "description": "Charity and community service events by Sirat-e-Mustaqeem Welfare Trust in Pakistan.",
+            "organizer": {
+              "@type": "Organization",
+              "name": "Sirat-e-Mustaqeem Welfare Trust",
+              "url": "https://www.smwelfare.org/"
+            }
+          })
+        }}
+      />
       <PageHeader title="Events">
         <p className="text-xl text-white/90">
           Explore our upcoming events and join us in making a difference in the community.

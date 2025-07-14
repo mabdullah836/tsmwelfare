@@ -1,6 +1,7 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatDate } from '@/lib/utils/format';
 import type { Media } from '@/lib/types/media';
+import Image from 'next/image';
 
 export const ListRow = ({ media, selected, onSelect }: {
   media: Media;
@@ -15,9 +16,11 @@ export const ListRow = ({ media, selected, onSelect }: {
     />
     <div className="flex-shrink-0 w-24 h-24 overflow-hidden rounded">
       {media.type === 'image' ? (
-        <img
+        <Image
           src={media.url ?? ''}
           alt={media.name ?? 'Media'}
+          width={96}
+          height={96}
           className="object-cover w-full h-full"
         />
       ) : (

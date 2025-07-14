@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
 import { useDebounce } from '@/lib/hooks/use-debounce';
+import Image from 'next/image';
 
 export function TeamSection() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -59,7 +60,7 @@ export function TeamSection() {
             {teamMembers.map(member => (
               <Card key={member._id} className="flex flex-col items-center p-6">
                 <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
-                  <img src={member.imageUrl || '/placeholder-user.jpg'} alt={member.name} className="object-cover w-full h-full" />
+                  <Image src={member.imageUrl || '/placeholder-user.jpg'} alt={member.name} width={96} height={96} className="object-cover w-full h-full" />
                 </div>
                 <CardContent className="text-center">
                   <h3 className="font-bold text-lg mb-1">{member.name}</h3>

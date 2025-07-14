@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PlayCircle, CheckCircle, XCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils/format';
 import type { Media } from '@/lib/types/media';
+import Image from 'next/image';
 
 export const VideoCard = ({ media, selected, onSelect, onClick, onApprove, onReject, approving }: {
   media: Media;
@@ -23,9 +24,11 @@ export const VideoCard = ({ media, selected, onSelect, onClick, onApprove, onRej
     />
     <Card className="overflow-hidden">
       <div className="relative w-full h-48">
-        <img
+        <Image
           src={media.thumbnail || '/placeholder-image.svg'}
           alt={media.name ?? 'Video thumbnail'}
+          width={400}
+          height={192}
           className="object-cover w-full h-48"
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black/30">
