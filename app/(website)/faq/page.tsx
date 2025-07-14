@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { PageHeader } from "@/components/page-header"
 import {
@@ -12,6 +12,23 @@ import { faqs } from "@/lib/data/faqs"
 export default function FAQPage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": faqs.map(faq => ({
+              "@type": "Question",
+              "name": faq.question,
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": faq.answer
+              }
+            }))
+          })
+        }}
+      />
       <PageHeader title="Frequently Asked Questions">
         <p className="text-xl text-white/90">
           Find answers to common questions about our organization, programs, and how you can get involved in our mission of serving humanity.
@@ -24,7 +41,7 @@ export default function FAQPage() {
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`} className="bg-card rounded-lg px-6">
                 <AccordionTrigger className="text-lg font-medium">
-                  {faq.question}
+                  <h2 className="text-lg font-semibold m-0">{faq.question}</h2>
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
                   {faq.answer}

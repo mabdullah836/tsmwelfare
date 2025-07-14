@@ -10,7 +10,7 @@ export function SiteFooter() {
           <div>
             <Link href="/" className="flex items-center space-x-2 mb-6">
               <Image
-                src="/images/smw-logo-transparent.png"
+                src="/logo.png"
                 alt="The Sirat-e-Mustaqeem Welfare Trust Logo"
                 width={40}
                 height={40}

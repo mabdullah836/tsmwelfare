@@ -1,28 +1,31 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState } from "react";
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertMessage } from '@/components/ui/alert-message';
 import { EventCard } from './EventCard';
+import { getUpcomingEvents } from '@/lib/services/event';
 
-interface EventsSectionProps {
-  title?: string;
-  description?: string;
-  events: any[];
-  rowLimit?: number;
-  loading?: boolean;
-  error?: string | null;
-}
+export function EventsSection() {
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const rowLimit = 3;
+  const title = 'Upcoming Events';
+  const description = 'Join us in making a difference. Here are our upcoming events where you can participate and contribute to our cause.';
 
-export function EventsSection({
-  title = 'Upcoming Events',
-  description = 'Join us in making a difference. Here are our upcoming events where you can participate and contribute to our cause.',
-  events = [],
-  rowLimit = 3,
-  loading = false,
-  error = null,
-}: EventsSectionProps) {
+  useEffect(() => {
+    setLoading(true);
+    getUpcomingEvents({ page: 1, limit: 10 })
+      .then(res => {
+        setEvents(Array.isArray(res?.data) ? res.data : []);
+        setError(null);
+      })
+      .catch(() => setError("Failed to load events."))
+      .finally(() => setLoading(false));
+  }, []);
+
   const showViewAll = events.length > rowLimit;
   const visibleEvents = events.slice(0, rowLimit);
 

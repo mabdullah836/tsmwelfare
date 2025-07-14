@@ -61,12 +61,12 @@ export function OrganizationHeader({
       <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 rounded-full blur-lg"></div>
         <Image
-          src="/images/smw-logo-transparent.png"
+          src="/images/logo.png"
           alt="The Sirat-e-Mustaqeem Welfare Trust Logo"
           width={120}
           height={120}
           className={cn("relative object-contain drop-shadow-xl", currentSize.logo)}
-        />
+        />  
       </div>
         <div className="flex-1">
           <p className={cn("text-emerald-700 dark:text-emerald-400 font-extrabold", currentSize.arabic)} dir="rtl">
