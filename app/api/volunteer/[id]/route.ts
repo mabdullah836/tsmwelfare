@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withDbConnection } from '@/lib/mongodb';
-import { VolunteerModel } from '@/models';
+import { VolunteerModel } from '@/models/volunteer';
 
 export async function PATCH(
   request: Request,

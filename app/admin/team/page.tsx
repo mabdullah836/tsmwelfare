@@ -20,15 +20,16 @@ import { Draggable, DragDropContext, Droppable, DropResult } from "@hello-pangea
 import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { NoRecords } from '@/components/ui/no-records'
 import { Checkbox } from "@/components/ui/checkbox"
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { GridSkeleton } from "@/components/shared/skeletons/GridSkeleton"
 import { getTeamMembers } from "@/lib/services/team"
 import { TeamMember } from "@/lib/types/team"
 import { useDebounce } from '@/lib/hooks/use-debounce'
+import { useForm } from 'react-hook-form';
+import { FileUpload } from '@/components/ui/file-upload';
+import { FormInput } from '@/components/ui/form-input';
 
 export default function AdminTeamPage() {
   const [team, setTeam] = useState<TeamMember[]>([])
@@ -231,89 +232,63 @@ export default function AdminTeamPage() {
     }
   }
 
-  const handleDeleteMember = async (id: string) => {
-    setIsSubmitting(true)
-    try {
-      const response = await fetch(`/api/team/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete team member')
-      }
-
-      setTeam(prev => prev.filter(member => member._id !== id))
-      setAlert({
-        message: "Team member has been permanently removed",
-        type: "success"
-      })
-    } catch (error) {
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to remove team member",
-        type: "error"
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   const TeamMemberForm = ({ member }: { member?: TeamMember }) => {
-    const isEditing = !!member
+    const isEditing = !!member;
+    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, reset, control } = useForm({
+      defaultValues: {
+        name: member?.name || '',
+        role: member?.role || '',
+        bio: member?.bio || '',
+        image: null,
+      },
+    });
+
+    const onSubmit = (data: any) => {
+      if (isEditing) handleEditMember(data);
+      else handleAddMember(data);
+      reset();
+    };
+
     return (
-      <form action={isEditing ? handleEditMember : handleAddMember} className="space-y-4">
-        <div>
-          <Label htmlFor="name">Name</Label>
-          <Input 
-            id="name" 
-            name="name" 
-            defaultValue={member?.name} 
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="role">Role</Label>
-          <Input 
-            id="role" 
-            name="role" 
-            defaultValue={member?.role} 
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="bio">Bio</Label>
-          <Textarea 
-            id="bio" 
-            name="bio" 
-            defaultValue={member?.bio} 
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="image">
-            {member?.imageUrl ? "Change Image" : "Image"}
-          </Label>
-          <Input id="image" name="image" type="file" accept="image/*" />
-          {member?.imageUrl && (
-            <div className="mt-2 relative h-20 rounded overflow-hidden">
-              <Image
-                src={member.imageUrl}
-                alt={member.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <FormInput
+          id="name"
+          label="Name"
+          register={register}
+          errors={errors}
+          required
+          placeholder="Enter name"
+        />
+        <FormInput
+          id="role"
+          label="Role"
+          register={register}
+          errors={errors}
+          required
+          placeholder="Enter role"
+        />
+        <FormInput
+          id="bio"
+          label="Bio"
+          register={register}
+          errors={errors}
+          required
+          rows={4}
+          placeholder="Enter bio"
+        />
+        <FileUpload
+          name="image"
+          control={control}
+          label={member?.imageUrl ? "Change Image" : "Image"}
+          accept="image/*"
+          preview
+        />
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting 
-            ? (isEditing ? "Updating..." : "Adding...") 
-            : (isEditing ? "Update Member" : "Add Member")
-          }
+          {isSubmitting ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Member" : "Add Member")}
         </Button>
       </form>
-    )
-  }
+    );
+  };
 
   const uniqueRoles = ["all", ...Array.from(new Set(team.map(m => m.role)))]
 
@@ -400,8 +375,8 @@ export default function AdminTeamPage() {
           </div>
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-2">
-              <div className="flex bg-muted/50 font-medium" role="rowgroup">
-                <div className="p-4 w-auto flex-shrink-0 flex items-center justify-center" role="columnheader">
+              <div className="flex bg-muted/50  rounded" role="rowgroup">
+                <div className="p-2 w-auto flex-shrink-0 flex items-center justify-center" role="columnheader">
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="select-all-checkbox"
@@ -416,7 +391,7 @@ export default function AdminTeamPage() {
                 variant="destructive"
                 onClick={() => setShowDeleteConfirm(true)}
               >
-                Delete Selected
+                {selectedIds.length === 1 ? 'Delete' : 'Delete All'}
               </Button>
             </div>
           )}
@@ -450,14 +425,7 @@ export default function AdminTeamPage() {
                     >
                       <Edit2Icon className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => member._id && handleDeleteMember(member._id)}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "..." : "Delete"}
-                    </Button>
+                  
                   </div>
                 </div>
                 <CardContent className="pt-4">

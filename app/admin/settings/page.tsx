@@ -2,27 +2,31 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useForm } from 'react-hook-form';
+import { FormInput } from "@/components/ui/form-input";
 
 export default function AdminSettingsPage() {
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [email, setEmail] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm({
+    defaultValues: {
+      currentPassword: '',
+      email: '',
+      newPassword: '',
+      confirmPassword: '',
+    },
+  });
+
+  const onSubmit = async (data: any) => {
     setIsLoading(true)
     setError("")
     setSuccess("")
 
-    if (newPassword && newPassword !== confirmPassword) {
+    if (data.newPassword && data.newPassword !== data.confirmPassword) {
       setError("New passwords do not match.")
       setIsLoading(false)
       return
@@ -37,19 +41,17 @@ export default function AdminSettingsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          currentPassword,
-          email,
-          newPassword,
+          currentPassword: data.currentPassword,
+          email: data.email,
+          newPassword: data.newPassword,
         }),
       })
-      const data = await res.json()
-      if (data.success) {
+      const respData = await res.json()
+      if (respData.success) {
         setSuccess("Settings updated successfully.")
-        setCurrentPassword("")
-        setNewPassword("")
-        setConfirmPassword("")
+        reset()
       } else {
-        setError(data.message || "Failed to update settings.")
+        setError(respData.message || "Failed to update settings.")
       }
     } catch (err) {
       setError("Something went wrong. Please try again.")
@@ -65,48 +67,44 @@ export default function AdminSettingsPage() {
           <CardTitle className="text-2xl">Admin Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                placeholder="Enter current password"
-                value={currentPassword}
-                onChange={e => setCurrentPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">New Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter new email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-              />
-            </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <FormInput
+              id="currentPassword"
+              label="Current Password"
+              type="password"
+              register={register}
+              errors={errors}
+              required
+              placeholder="Enter current password"
+            />
+            <FormInput
+              id="email"
+              label="New Email"
+              type="email"
+              register={register}
+              errors={errors}
+              pattern={{ value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' }}
+              placeholder="Enter new email"
+            />
+            <FormInput
+              id="newPassword"
+              label="New Password"
+              type="password"
+              register={register}
+              errors={errors}
+              placeholder="Enter new password"
+            />
+            <FormInput
+              id="confirmPassword"
+              label="Confirm New Password"
+              type="password"
+              register={register}
+              errors={errors}
+              placeholder="Confirm new password"
+              registerOptions={{
+                validate: value => !watch('newPassword') || value === watch('newPassword') || 'Passwords do not match',
+              }}
+            />
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>

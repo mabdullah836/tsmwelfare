@@ -4,12 +4,12 @@ import type React from "react"
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Shield } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { FormInput } from '@/components/ui/form-input';
+import { useForm } from 'react-hook-form';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
@@ -19,8 +19,9 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { register, handleSubmit, formState: { errors } } = useForm();
+
+  const handleSubmitForm = async (data: any) => {
     setIsLoading(true)
     setError("")
 
@@ -28,14 +29,14 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(data),
       })
-      const data = await res.json()
-      console.log(data)
-      if (data?.success) {
+      const dataRes = await res.json()
+      console.log(dataRes)
+      if (dataRes?.success) {
         router.push('/admin/dashboard');
       } else {
-        setError(data?.message || 'Invalid email or password')
+        setError(dataRes?.message || 'Invalid email or password')
       }
     } catch (err) {
       setError('Something went wrong. Please try again.')
@@ -55,39 +56,36 @@ export default function AdminLoginPage() {
           <CardDescription>Sign in to access the admin dashboard</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@sirat-e-mustaqeem.org"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+          <form onSubmit={handleSubmit(handleSubmitForm)} className="space-y-4">
+            <FormInput
+              id="email"
+              label="Email"
+              type="email"
+              register={register}
+              errors={errors}
+              required
+              placeholder="admin@sirat-e-mustaqeem.org"
+            />
+            <div className="relative">
+              <FormInput
+                id="password"
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                register={register}
+                errors={errors}
                 required
+                placeholder="Enter your password"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
             </div>
 
             {error && (

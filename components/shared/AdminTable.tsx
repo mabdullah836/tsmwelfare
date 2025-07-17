@@ -1,7 +1,7 @@
 import React from "react";
 import { TableSkeleton } from "@/components/shared/skeletons/TableSkeleton";
 import { NoRecords } from "@/components/ui/no-records";
-import { Pagination } from "@/components/ui/pagination";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 interface Column {
   key: string;
@@ -21,6 +21,9 @@ interface AdminTableProps<T> {
   bodyClassName?: string;
   skeletonRows?: number;
   skeletonRowHeight?: number;
+  handleSort?: (key: string) => void;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export function AdminTable<T>({
@@ -31,38 +34,63 @@ export function AdminTable<T>({
   pagination,
   renderRow,
   className = "",
-  headerClassName = "",
-  bodyClassName = "",
   skeletonRows = 4,
   skeletonRowHeight = 64,
+  handleSort,
+  sortBy,
+  sortOrder,
 }: AdminTableProps<T>) {
   return (
     <div className={`overflow-x-auto ${className}`}>
-      <div className="rounded-md border" role="table">
-        <div className={`flex bg-muted/50 font-medium ${headerClassName}`} role="rowgroup">
-          {columns.map((col) => (
-            <div
-              key={col.key}
-              className={`p-4 ${col.className || "flex-1"}`}
-              role="columnheader"
-            >
-              {col.label}
-            </div>
-          ))}
-        </div>
-        <div className={bodyClassName} role="rowgroup">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {columns.map((col) => {
+              const isSortable = col.key !== "actions" && !!handleSort;
+              const isSorted = sortBy === col.key;
+              return (
+                <TableHead
+                  key={col.key}
+                  className={col.className || ""}
+                  onClick={isSortable ? () => handleSort && handleSort(col.key) : undefined}
+                  aria-sort={isSorted ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
+                  style={{ cursor: isSortable ? "pointer" : undefined }}
+                  scope="col"
+                >
+                  <span className="inline-flex items-center">
+                    {col.label}
+                    {isSorted && (
+                      <span className="ml-1 text-xs">
+                        {sortOrder === "asc" ? "▲" : "▼"}
+                      </span>
+                    )}
+                  </span>
+                </TableHead>
+              );
+            })}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {loading ? (
-            <TableSkeleton rows={skeletonRows} rowHeight={skeletonRowHeight} />
+            <TableRow>
+              <TableCell colSpan={columns.length}>
+                <TableSkeleton rows={skeletonRows} rowHeight={skeletonRowHeight} />
+              </TableCell>
+            </TableRow>
           ) : data.length === 0 ? (
-            <NoRecords
-              title={emptyState?.title || "No records found"}
-              description={emptyState?.description}
-            />
+            <TableRow>
+              <TableCell colSpan={columns.length}>
+                <NoRecords
+                  title={emptyState?.title || "No records found"}
+                  description={emptyState?.description}
+                />
+              </TableCell>
+            </TableRow>
           ) : (
             data.map((item, idx) => renderRow(item, idx))
           )}
-        </div>
-      </div>
+        </TableBody>
+      </Table>
       {pagination && <div className="mt-8 flex justify-center">{pagination}</div>}
     </div>
   );

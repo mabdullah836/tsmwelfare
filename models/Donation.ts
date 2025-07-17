@@ -23,6 +23,12 @@ const donationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'bank', 'online', 'other'],
+    default: 'other',
+    required: true
+  },
   status: {
     type: String,
     enum: ['pending', 'completed', 'failed'],

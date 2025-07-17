@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const data = await request.json()
+  console.log("======>>>>DATA", data)
   return await withDbConnection(() => handlePost({ model: VolunteerModel, data }))
 }
 

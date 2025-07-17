@@ -52,9 +52,9 @@ export default function HomePage() {
       <UrduTitleSection/>
       <DepartmentsPage />
       <GazaPage />
-      <HomeClientSections />
-      <DonationCounter />
       <EventsSection />
+      <DonationCounter />
+      <HomeClientSections />
     </>
   );
 }

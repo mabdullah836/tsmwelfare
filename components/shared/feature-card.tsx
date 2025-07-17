@@ -1,7 +1,7 @@
 import React from "react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FeatureCardProps } from "@/lib/types/components"
+import { FeatureCardProps } from "@/lib/types/featureCard"
 
 export const FeatureCard = React.memo(function FeatureCard({ title, description, icon, className }: FeatureCardProps) {
   return (

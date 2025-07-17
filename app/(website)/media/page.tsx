@@ -13,18 +13,15 @@
     import Image from "next/image"
     import { AlertMessage } from "@/components/ui/alert-message"
     import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
-    import { NoRecords } from '@/components/ui/no-records'
-    import { Skeleton } from "@/components/ui/skeleton"
     import type { Media } from '@/lib/types/media'
     import { getMedia } from '@/lib/services/media'
     import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
     import { motion, AnimatePresence } from 'framer-motion'
     import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
-    import { X } from 'lucide-react'
     import { getYouTubeId } from "@/lib/utils/format"
     import { useDebounce } from '@/lib/hooks/use-debounce'
-    import { GridSkeleton } from '@/components/shared/skeletons/GridSkeleton'
     import { AdminGrid } from "@/components/shared/AdminGrid";
+
 
     export default function MediaPage() {
       const [view, setView] = useState<"grid" | "list">("grid")
@@ -123,11 +120,13 @@
                 <div className="relative flex-1 min-w-[200px]">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search media..."
-                    className="pl-8"
+                    id="searchQuery"
+                    type="text"
+                    className="input-class"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    aria-label="Search media"
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search media files..."
+                    aria-label="Search Media Files"
                   />
                 </div>
                 <div className="flex items-center gap-2">

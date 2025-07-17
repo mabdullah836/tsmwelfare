@@ -84,16 +84,16 @@ export default function ZakatCalculatorPage() {
                               </label>
                               <HelpCircle
                                 className="h-4 w-4 text-muted-foreground"
-                                title="Enter the current market value of gold you own."
+                                aria-label="Enter the current market value of gold you own."
                               />
                             </div>
                             <Input
                               id="gold"
                               type="number"
-                              min="0"
+                              className="input-class"
                               value={goldValue || ""}
-                              onChange={(e) => setGoldValue(Number(e.target.value))}
-                              placeholder="0"
+                              onChange={e => setGoldValue(Number(e.target.value))}
+                              placeholder="Enter gold amount"
                             />
                           </div>
                           <div className="space-y-2">
@@ -103,16 +103,16 @@ export default function ZakatCalculatorPage() {
                               </label>
                               <HelpCircle
                                 className="h-4 w-4 text-muted-foreground"
-                                title="Enter the current market value of silver you own."
+                                aria-label="Enter the current market value of silver you own."
                               />
                             </div>
                             <Input
                               id="silver"
                               type="number"
-                              min="0"
+                              className="input-class"
                               value={silverValue || ""}
-                              onChange={(e) => setSilverValue(Number(e.target.value))}
-                              placeholder="0"
+                              onChange={e => setSilverValue(Number(e.target.value))}
+                              placeholder="Enter silver amount"
                             />
                           </div>
                         </div>
@@ -125,16 +125,16 @@ export default function ZakatCalculatorPage() {
                               </label>
                               <HelpCircle
                                 className="h-4 w-4 text-muted-foreground"
-                                title="Enter the total amount of cash and bank balances you have."
+                                aria-label="Enter the total amount of cash and bank balances you have."
                               />
                             </div>
                             <Input
                               id="cash"
                               type="number"
-                              min="0"
+                              className="input-class"
                               value={cashValue || ""}
-                              onChange={(e) => setCashValue(Number(e.target.value))}
-                              placeholder="0"
+                              onChange={e => setCashValue(Number(e.target.value))}
+                              placeholder="Enter cash amount"
                             />
                           </div>
                           <div className="space-y-2">
@@ -144,16 +144,16 @@ export default function ZakatCalculatorPage() {
                               </label>
                               <HelpCircle
                                 className="h-4 w-4 text-muted-foreground"
-                                title="Enter the current value of your investments, stocks, and shares."
+                                aria-label="Enter the current value of your investments, stocks, and shares."
                               />
                             </div>
                             <Input
                               id="investments"
                               type="number"
-                              min="0"
+                              className="input-class"
                               value={investmentsValue || ""}
-                              onChange={(e) => setInvestmentsValue(Number(e.target.value))}
-                              placeholder="0"
+                              onChange={e => setInvestmentsValue(Number(e.target.value))}
+                              placeholder="Enter investments amount"
                             />
                           </div>
                         </div>
@@ -166,16 +166,16 @@ export default function ZakatCalculatorPage() {
                               </label>
                               <HelpCircle
                                 className="h-4 w-4 text-muted-foreground"
-                                title="Enter the value of property owned for investment purposes, not personal use."
+                                aria-label="Enter the value of property owned for investment purposes, not personal use."
                               />
                             </div>
                             <Input
                               id="property"
                               type="number"
-                              min="0"
+                              className="input-class"
                               value={propertyValue || ""}
-                              onChange={(e) => setPropertyValue(Number(e.target.value))}
-                              placeholder="0"
+                              onChange={e => setPropertyValue(Number(e.target.value))}
+                              placeholder="Enter property amount"
                             />
                           </div>
                           <div className="space-y-2">
@@ -185,16 +185,16 @@ export default function ZakatCalculatorPage() {
                               </label>
                               <HelpCircle
                                 className="h-4 w-4 text-muted-foreground"
-                                title="Enter the value of your business inventory and assets."
+                                aria-label="Enter the value of your business inventory and assets."
                               />
                             </div>
                             <Input
                               id="business"
                               type="number"
-                              min="0"
+                              className="input-class"
                               value={businessValue || ""}
-                              onChange={(e) => setBusinessValue(Number(e.target.value))}
-                              placeholder="0"
+                              onChange={e => setBusinessValue(Number(e.target.value))}
+                              placeholder="Enter business amount"
                             />
                           </div>
                         </div>
@@ -211,16 +211,16 @@ export default function ZakatCalculatorPage() {
                             </label>
                             <HelpCircle
                               className="h-4 w-4 text-muted-foreground"
-                              title="Enter the total amount of debts you owe to others."
+                              aria-label="Enter the total amount of debts you owe to others."
                             />
                           </div>
                           <Input
                             id="debts"
                             type="number"
-                            min="0"
+                            className="input-class"
                             value={debtsValue || ""}
-                            onChange={(e) => setDebtsValue(Number(e.target.value))}
-                            placeholder="0"
+                            onChange={e => setDebtsValue(Number(e.target.value))}
+                            placeholder="Enter debts amount"
                           />
                         </div>
                         <div className="space-y-2">
@@ -230,16 +230,16 @@ export default function ZakatCalculatorPage() {
                             </label>
                             <HelpCircle
                               className="h-4 w-4 text-muted-foreground"
-                              title="Enter the total amount of expenses that are due."
+                              aria-label="Enter the total amount of expenses that are due."
                             />
                           </div>
                           <Input
                             id="expenses"
                             type="number"
-                            min="0"
+                            className="input-class"
                             value={expensesValue || ""}
-                            onChange={(e) => setExpensesValue(Number(e.target.value))}
-                            placeholder="0"
+                            onChange={e => setExpensesValue(Number(e.target.value))}
+                            placeholder="Enter expenses amount"
                           />
                         </div>
                       </div>

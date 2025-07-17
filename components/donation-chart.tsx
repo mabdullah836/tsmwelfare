@@ -1,68 +1,111 @@
 "use client"
 
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, TooltipProps } from "recharts"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import React from "react";
 
-const data = [
-  { name: "Jan", amount: 45000 },
-  { name: "Feb", amount: 52000 },
-  { name: "Mar", amount: 48000 },
-  { name: "Apr", amount: 61000 },
-  { name: "May", amount: 55000 },
-  { name: "Jun", amount: 67000 },
-  { name: "Jul", amount: 73000 },
-  { name: "Aug", amount: 69000 },
-  { name: "Sep", amount: 82000 },
-  { name: "Oct", amount: 78000 },
-  { name: "Nov", amount: 85000 },
-  { name: "Dec", amount: 92000 },
-]
+type ChartType = "bar" | "area" | "pie";
 
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-lg border bg-background p-2 shadow-sm">
-        <div className="grid gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground">Amount:</span>
-            <span className="font-medium">
-              Rs. {payload[0].value?.toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  return null
-}
+type DonationChartProps = {
+  type: ChartType;
+  data: any[];
+  title?: string;
+  description?: string;
+  loading?: boolean;
+  xKey?: string;
+  yKey?: string;
+  color?: string;
+  pieNameKey?: string;
+  pieValueKey?: string;
+  pieColors?: string[];
+};
 
-export function DonationChart() {
+const DEFAULT_PIE_COLORS = [
+  "#6366f1", // Indigo
+  "#f59e42", // Orange
+  "#10b981", // Green
+  "#ef4444", // Red
+  "#3b82f6", // Blue
+  "#a21caf", // Purple
+  "#fbbf24", // Yellow
+  "#0ea5e9", // Sky
+];
+
+export function DonationChart({
+  type,
+  data,
+  title,
+  description,
+  loading = false,
+  xKey = "name",
+  yKey = "amount",
+  color = "hsl(var(--primary))",
+  pieNameKey = "name",
+  pieValueKey = "value",
+  pieColors = DEFAULT_PIE_COLORS,
+}: DonationChartProps) {
   return (
-    <div className="h-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data}>
-          <XAxis 
-            dataKey="name" 
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            stroke="hsl(var(--muted-foreground))"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-            tickFormatter={(value) => `Rs. ${value.toLocaleString()}`}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar 
-            dataKey="amount" 
-            fill="hsl(var(--primary))" 
-            radius={[4, 4, 0, 0]}
-            className="hover:opacity-80 transition-opacity"
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  )
-} 
+    <Card>
+      {(title || description) && (
+        <CardHeader>
+          {title && <CardTitle>{title}</CardTitle>}
+          {description && <CardDescription>{description}</CardDescription>}
+        </CardHeader>
+      )}
+      <CardContent className={type === "pie" ? "h-72 flex items-center justify-center" : "h-[300px]"}>
+        {loading ? (
+          <Skeleton className="h-full w-full" />
+        ) : !data || data.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground">No data available</div>
+        ) : type === "bar" ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data}>
+              <XAxis dataKey={xKey} fontSize={12} axisLine={false} tickLine={false} />
+              <YAxis fontSize={12} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(value: number) => [`Rs. ${Number(value).toLocaleString()}`, "Amount"]} wrapperStyle={{ fontSize: 12 }} />
+              <Bar dataKey={yKey} fill={color} radius={[4, 4, 0, 0]} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : type === "area" ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id="colorDonations" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={color} stopOpacity={0.8} />
+                  <stop offset="95%" stopColor={color} stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey={xKey} fontSize={12} axisLine={false} tickLine={false} />
+              <YAxis fontSize={12} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(value: number) => [`Rs. ${Number(value).toLocaleString()}`, "Amount"]} wrapperStyle={{ fontSize: 12 }} />
+              <Area type="monotone" dataKey={yKey} stroke={color} fillOpacity={1} fill="url(#colorDonations)" />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : type === "pie" ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey={pieValueKey}
+                nameKey={pieNameKey}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label
+              >
+                {data.map((entry, idx) => (
+                  <Cell key={entry[pieNameKey] || idx} fill={pieColors[idx % pieColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value: number) => [`Rs. ${Number(value).toLocaleString()}`, "Amount"]} wrapperStyle={{ fontSize: 12 }} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}

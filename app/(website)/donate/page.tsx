@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Heart, CreditCard, Landmark, Smartphone } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { PageHeader } from "@/components/page-header"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { FormInput } from "@/components/ui/form-input"
 
 export default function DonatePage() {
   const [donationAmount, setDonationAmount] = useState<string>("")
@@ -26,10 +27,11 @@ export default function DonatePage() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!donationAmount || Number(donationAmount) <= 0) {
+  const { handleSubmit, register, formState: { errors } } = useForm()
+
+  // Change handleSubmitForm to accept form data
+  const handleSubmitForm = async (data: any) => {
+    if (!data.donationAmount || Number(data.donationAmount) <= 0) {
       setAlert({
         message: "Please enter a valid donation amount",
         type: "error"
@@ -46,8 +48,8 @@ export default function DonatePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          amount: donationAmount,
-          type: donationType,
+          amount: data.donationAmount,
+          type: data.donationType,
           paymentMethod,
         }),
       })
@@ -118,7 +120,7 @@ export default function DonatePage() {
               </CardContent>
             </Card>
           ) : (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(handleSubmitForm)}>
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
                   <Card>
@@ -141,101 +143,47 @@ export default function DonatePage() {
                             </Button>
                           ))}
                         </div>
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            min="100"
-                            placeholder="Other Amount"
-                            value={!["1000", "5000", "10000", "25000"].includes(donationAmount) ? donationAmount : ""}
-                            onChange={(e) => setDonationAmount(e.target.value)}
-                            className="pl-10"
-                          />
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">Rs.</span>
-                        </div>
+                        <FormInput
+                          id="donationAmount"
+                          label="Donation Amount (PKR)"
+                          type="number"
+                          register={register}
+                          errors={errors}
+                          required
+                          placeholder="Other Amount"
+                        />
                       </div>
 
                       <div className="space-y-4">
                         <Label>Donation Type</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              value="general"
-                              id="general"
-                              name="donationType"
-                              onChange={(e) => setDonationType(e.target.value)}
-                              defaultChecked
-                            />
-                            <label htmlFor="general" className="cursor-pointer">
-                              General Donation
-                            </label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              value="zakat"
-                              id="zakat"
-                              name="donationType"
-                              onChange={(e) => setDonationType(e.target.value)}
-                            />
-                            <label htmlFor="zakat" className="cursor-pointer">
-                              Zakat
-                            </label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              value="education"
-                              id="education"
-                              name="donationType"
-                              onChange={(e) => setDonationType(e.target.value)}
-                            />
-                            <label htmlFor="education" className="cursor-pointer">
-                              Education Program
-                            </label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              value="medical"
-                              id="medical"
-                              name="donationType"
-                              onChange={(e) => setDonationType(e.target.value)}
-                            />
-                            <label htmlFor="medical" className="cursor-pointer">
-                              Medical Assistance
-                            </label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              value="orphans"
-                              id="orphans"
-                              name="donationType"
-                              onChange={(e) => setDonationType(e.target.value)}
-                            />
-                            <label htmlFor="orphans" className="cursor-pointer">
-                              Orphan Care
-                            </label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              value="food"
-                              id="food"
-                              name="donationType"
-                              onChange={(e) => setDonationType(e.target.value)}
-                            />
-                            <label htmlFor="food" className="cursor-pointer">
-                              Food Distribution
-                            </label>
-                          </div>
-                        </div>
+                        <FormInput
+                          id="donationType"
+                          label="Donation Type"
+                          type="radio"
+                          options={[
+                            { value: "general", label: "General Donation" },
+                            { value: "zakat", label: "Zakat" },
+                            { value: "education", label: "Education Program" },
+                            { value: "medical", label: "Medical Assistance" },
+                            { value: "orphans", label: "Orphan Care" },
+                            { value: "food", label: "Food Distribution" },
+                          ]}
+                          register={register}
+                          errors={errors}
+                          required
+                        />
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="message">Message (Optional)</Label>
-                        <Textarea id="message" placeholder="Add a message with your donation" rows={3} />
+                        <FormInput
+                          id="message"
+                          label="Message (Optional)"
+                          register={register}
+                          errors={errors}
+                          rows={3}
+                          placeholder="Add a message with your donation"
+                        />
                       </div>
                     </CardContent>
                   </Card>
@@ -249,26 +197,56 @@ export default function DonatePage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="firstName">First Name</Label>
-                          <Input id="firstName" required />
+                          <FormInput
+                            id="firstName"
+                            label="First Name"
+                            register={register}
+                            errors={errors}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="lastName">Last Name</Label>
-                          <Input id="lastName" required />
+                          <FormInput
+                            id="lastName"
+                            label="Last Name"
+                            register={register}
+                            errors={errors}
+                            required
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="email">Email</Label>
-                          <Input id="email" type="email" required />
+                          <FormInput
+                            id="email"
+                            label="Email"
+                            type="email"
+                            register={register}
+                            errors={errors}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone</Label>
-                          <Input id="phone" type="tel" />
+                          <FormInput
+                            id="phone"
+                            label="Phone"
+                            type="tel"
+                            register={register}
+                            errors={errors}
+                          />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="address">Address (Optional)</Label>
-                        <Input id="address" />
+                        <FormInput
+                          id="address"
+                          label="Address (Optional)"
+                          register={register}
+                          errors={errors}
+                        />
                       </div>
                     </CardContent>
                   </Card>

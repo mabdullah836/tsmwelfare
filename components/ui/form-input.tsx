@@ -3,15 +3,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { UseFormRegister, FieldErrors, UseFormWatch } from "react-hook-form"
+import { UseFormRegister, FieldErrors, UseFormWatch, RegisterOptions, ValidationRule } from "react-hook-form"
 
-interface FormInputProps<T extends Record<string, any>> {
+interface FormInputProps<T extends Record<string, any> = Record<string, any>> {
   id: string
   label: string
   type?: string
-  register: UseFormRegister<T>
-  errors: FieldErrors<T>
-  required?: boolean
+  register?: UseFormRegister<T>
+  errors?: FieldErrors<T>
+  required?: boolean | string
   pattern?: {
     value: RegExp
     message: string
@@ -25,6 +25,7 @@ interface FormInputProps<T extends Record<string, any>> {
   checked?: boolean
   onCheckedChange?: (checked: boolean) => void
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>
+  registerOptions?: RegisterOptions<T>
 }
 
 export const FormInput = <T extends Record<string, any>>({
@@ -44,8 +45,22 @@ export const FormInput = <T extends Record<string, any>>({
   checked,
   onCheckedChange,
   inputProps,
+  registerOptions,
 }: FormInputProps<T>) => {
-  const error = errors[id]?.message as string
+  const error = errors?.[id]?.message as string
+
+  const getRegisterOptions = (): RegisterOptions<T> => {
+    const opts: RegisterOptions<T> = {
+      ...(required && { 
+        required: typeof required === 'string' ? required : `${label} is required` 
+      }),
+      ...registerOptions
+    };
+    if (pattern) {
+      opts.pattern = pattern;
+    }
+    return opts;
+  }
 
   if (isCheckbox) {
     return (
@@ -71,7 +86,7 @@ export const FormInput = <T extends Record<string, any>>({
         </Label>
         <Select
           onValueChange={onValueChange}
-          {...register(id as any, { required: required ? `${label} is required` : false })}
+          {...(register ? register(id as any, getRegisterOptions()) : {})}
         >
           <SelectTrigger>
             <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
@@ -98,10 +113,7 @@ export const FormInput = <T extends Record<string, any>>({
         </Label>
         <Textarea
           id={id}
-          {...register(id as any, {
-            required: required ? `${label} is required` : false,
-            pattern: pattern
-          })}
+          {...(register ? register(id as any, getRegisterOptions()) : {})}
           placeholder={placeholder}
           rows={rows}
         />
@@ -119,10 +131,7 @@ export const FormInput = <T extends Record<string, any>>({
       <Input
         id={id}
         type={type}
-        {...register(id as any, {
-          required: required ? `${label} is required` : false,
-          pattern: pattern
-        })}
+        {...(register ? register(id as any, getRegisterOptions()) : {})}
         placeholder={placeholder}
         {...inputProps}
       />
