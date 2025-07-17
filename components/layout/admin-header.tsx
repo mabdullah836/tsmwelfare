@@ -44,7 +44,7 @@ export function AdminHeader({ onSidebarToggle }: { onSidebarToggle?: () => void 
             <Link href="/">View Website</Link>
           </Button>
           <DropdownMenu>
-            <DropdownMenuTrigger className="relative h-9 w-9 rounded-full p-0 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <DropdownMenuTrigger asChild>
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-primary/10 text-primary">AD</AvatarFallback>
               </Avatar>

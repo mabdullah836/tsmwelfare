@@ -26,6 +26,9 @@ import { uploadMedia } from '@/lib/services/media'
 import { getUpcomingEvents } from '@/lib/services/event'
 import { Event } from "@/lib/types/event"
 import { useDebounce } from '@/lib/hooks/use-debounce'
+import { useForm } from 'react-hook-form';
+import { FileUpload } from '@/components/ui/file-upload';
+import { FormInput } from '@/components/ui/form-input';
 
 import { AdminGrid } from "@/components/shared/AdminGrid"
 
@@ -163,109 +166,83 @@ export default function AdminEventsPage() {
     }
   }
 
-  const handleDeleteEvent = async (id: string) => {
-    setIsSubmitting(true)
-    try {
-      const response = await fetch(`/api/events/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete event')
-      }
-
-      setEvents(prev => prev.filter(event => event._id !== id))
-      setAlert({
-        message: "Event has been permanently removed",
-        type: "success"
-      })
-    } catch (error) {
-      setAlert({
-        message: error instanceof Error ? error.message : "Failed to delete event",
-        type: "error"
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   const EventForm = ({ event }: { event?: Event }) => {
-    const isEditing = !!event
+    const isEditing = !!event;
+    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, reset, control } = useForm({
+      defaultValues: {
+        title: event?.title || '',
+        description: event?.description || '',
+        date: event?.date ? new Date(event.date).toISOString().split('T')[0] : '',
+        time: event?.time || '',
+        location: event?.location || '',
+        image: null,
+      },
+    });
+
+    const onSubmit = (data: any) => {
+      if (isEditing) handleEditEvent(data);
+      else handleAddEvent(data);
+      reset();
+    };
+
     return (
-      <form action={isEditing ? handleEditEvent : handleAddEvent} className="space-y-4">
-        <div>
-          <Label htmlFor="title">Title</Label>
-          <Input 
-            id="title" 
-            name="title" 
-            defaultValue={event?.title} 
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="description">Description</Label>
-          <Textarea 
-            id="description" 
-            name="description" 
-            defaultValue={event?.description} 
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="date">Date</Label>
-          <Input 
-            id="date" 
-            name="date" 
-            type="date"
-            defaultValue={event?.date ? new Date(event.date).toISOString().split('T')[0] : undefined}
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="time">Time</Label>
-          <Input 
-            id="time" 
-            name="time" 
-            type="time"
-            defaultValue={event?.time} 
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="location">Location</Label>
-          <Input 
-            id="location" 
-            name="location" 
-            defaultValue={event?.location} 
-            required 
-          />
-        </div>
-        <div>
-          <Label htmlFor="image">
-            {event?.imageUrl ? "Change Image" : "Image"}
-          </Label>
-          <Input id="image" name="image" type="file" accept="image/*" />
-          {event?.imageUrl && (
-            <div className="mt-2 relative h-40 rounded overflow-hidden">
-              <Image
-                src={event.imageUrl}
-                alt={event.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-        </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <FormInput
+          id="title"
+          label="Title"
+          register={register}
+          errors={errors}
+          required
+        />
+        <FormInput
+          id="description"
+          label="Description"
+          register={register}
+          errors={errors}
+          required
+          rows={4}
+        />
+        <FormInput
+          id="date"
+          label="Date"
+          type="date"
+          register={register}
+          errors={errors}
+          required
+        />
+        <FormInput
+          id="time"
+          label="Time"
+          type="time"
+          register={register}
+          errors={errors}
+          required
+        />
+        <FormInput
+          id="location"
+          label="Location"
+          register={register}
+          errors={errors}
+          required
+        />
+        <FileUpload
+          name="image"
+          control={control}
+          label={event?.imageUrl ? "Change Image" : "Image"}
+          accept="image/*"
+          preview
+        />
+        {event?.imageUrl && (
+          <div className="mt-2 relative h-40 rounded overflow-hidden">
+            <Image src={event.imageUrl} alt={event.title} fill className="object-cover" />
+          </div>
+        )}
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting 
-            ? (isEditing ? "Updating..." : "Adding...") 
-            : (isEditing ? "Update Event" : "Add Event")
-          }
+          {isSubmitting ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Event" : "Add Event")}
         </Button>
       </form>
-    )
-  }
+    );
+  };
 
   const selectableEvents = events.filter(event => typeof event._id === 'string') as { _id: string }[];
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableEvents);
@@ -299,41 +276,43 @@ export default function AdminEventsPage() {
               onChange={e => setSearch(e.target.value)}
               className="w-48"
             />
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className="h-8 w-8 p-0"
-            >
-              <GridIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8 w-8 p-0"
-            >
-              <ListIcon className="h-4 w-4" />
-            </Button>
-            <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="columnheader">
+         <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="h-8 w-8 p-0"
+              >
+                <GridIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="h-8 w-8 p-0"
+              >
+                <ListIcon className="h-4 w-4" />
+              </Button>
+            </div>
               {selectedIds.length > 0 && (
                 <>
-                  <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
-                  <Checkbox
-                    id="select-all-checkbox"
-                    checked={allSelected}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                </>
-              )}
-            </div>
-            {selectedIds.length > 0 && (
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                Delete Selected
-              </Button>
+                 <div className="p-2 flex-shrink-0  bg-muted/50 rounded flex items-center justify-center" role="columnheader">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="select-all-checkbox"
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                    <label htmlFor="select-all-checkbox" className="cursor-pointer">Select all</label>
+                  </div>
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  Delete Selected
+                </Button>
+              </>
             )}
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open)

@@ -3,13 +3,12 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { PageHeader } from "@/components/page-header"
 import { contactFaqs } from '@/lib/data/faqs'
+import { FormInput } from "@/components/ui/form-input"
 
 interface ContactFormData {
   name: string
@@ -27,6 +26,7 @@ export default function ContactPage() {
     handleSubmit,
     formState: { errors },
     reset,
+    control,
   } = useForm<ContactFormData>()
 
   const onSubmit = async (formData: ContactFormData) => {
@@ -90,85 +90,42 @@ export default function ContactPage() {
                 <CardContent>
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="name" className="text-sm font-medium">
-                          Your Name
-                        </label>
-                        <Input
-                          id="name"
-                          {...register("name", {
-                            required: "Name is required",
-                            minLength: {
-                              value: 2,
-                              message: "Name must be at least 2 characters"
-                            }
-                          })}
-                        />
-                        {errors.name && (
-                          <p className="text-sm text-red-500">{errors.name.message}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="email" className="text-sm font-medium">
-                          Email Address
-                        </label>
-                        <Input
-                          id="email"
-                          type="email"
-                          {...register("email", {
-                            required: "Email is required",
-                            pattern: {
-                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                              message: "Invalid email address"
-                            }
-                          })}
-                        />
-                        {errors.email && (
-                          <p className="text-sm text-red-500">{errors.email.message}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="subject" className="text-sm font-medium">
-                        Subject
-                      </label>
-                      <Input
-                        id="subject"
-                        {...register("subject", {
-                          required: "Subject is required",
-                          minLength: {
-                            value: 5,
-                            message: "Subject must be at least 5 characters"
-                          }
-                        })}
+                      <FormInput
+                        id="name"
+                        label="Your Name"
+                        register={register}
+                        errors={errors}
+                        required
+                        placeholder="e.g., John Doe"
                       />
-                      {errors.subject && (
-                        <p className="text-sm text-red-500">{errors.subject.message}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="message" className="text-sm font-medium">
-                        Message
-                      </label>
-                      <Textarea
-                        id="message"
-                        rows={5}
-                        {...register("message", {
-                          required: "Message is required",
-                          minLength: {
-                            value: 10,
-                            message: "Message must be at least 10 characters"
-                          },
-                          maxLength: {
-                            value: 1000,
-                            message: "Message cannot exceed 1000 characters"
-                          }
-                        })}
+                      <FormInput
+                        id="email"
+                        label="Email Address"
+                        type="email"
+                        register={register}
+                        errors={errors}
+                        required
+                        placeholder="e.g., john.doe@example.com"
+                        pattern={{ value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Invalid email address" }}
                       />
-                      {errors.message && (
-                        <p className="text-sm text-red-500">{errors.message.message}</p>
-                      )}
                     </div>
+                    <FormInput
+                      id="subject"
+                      label="Subject"
+                      register={register}
+                      errors={errors}
+                      required
+                      placeholder="e.g., Inquiry about services"
+                    />
+                    <FormInput
+                      id="message"
+                      label="Message"
+                      register={register}
+                      errors={errors}
+                      required
+                      rows={5}
+                      placeholder="Your message here..."
+                    />
                     <Button type="submit" className="w-full" disabled={isSubmitting}>
                       {isSubmitting ? "Sending..." : "Send Message"}
                     </Button>

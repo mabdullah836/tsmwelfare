@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UploadIcon, ImageIcon, VideoIcon, XIcon, CheckIcon } from "lucide-react";
+import { FormInput } from '@/components/ui/form-input';
+import { FileUpload } from '@/components/ui/file-upload';
 
 interface UploadedFile {
   id: string;

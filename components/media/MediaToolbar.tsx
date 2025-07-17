@@ -70,7 +70,7 @@ export const MediaToolbar = ({
         </div>
       )}
       {selectedIds.length > 0 && (
-        <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>Delete</Button>
+        <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>{selectedIds.length > 1 ? 'Delete All' : 'Delete' }</Button>
       )}
     </div>
   </div>

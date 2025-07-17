@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { FormInput } from '@/components/ui/form-input';
 import { Button } from '@/components/ui/button';
 import { PlayCircle, CheckCircle, XCircle } from 'lucide-react';
 import { formatDate } from '@/lib/utils/format';
@@ -16,12 +16,15 @@ export const VideoCard = ({ media, selected, onSelect, onClick, onApprove, onRej
   approving: boolean;
 }) => (
   <div className="relative group cursor-pointer" onClick={onClick}>
-    <Checkbox
-      className="absolute top-2 left-2 z-10"
-      checked={selected}
-      onClick={e => e.stopPropagation()}
-      onCheckedChange={onSelect}
-    />
+    <div onClick={e => e.stopPropagation()}>
+      <FormInput
+        id={`select-video-${media?._id}`}
+        label="Select Video"
+        isCheckbox
+        checked={selected}
+        onCheckedChange={onSelect}
+      />
+    </div>
     <Card className="overflow-hidden">
       <div className="relative w-full h-48">
         <Image

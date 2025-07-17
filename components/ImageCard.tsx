@@ -1,16 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import { FormInput } from '@/components/ui/form-input';
 import { formatDate } from '@/lib/utils/format';
 import type { Media } from '@/lib/types/media';
 import Image from 'next/image';
 
 export const ImageCard = ({ media, selected, onSelect, onClick }: { media: Media; selected: boolean; onSelect: () => void; onClick?: () => void }) => (
   <div className="relative group">
-    <Checkbox
-      className="absolute top-2 left-2 z-10"
+    <FormInput
+      id={`select-image-${media?._id}`}
+      label="Select Image"
+      isCheckbox
       checked={selected}
       onCheckedChange={onSelect}
-      onClick={e => e.stopPropagation()}
     />
     <Card className="overflow-hidden cursor-pointer" onClick={onClick}>
       <CardContent className="p-0">

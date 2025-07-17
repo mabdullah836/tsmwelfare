@@ -1,4 +1,4 @@
-import { Checkbox } from '@/components/ui/checkbox';
+import { FormInput } from '@/components/ui/form-input';
 import { formatDate } from '@/lib/utils/format';
 import type { Media } from '@/lib/types/media';
 import Image from 'next/image';
@@ -9,8 +9,10 @@ export const ListRow = ({ media, selected, onSelect }: {
   onSelect: () => void;
 }) => (
   <div className="relative group flex items-center gap-4 border rounded-lg p-4">
-    <Checkbox
-      className="absolute top-2 left-2 z-10"
+    <FormInput
+      id={`select-row-${media?._id}`}
+      label="Select Row"
+      isCheckbox
       checked={selected}
       onCheckedChange={onSelect}
     />

@@ -4,17 +4,6 @@ import { PageHeader } from "@/components/page-header"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { VolunteerBenefits } from "@/components/features/volunteer/volunteer-benefits"
 import { INTEREST_OPTIONS, AVAILABILITY_OPTIONS } from "@/lib/constants/volunteer"
@@ -108,12 +97,25 @@ export default function VolunteerPage() {
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={handleFormSubmit} className="space-y-6">
+                <form onSubmit={handleFormSubmit}>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <FormInput id="firstName" label="First Name" register={register} errors={errors} required />
-                    <FormInput id="lastName" label="Last Name" register={register} errors={errors} required />
+                    <FormInput
+                      id="firstName"
+                      label="First Name"
+                      register={register}
+                      errors={errors}
+                      required
+                      placeholder="First Name"
+                    />
+                    <FormInput
+                      id="lastName"
+                      label="Last Name"
+                      register={register}
+                      errors={errors}
+                      required
+                      placeholder="Last Name"
+                    />
                   </div>
-
                   <div className="grid sm:grid-cols-2 gap-4">
                     <FormInput
                       id="email"
@@ -122,60 +124,69 @@ export default function VolunteerPage() {
                       register={register}
                       errors={errors}
                       required
-                      pattern={{
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: "Invalid email address",
-                      }}
+                      placeholder="Email"
                     />
                     <FormInput
                       id="phone"
                       label="Phone Number"
-                      type="tel"
                       register={register}
                       errors={errors}
                       required
-                      pattern={{
-                        value: /^[0-9]{11}$/,
-                        message: "Please enter a valid 11-digit phone number",
-                      }}
+                      placeholder="Phone Number"
                     />
                   </div>
-
-                  <FormInput id="address" label="Address" register={register} errors={errors} required />
-
+                  <FormInput
+                    id="address"
+                    label="Address"
+                    register={register}
+                    errors={errors}
+                    required
+                    placeholder="Address"
+                  />
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <FormInput id="city" label="City" register={register} errors={errors} required />
-                    <FormInput id="occupation" label="Occupation" register={register} errors={errors} required />
+                    <FormInput
+                      id="city"
+                      label="City"
+                      register={register}
+                      errors={errors}
+                      required
+                      placeholder="City"
+                    />
+                    <FormInput
+                      id="occupation"
+                      label="Occupation"
+                      register={register}
+                      errors={errors}
+                      required
+                      placeholder="Occupation"
+                    />
                   </div>
-
                   <FormInput
                     id="availability"
                     label="Availability"
                     register={register}
                     errors={errors}
                     required
-                    options={AVAILABILITY_OPTIONS}
+                    options={AVAILABILITY_OPTIONS.map(option => ({ value: option.value, label: option.label }))}
                     onValueChange={handleAvailabilityChange}
                   />
-
                   <div className="space-y-3">
-                    <Label>Areas of Interest</Label>
+                    <label className="block font-medium">Areas of Interest</label>
                     <div className="grid sm:grid-cols-2 gap-4">
                       {INTEREST_OPTIONS.map((interest) => (
                         <FormInput
                           key={interest}
-                          id={interest}
+                          id={"interests"}
                           label={interest}
                           register={register}
                           errors={errors}
                           isCheckbox
-                          checked={watch("interests")?.includes(interest) ?? false}
+                          checked={watch("interests")?.includes(interest)}
                           onCheckedChange={() => handleInterestChange(interest)}
                         />
                       ))}
                     </div>
                   </div>
-
                   <FormInput
                     id="skills"
                     label="Special Skills or Qualifications"
@@ -184,35 +195,30 @@ export default function VolunteerPage() {
                     rows={3}
                     placeholder="List any special skills or qualifications you have"
                   />
-
                   <FormInput
                     id="experience"
                     label="Previous Volunteer Experience"
                     register={register}
                     errors={errors}
                     rows={3}
-                    placeholder="Describe your previous volunteer experience"
+                    placeholder="Describe any previous volunteer experience"
                   />
-
                   <FormInput
                     id="motivation"
-                    label="Why do you want to volunteer with us?"
+                    label="Motivation"
                     register={register}
                     errors={errors}
-                    required
                     rows={3}
-                    placeholder="Tell us why you'd like to volunteer with our organization"
+                    placeholder="Why do you want to volunteer with us?"
                   />
-
                   <FormInput
                     id="references"
                     label="References"
                     register={register}
                     errors={errors}
-                    rows={3}
-                    placeholder="Please provide two references with their contact information"
+                    rows={2}
+                    placeholder="Provide references (optional)"
                   />
-
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? "Submitting..." : "Submit Application"}
                   </Button>

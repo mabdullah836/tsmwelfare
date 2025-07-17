@@ -28,8 +28,6 @@ export default function MediaPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-  const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
-  const [deletingSingle, setDeletingSingle] = useState(false)
   const [showAddVideo, setShowAddVideo] = useState(false)
   const [showVideoModal, setShowVideoModal] = useState(false)
   const [activeVideo, setActiveVideo] = useState<Media | null>(null)
@@ -89,24 +87,6 @@ export default function MediaPage() {
     }
   }
   const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteMediaItems, selectedIds)
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteMedia(id)
-      setMediaItems(prev => prev.filter(item => item._id !== id))
-      setAlert({ message: 'Media item has been permanently removed', type: 'success' })
-    } catch (error) {
-      setAlert({ message: error instanceof Error ? error.message : 'Failed to delete media item', type: 'error' })
-    }
-  }
-
-  const handleDeleteWithModal = async () => {
-    if (!mediaToDelete) return
-    setDeletingSingle(true)
-    await handleDelete(mediaToDelete)
-    setDeletingSingle(false)
-    setMediaToDelete(null)
-  }
 
   async function handleApprove(media: Media) {
     setApproving(true)
@@ -184,14 +164,12 @@ export default function MediaPage() {
           toggleSelectAll={toggleSelectAll}
         />
         <ConfirmDeleteModal
-          open={showDeleteConfirm || !!mediaToDelete}
+          open={showDeleteConfirm}
           title="Delete Media"
           description="Are you sure you want to delete the selected media file(s)? This action cannot be undone."
-          loading={mediaToDelete ? deletingSingle : deleting}
-          onCancel={() => {
-            mediaToDelete ? setMediaToDelete(null) : setShowDeleteConfirm(false)
-          }}
-          onConfirm={mediaToDelete ? handleDeleteWithModal : handleBulkDelete}
+          loading={deleting}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleBulkDelete}
         />
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <AdminGrid
@@ -260,6 +238,19 @@ export default function MediaPage() {
             </PaginationContent>
           </Pagination>
         )}
+        <AddVideoDialog
+          open={showAddVideo}
+          onOpenChange={setShowAddVideo}
+          url={url}
+          setUrl={setUrl}
+          thumbnail={thumbnail}
+          setThumbnail={setThumbnail}
+          title={title}
+          setTitle={setTitle}
+          tag={tag}
+          setTag={setTag}
+          onSave={handleSave}
+        />
       </div>
     </div>
   )

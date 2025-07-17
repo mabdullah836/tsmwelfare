@@ -39,10 +39,11 @@ export function TeamSection() {
         <h2 className="text-3xl font-bold mb-12 text-center">Meet Our Team</h2>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <Input
-            placeholder="Search team members..."
+            id="teamMemberName"
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full md:w-72"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            required
+            placeholder="Enter team member name"
           />
         </div>
         {loading ? (

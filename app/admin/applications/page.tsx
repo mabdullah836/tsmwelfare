@@ -1,253 +1,432 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { useState, useEffect } from "react"
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { AlertMessage } from "@/components/ui/alert-message"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { formatDate } from "@/lib/utils/format"
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
+import { 
+  TableCell, 
+  TableRow 
+} from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { updateApplicationStatus } from '@/lib/services/application'
-import type { Application } from '@/lib/types/application'
-import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
-import { useSelection } from '@/lib/hooks/use-selection'
-import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { usePaginationFilter } from '@/lib/hooks/use-pagination-filter'
-import { AdminTable } from "@/components/shared/AdminTable"
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu"
+import { 
+  MoreHorizontal, 
+  Trash2, 
+  CheckCircle2, 
+  XCircle, 
+  Eye,
+  Mail,
+  Phone,
+  User,
+  Calendar,
+  FileText,
+  File
+} from "lucide-react"
+import { AlertMessage } from '@/components/ui/alert-message';
+import { formatDate } from "@/lib/utils/format"
 import { getApplications } from "@/lib/services/application"
+import { Application } from "@/lib/types/application"
 import { useDebounce } from '@/lib/hooks/use-debounce'
+import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
+import { AdminTable } from "@/components/shared/AdminTable";
+import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([])
-  const [loading, setLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
-  const [showDetails, setShowDetails] = useState(false)
-  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
   const [page, setPage] = useState(1)
-  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
-  const debouncedSearch = useDebounce(search, 400)
-
-  // Selection hook
-  const { selectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(applications.filter((app): app is Application & { _id: string } => typeof app._id === 'string'))
-
-  // Pagination and filtering
-  const {
-    pageSize: limit,
-    setPage: setPageSize,
-    totalPages: totalPages,
-    paginated: paginatedApplications
-  } = usePaginationFilter(applications, {
-    pageSize: 10,
-    searchValue: search,
-    filterFn: (item, search) => {
-      const s = search.toLowerCase()
-      return (
-        item.name.toLowerCase().includes(s) ||
-        item.email.toLowerCase().includes(s) ||
-        item.type.toLowerCase().includes(s)
-      )
-    },
-    extraFilters: { status: statusFilter },
-    extraFilterFn: (item, filters) => {
-      if (!filters || !filters.status || filters.status === 'all') return true
-      return item.status === filters.status
-    }
+  const [meta, setMeta] = useState({ 
+    total: 0, 
+    page: 1, 
+    pages: 1, 
+    limit: 10 
   })
-
-  // Delete function for API
-  const deleteApplications = useCallback(async (ids: string[]) => {
-    await fetch("/api/applications", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids })
-    })
-    // Refresh applications after delete
-    setApplications(apps => apps.filter(app => !ids.includes(app._id!)))
-    setAlert({ message: "Applications deleted successfully", type: "success" })
-  }, [])
-
-  // Bulk delete hook
-  const {
-    showDeleteConfirm,
-    setShowDeleteConfirm,
-    deleting,
-    handleBulkDelete
-  } = useBulkDelete(deleteApplications, selectedIds)
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
+  const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false)
+  const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null)
+  const debouncedSearch = useDebounce(search, 400)
+  const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [isSingleDeleteOpen, setSingleDeleteOpen] = useState(false);
+  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
+  const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
   // Fetch applications from API
   useEffect(() => {
-    setLoading(true)
+    setIsLoading(true)
     getApplications({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
       setApplications(res.data)
       setMeta(res.meta)
-      setLoading(false)
-      setAlert(null)
+      setIsLoading(false)
     }).catch(() => {
       setApplications([])
       setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
-      setLoading(false)
-      setAlert({ message: 'Failed to fetch applications', type: 'error' })
+      setIsLoading(false)
+      setAlert({ type: 'error', message: 'Failed to fetch applications' });
     })
   }, [page, meta.limit, debouncedSearch])
-  
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-500'
-      case 'rejected':
-        return 'bg-red-500'
-      default:
-        return 'bg-yellow-500'
+  // Handle row selection
+  const toggleRowSelection = (id: string) => {
+    setRowSelection(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
+  }
+
+  const toggleAllRowsSelection = () => {
+    if (Object.keys(rowSelection).length === applications.length) {
+      setRowSelection({})
+    } else {
+      const newSelection: Record<string, boolean> = {}
+      applications.forEach(application => {
+        if (application._id) newSelection[application._id] = true
+      })
+      setRowSelection(newSelection)
     }
   }
 
+  // Handle sorting
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
+  const sortedApplications = [...applications].sort((a, b) => {
+    if (!sortConfig) return 0
+    
+    const aValue = a[sortConfig.key as keyof Application]
+    const bValue = b[sortConfig.key as keyof Application]
+    
+    if (aValue === undefined || bValue === undefined) return 0
+    
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1
+    }
+    return 0
+  })
+
+  const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected') => {
+    try {
+      if (newStatus === 'rejected') {
+        const response = await fetch(`/api/application/${id}`, { method: 'DELETE' })
+        const data = await response.json()
+        if (response.ok && data.success) {
+          setApplications(prev => prev.filter(application => application._id !== id))
+          setRowSelection(prev => {
+            const newSelection = {...prev}
+            delete newSelection[id]
+            return newSelection
+          })
+          setAlert({ type: 'success', message: 'Application rejected and removed successfully' });
+        } else {
+          throw new Error('Failed to remove application')
+        }
+      } else {
+        const response = await fetch(`/api/application/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        })
+        const data = await response.json()
+        if (response.ok && data.success) {
+          setApplications(prev =>
+            prev.map(application =>
+              application._id === id
+                ? { ...application, status: newStatus }
+                : application
+            )
+          )
+          setAlert({ type: 'success', message: `Application ${newStatus} successfully` });
+        } else {
+          throw new Error('Failed to update application status')
+        }
+      }
+    } catch (error) {
+      setAlert({ type: 'error', message: 'Failed to update application status' });
+    }
+  }
+
+  const handleDeleteSelected = async () => {
+    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
+    setBulkDeleteLoading(true);
+    try {
+      await Promise.all(selectedIds.map(id => 
+        fetch(`/api/application/${id}`, { method: 'DELETE' })
+      ));
+      setApplications(prev => prev.filter(a => !selectedIds.includes(a._id || '')));
+      setRowSelection({});
+      setDeleteConfirmationOpen(false);
+      setAlert({ type: 'success', message: `${selectedIds.length} application(s) deleted successfully` });
+    } catch (error) {
+      setAlert({ type: 'error', message: 'Failed to delete applications' });
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const handleSingleDelete = async () => {
+    if (!singleDeleteId) return;
+    setSingleDeleteLoading(true);
+    await handleStatusChange(singleDeleteId, 'rejected');
+    setSingleDeleteLoading(false);
+    setSingleDeleteOpen(false);
+    setSingleDeleteId(null);
+  };
+
   const columns = [
-    { key: "select", label: selectedIds.length > 0 ? (
-      <>
-        <label htmlFor="select-all-checkbox" className="sr-only">Select all</label>
-        <Checkbox
-          id="select-all-checkbox"
-          checked={allSelected}
-          onCheckedChange={toggleSelectAll}
-        />
-      </>
-    ) : null, className: "w-8 flex-shrink-0 flex items-center justify-center" },
-    { key: "name", label: "Name", className: "flex-[2]" },
-    { key: "type", label: "Type", className: "flex-[2]" },
-    { key: "contact", label: "Contact", className: "flex-[3]" },
-    { key: "appliedOn", label: "Applied On", className: "flex-[2]" },
-    { key: "status", label: "Status", className: "flex-[1]" },
-    { key: "actions", label: "Actions", className: "flex-[1]" },
-  ];
+    { id: 'select', label: 'Select', accessor: 'select' },
+    { id: 'name', label: 'Name', accessor: 'name', sortable: true },
+    { id: 'type', label: 'Type', accessor: 'type', sortable: true },
+    { id: 'email', label: 'Email', accessor: 'email', sortable: true },
+    { id: 'status', label: 'Status', accessor: 'status', sortable: true },
+    { id: 'appliedDate', label: 'Applied Date', accessor: 'createdAt', sortable: true },
+    { id: 'actions', label: 'Actions', accessor: 'actions' }
+  ]
 
   return (
-    <div className="container py-10">
-      {alert && (
-        <AlertMessage
-          message={alert.message}
-          type={alert.type}
-          onClose={() => setAlert(null)}
-        />
-      )}
-      <Card>
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
+    <div className="flex flex-col h-full min-h-0">
+      <Card className="flex flex-col flex-1 min-h-0">
+        <CardHeader>
           <CardTitle>Applications</CardTitle>
-          <CardDescription>
-            Manage and review assistance applications
-          </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            {selectedIds.length > 0 && (
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
+          <CardDescription>Manage and review assistance applications</CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col min-h-0">
+          {alert && (
+            <AlertMessage
+              message={alert.message}
+              type={alert.type}
+              onClose={() => setAlert(null)}
+            />
+          )}
+          <div className="flex items-center justify-between pb-4">
+            <Input
+              placeholder="Filter by name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-sm"
+            />
+            {Object.keys(rowSelection).filter(id => rowSelection[id]).length > 0 && (
+              <Button 
+                variant="destructive" 
+                onClick={() => setDeleteConfirmationOpen(true)}
               >
-                {`Delete Selected ${selectedIds.length}`}
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete ({Object.keys(rowSelection).filter(id => rowSelection[id]).length})
               </Button>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
-            <div className="flex items-center gap-2 flex-1 flex-wrap">
-              <Input
-                placeholder="Search by name, email, or type..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full md:w-72"
-              />
-              {/* Status filter can be added to API if needed */}
-            </div>
+          
+          <div className="rounded-md border overflow-x-auto h-full">
+            <AdminTable
+              columns={[
+                {
+                  key: "select",
+                  label: (
+                    <Checkbox
+                      checked={Object.keys(rowSelection).length === applications.length && applications.length > 0}
+                      onCheckedChange={toggleAllRowsSelection}
+                      aria-label="Select all"
+                      className="translate-y-[2px]"
+                    />
+                  ),
+                  className: "w-12",
+                },
+                { key: "name", label: "Name", className: "min-w-[160px]" },
+                { key: "type", label: "Type", className: "min-w-[120px]" },
+                { key: "email", label: "Email", className: "min-w-[180px]" },
+                { key: "status", label: "Status", className: "w-32 text-center" },
+                { key: "appliedDate", label: "Applied Date", className: "w-40" },
+                { key: "actions", label: "Actions", className: "w-16 text-center" },
+              ]}
+              data={sortedApplications}
+              loading={isLoading}
+              emptyState={{
+                title: search ? "No applications match your search" : "No applications found",
+              }}
+              renderRow={(application) => (
+                <TableRow key={application._id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={!!rowSelection[application._id || '']}
+                      onCheckedChange={() => toggleRowSelection(application._id || '')}
+                      aria-label="Select row"
+                      className="translate-y-[2px]"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium truncate">
+                    {application.name}
+                  </TableCell>
+                  <TableCell className="truncate">
+                    {application.type.replace("_", " ")}
+                  </TableCell>
+                  <TableCell className="truncate">
+                    {application.email}
+                  </TableCell>
+                  <TableCell className="w-32 text-center">
+                    <Badge 
+                      variant={
+                        application.status === 'approved' 
+                          ? 'secondary' 
+                          : application.status === 'rejected' 
+                          ? 'destructive' 
+                          : 'outline'
+                      } 
+                      className="capitalize"
+                    >
+                      {application.status || 'pending'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="w-40">
+                    {application.createdAt ? formatDate(application.createdAt) : 'N/A'}
+                  </TableCell>
+                  <TableCell className="w-16 text-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => setSelectedApplication(application)}>
+                          <Eye className="mr-2 h-4 w-4" /> View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleStatusChange(application._id || '', 'approved')}
+                          className={application.status === 'approved' ? 'opacity-50 pointer-events-none' : ''}
+                        >
+                          <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSingleDeleteId(application._id || '');
+                            setSingleDeleteOpen(true);
+                          }}
+                          className={application.status === 'rejected' ? 'opacity-50 pointer-events-none' : ''}
+                        >
+                          <XCircle className="mr-2 h-4 w-4" /> Reject
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              )}
+              handleSort={sortConfig ? requestSort : undefined}
+              sortBy={sortConfig?.key}
+              sortOrder={sortConfig?.direction}
+            />
           </div>
-          <AdminTable
-            columns={columns}
-            data={applications}
-            loading={loading}
-            emptyState={{
-              title: "No applications found",
-              description: search ? 'Try adjusting your search terms' : 'No applications available yet.'
-            }}
-            pagination={meta.pages > 1 && (
-            <Pagination className="mt-8 flex justify-center">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
-                </PaginationItem>
-                {[...Array(meta.pages)].map((_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-            renderRow={(application) => {
-              const isSelected = application._id ? selectedIds.includes(application._id) : false;
-              return (
-                <div key={application._id} className="flex items-center border-b" role="row">
-                  <div className="p-4 w-8 flex-shrink-0 flex items-center justify-center" role="cell">
-                    <Checkbox checked={isSelected} onCheckedChange={() => application._id && toggleSelect(application._id)} />
-                  </div>
-                  <div className="p-4 flex-[2] whitespace-nowrap" role="cell">{application.name}</div>
-                  <div className="p-4 flex-[2] whitespace-nowrap capitalize" role="cell">{application.type.replace("_", " ")}</div>
-                  <div className="p-4 flex-[3]" role="cell">
-                    <div className="space-y-1">
-                      <div>{application.email}</div>
-                      <div>{application.phone}</div>
-                    </div>
-                  </div>
-                  <div className="p-4 flex-[2]" role="cell">{formatDate(application.createdAt || '')}</div>
-                  <div className="p-4 flex-[1]" role="cell">
-                    <Badge className={getStatusBadgeColor(application.status)}>{application.status}</Badge>
-                  </div>
-                  <div className="p-4 flex-[1]" role="cell">
-                    <Button size="sm" onClick={() => { setSelectedApplication(application); setShowDetails(true); }}>
-                      View
-                    </Button>
-                  </div>
-                </div>
-              );
-            }}
-          />
-        </CardContent>
-      </Card>
+          
+          <div className="flex items-center justify-end space-x-2 py-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+              {Object.keys(rowSelection).filter(id => rowSelection[id]).length} of {applications.length} row(s) selected.
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
+              disabled={page >= meta.pages}
+            >
+              Next
+            </Button>
+          </div>
 
-      <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Application Details</DialogTitle>
-          </DialogHeader>
-          {selectedApplication && (
-            <div className="space-y-2 mt-4">
-              <div><b>Name:</b> {selectedApplication.name}</div>
-              <div><b>Email:</b> {selectedApplication.email}</div>
-              <div><b>Phone:</b> {selectedApplication.phone}</div>
-              <div><b>Status:</b> {selectedApplication.status}</div>
-              <div><b>Type:</b> {selectedApplication.type.replace("_", " ")}</div>
-              <div><b>Applied On:</b> {formatDate(selectedApplication.createdAt || '')}</div>
-                <div>
-                  <h3 className="font-medium mb-2">Description</h3>
-                  <p className="text-sm">{selectedApplication.description}</p>
+          <AdminDetailsSheet
+            open={!!selectedApplication}
+            onOpenChange={(open) => !open && setSelectedApplication(null)}
+            title={
+              <>
+                <User /> {selectedApplication?.name}
+              </>
+            }
+            statusBadge={selectedApplication && (
+              <Badge
+                variant={
+                  selectedApplication.status === 'approved'
+                    ? 'secondary'
+                    : selectedApplication.status === 'rejected'
+                    ? 'destructive'
+                    : 'outline'
+                }
+                className="capitalize"
+              >
+                {selectedApplication.status || 'pending'}
+              </Badge>
+            )}
+            description={selectedApplication ? 'application details.' : undefined}
+          >
+            {selectedApplication && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />Contact Information
+                  </h3>
+                  <p className="text-sm flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" /> {selectedApplication.email}
+                  </p>
+                  <p className="text-sm flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-muted-foreground" /> {selectedApplication.phone || 'N/A'}
+                  </p>
+                  <p className="text-sm flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    Applied on {selectedApplication.createdAt ? formatDate(selectedApplication.createdAt) : 'N/A'}
+                  </p>
                 </div>
-                {selectedApplication.documents.length > 0 && (
-                  <div>
-                    <h3 className="font-medium mb-2">Documents</h3>
+                <div className="space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />Type
+                  </h3>
+                  <p className="text-sm">{selectedApplication.type.replace("_", " ")}</p>
+                </div>
+                {selectedApplication.description && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-muted-foreground" />Description
+                    </h3>
+                    <p className="text-sm text-muted-foreground bg-secondary/50 p-4 rounded-md border">
+                      {selectedApplication.description}
+                    </p>
+                  </div>
+                )}
+                {selectedApplication.documents && selectedApplication.documents.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <File className="w-4 h-4 text-muted-foreground" />Documents
+                    </h3>
                     <div className="grid grid-cols-2 gap-4">
                       {selectedApplication.documents.map((doc, index) => (
                         <div key={index} className="flex items-center gap-2">
@@ -264,20 +443,30 @@ export default function ApplicationsPage() {
                   </div>
                 )}
               </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </AdminDetailsSheet>
 
-      <ConfirmDialog
-        open={showDeleteConfirm}
-        title="Delete Applications"
-        description="Are you sure you want to delete the selected applications? This action cannot be undone."
-        confirmLabel={deleting ? "Deleting..." : "Delete"}
-        cancelLabel="Cancel"
-        loading={deleting}
-        onConfirm={handleBulkDelete}
-        onCancel={() => setShowDeleteConfirm(false)}
-      />
+          <ConfirmDeleteModal
+            open={isDeleteConfirmationOpen}
+            title="Delete Applications"
+            description="Are you sure you want to delete the selected applications? This action cannot be undone."
+            loading={bulkDeleteLoading}
+            onConfirm={handleDeleteSelected}
+            onCancel={() => setDeleteConfirmationOpen(false)}
+          />
+          <ConfirmDeleteModal
+            open={isSingleDeleteOpen}
+            title="Reject Application?"
+            description="Are you sure you want to reject and remove this application? This action cannot be undone."
+            loading={singleDeleteLoading}
+            onConfirm={handleSingleDelete}
+            onCancel={() => {
+              setSingleDeleteOpen(false);
+              setSingleDeleteId(null);
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }
