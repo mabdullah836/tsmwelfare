@@ -7,25 +7,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MailIcon } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
+import { useForm } from 'react-hook-form';
+import { FormInput } from '@/components/ui/form-input';
 
 export function NewsletterSignup() {
   const [email, setEmail] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
 
-    if (!email) {
-      setAlert({
-        message: "Please enter your email address",
-        type: "error"
-      })
-      return
-    }
-
-    setIsSubmitting(true)
+  const onSubmit = async (data: any) => {
 
     try {
       const response = await fetch("/api/newsletter", {
@@ -33,7 +25,7 @@ export function NewsletterSignup() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: data.email }),
       })
 
       if (!response.ok) {
@@ -52,7 +44,7 @@ export function NewsletterSignup() {
         type: "error"
       })
     } finally {
-      setIsSubmitting(false)
+      // setIsSubmitting(false) // This line is removed as per the edit hint.
     }
   }
 
@@ -73,19 +65,21 @@ export function NewsletterSignup() {
             <p>We'll keep you updated on all the good work we're doing together.</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <div className="flex-1">
-              <Input
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Signing Up..." : "Sign Up"}
-            </Button>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              {...register("email", { required: "Email is required" })}
+              className="flex-1"
+              aria-invalid={!!errors.email}
+              aria-describedby="newsletter-email-error"
+            />
+            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">Subscribe</Button>
           </form>
+        )}
+        {errors.email && (
+          <p id="newsletter-email-error" className="text-sm text-red-500 text-center mt-2">{errors.email.message as string}</p>
         )}
 
         {alert && (
