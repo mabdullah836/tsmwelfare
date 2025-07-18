@@ -11,14 +11,12 @@ import { useForm } from 'react-hook-form';
 import { FormInput } from '@/components/ui/form-input';
 
 export function NewsletterSignup() {
-  const [email, setEmail] = useState("")
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<{ email: string }>();
 
   const onSubmit = async (data: any) => {
-
     try {
       const response = await fetch("/api/newsletter", {
         method: "POST",
@@ -29,24 +27,24 @@ export function NewsletterSignup() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to subscribe to newsletter")
+        // Try to get error message from API
+        const res = await response.json().catch(() => null);
+        throw new Error(res?.message || "Failed to subscribe to newsletter");
       }
 
-      setIsSubmitted(true)
-      setEmail("")
+      setIsSubmitted(true);
+      reset();
       setAlert({
         message: "Thank you for subscribing to our newsletter!",
         type: "success"
-      })
+      });
     } catch (error) {
       setAlert({
         message: error instanceof Error ? error.message : "Failed to subscribe. Please try again later.",
         type: "error"
-      })
-    } finally {
-      // setIsSubmitting(false) // This line is removed as per the edit hint.
+      });
     }
-  }
+  };
 
   return (
     <section className="py-12 md:py-20 bg-secondary">
@@ -79,9 +77,12 @@ export function NewsletterSignup() {
           </form>
         )}
         {errors.email && (
-          <p id="newsletter-email-error" className="text-sm text-red-500 text-center mt-2">{errors.email.message as string}</p>
+          <AlertMessage
+            message={errors.email.message as string}
+            type="error"
+            onClose={() => {}}
+          />
         )}
-
         {alert && (
           <AlertMessage
             message={alert.message}
@@ -91,5 +92,5 @@ export function NewsletterSignup() {
         )}
       </div>
     </section>
-  )
+  );
 }

@@ -9,7 +9,7 @@ import {
   TopDonorsList,
   RecentActivities
 } from '@/components/dashboard/DashboardWidgets';
-import { exportToCSV } from '@/lib/utils/format';
+import { exportToCSV } from '@/lib/utils/export-csv';
 
 // --- TYPES ---
 type AnalyticsData = {
