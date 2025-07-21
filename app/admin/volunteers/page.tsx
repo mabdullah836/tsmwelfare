@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { 
   Card, 
   CardContent, 
@@ -39,26 +39,18 @@ import {
 } from "lucide-react"
 import { AlertMessage } from '@/components/ui/alert-message';
 import { formatDate } from "@/lib/utils/format"
-import { getVolunteers } from "@/lib/services/volunteer"
 import { VolunteerFormData } from "@/lib/types/volunteer"
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
 import { AdminTable } from "@/components/shared/AdminTable";
 import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
+import { useVolunteers } from '@/lib/hooks/useVolunteers';
+import { useSelection } from '@/lib/hooks/use-selection';
 
 export default function VolunteersPage() {
-  const [volunteers, setVolunteers] = useState<VolunteerFormData[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerFormData | null>(null)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [meta, setMeta] = useState({ 
-    total: 0, 
-    page: 1, 
-    pages: 1, 
-    limit: 10 
-  })
-  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null)
   const debouncedSearch = useDebounce(search, 400)
@@ -68,40 +60,12 @@ export default function VolunteersPage() {
   const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
-  // Fetch volunteers from API
-  useEffect(() => {
-    setIsLoading(true)
-    getVolunteers({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
-      setVolunteers(res.data)
-      setMeta(res.meta)
-      setIsLoading(false)
-    }).catch(() => {
-      setVolunteers([])
-      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
-      setIsLoading(false)
-      setAlert({ type: 'error', message: 'Failed to fetch volunteers' });
-    })
-  }, [page, meta.limit, debouncedSearch])
+  // SWR hook for volunteers
+  const { volunteers, meta, isLoading, isError, mutate } = useVolunteers({ page, limit: 10, q: debouncedSearch });
 
-  // Handle row selection
-  const toggleRowSelection = (id: string) => {
-    setRowSelection(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }))
-  }
-
-  const toggleAllRowsSelection = () => {
-    if (Object.keys(rowSelection).length === volunteers.length) {
-      setRowSelection({})
-    } else {
-      const newSelection: Record<string, boolean> = {}
-      volunteers.forEach(volunteer => {
-        if (volunteer._id) newSelection[volunteer._id] = true
-      })
-      setRowSelection(newSelection)
-    }
-  }
+  // Use useSelection for selection management
+  const selectableVolunteers = volunteers.filter((volunteer: VolunteerFormData) => typeof volunteer._id === 'string') as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableVolunteers);
 
   // Handle sorting
   const requestSort = (key: string) => {
@@ -112,7 +76,7 @@ export default function VolunteersPage() {
     setSortConfig({ key, direction })
   }
 
-  const sortedVolunteers = [...volunteers].sort((a, b) => {
+  const sortedVolunteers = [...volunteers].sort((a: VolunteerFormData, b: VolunteerFormData) => {
     if (!sortConfig) return 0
     
     const aValue = a[sortConfig.key as keyof VolunteerFormData]
@@ -135,12 +99,8 @@ export default function VolunteersPage() {
         const response = await fetch(`/api/volunteer/${id}`, { method: 'DELETE' })
         const data = await response.json()
         if (response.ok && data.success) {
-          setVolunteers(prev => prev.filter(volunteer => volunteer._id !== id))
-          setRowSelection(prev => {
-            const newSelection = {...prev}
-            delete newSelection[id]
-            return newSelection
-          })
+          mutate(); // Re-fetch and update the list
+          toggleSelect(id); // Update selection
           setAlert({ type: 'success', message: 'Volunteer rejected and removed successfully' });
         } else {
           throw new Error('Failed to remove volunteer')
@@ -153,13 +113,7 @@ export default function VolunteersPage() {
         })
         const data = await response.json()
         if (response.ok && data.success) {
-          setVolunteers(prev =>
-            prev.map(volunteer =>
-              volunteer._id === id
-                ? { ...volunteer, status: newStatus }
-                : volunteer
-            )
-          )
+          mutate(); // Re-fetch and update the list
           setAlert({ type: 'success', message: `Volunteer ${newStatus} successfully` });
         } else {
           throw new Error('Failed to update volunteer status')
@@ -171,14 +125,13 @@ export default function VolunteersPage() {
   }
 
   const handleDeleteSelected = async () => {
-    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
     setBulkDeleteLoading(true);
     try {
       await Promise.all(selectedIds.map(id => 
         fetch(`/api/volunteer/${id}`, { method: 'DELETE' })
       ));
-      setVolunteers(prev => prev.filter(v => !selectedIds.includes(v._id || '')));
-      setRowSelection({});
+      mutate(); // Re-fetch and update the list
+      toggleSelectAll(); // Deselect all rows
       setDeleteConfirmationOpen(false);
       setAlert({ type: 'success', message: `${selectedIds.length} volunteer(s) deleted successfully` });
     } catch (error) {
@@ -228,13 +181,13 @@ export default function VolunteersPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-sm"
             />
-            {Object.keys(rowSelection).filter(id => rowSelection[id]).length > 0 && (
+            {selectedIds.length > 0 && (
               <Button 
                 variant="destructive" 
                 onClick={() => setDeleteConfirmationOpen(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete ({Object.keys(rowSelection).filter(id => rowSelection[id]).length})
+                Delete ({selectedIds.length})
               </Button>
             )}
           </div>
@@ -246,8 +199,8 @@ export default function VolunteersPage() {
                   key: "select",
                   label: (
                     <Checkbox
-                      checked={Object.keys(rowSelection).length === volunteers.length && volunteers.length > 0}
-                      onCheckedChange={toggleAllRowsSelection}
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
                       aria-label="Select all"
                       className="translate-y-[2px]"
                     />
@@ -266,12 +219,12 @@ export default function VolunteersPage() {
               emptyState={{
                 title: search ? "No volunteers match your search" : "No volunteers found",
               }}
-              renderRow={(volunteer) => (
+              renderRow={(volunteer: VolunteerFormData) => (
                 <TableRow key={volunteer._id}>
                   <TableCell>
                     <Checkbox
-                      checked={!!rowSelection[volunteer._id || '']}
-                      onCheckedChange={() => toggleRowSelection(volunteer._id || '')}
+                      checked={!!volunteer._id && selectedIds.includes(volunteer._id)}
+                      onCheckedChange={() => volunteer._id && toggleSelect(volunteer._id)}
                       aria-label="Select row"
                       className="translate-y-[2px]"
                     />
@@ -344,7 +297,7 @@ export default function VolunteersPage() {
           
           <div className="flex items-center justify-end space-x-2 py-4">
             <div className="flex-1 text-sm text-muted-foreground">
-              {Object.keys(rowSelection).filter(id => rowSelection[id]).length} of {volunteers.length} row(s) selected.
+              {selectedIds.length} of {volunteers.length} row(s) selected.
             </div>
             <Button
               variant="outline"
