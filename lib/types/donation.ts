@@ -8,4 +8,5 @@ export interface DonationRecord {
     paymentMethod: 'cash' | 'bank' | 'online' | 'other';
     email?: string;
     message?: string;
+    type?: string;
   }

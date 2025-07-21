@@ -29,10 +29,11 @@ export const useVolunteerForm = () => {
 
   const handleInterestChange = (interest: string) => {
     const currentInterests = watch("interests")
-    const newInterests = currentInterests.includes(interest)
-      ? currentInterests.filter((i) => i !== interest)
-      : [...currentInterests, interest]
-    setValue("interests", newInterests)
+    const safeInterests = Array.isArray(currentInterests) ? currentInterests : [];
+    const newInterests = safeInterests.includes(interest)
+      ? safeInterests.filter((i) => i !== interest)
+      : [...safeInterests, interest];
+    setValue("interests", newInterests);
   }
 
   const handleAvailabilityChange = (value: string) => {

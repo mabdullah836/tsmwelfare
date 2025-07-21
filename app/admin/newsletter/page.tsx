@@ -7,24 +7,11 @@ import { exportToCSV } from "@/lib/utils/export-csv";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Loader2, Mail, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useNewsletter } from '@/lib/hooks/useNewsletter';
 
 export default function NewsletterAdminPage() {
-  const [emails, setEmails] = useState<{ email: string; createdAt: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/newsletter")
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setEmails(data.emails);
-        else setEmails([]);
-        setLoading(false);
-      })
-      .catch(() => {
-        setEmails([]);
-        setLoading(false);
-      });
-  }, []);
+  // SWR hook for newsletter
+  const { newsletter, isLoading, isError } = useNewsletter();
 
   return (
     <div className="container py-8">
@@ -39,13 +26,13 @@ export default function NewsletterAdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="px-3 py-1 text-sm">
-              {emails.length} subscribers
+              {newsletter.length} subscribers
             </Badge>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => exportToCSV(emails, "newsletter-subscribers.csv")}
-              disabled={emails.length === 0}
+              onClick={() => exportToCSV(newsletter, "newsletter-subscribers.csv")}
+              disabled={newsletter.length === 0}
             >
               <Download className="mr-2 h-4 w-4" />
               Export CSV
@@ -59,7 +46,7 @@ export default function NewsletterAdminPage() {
               <div>
                 <CardTitle className="text-lg">Subscribers List</CardTitle>
                 <CardDescription className="text-sm">
-                  {emails.length} active email addresses
+                  {newsletter.length} active email addresses
                 </CardDescription>
               </div>
               <div className="flex items-center space-x-2">
@@ -77,7 +64,7 @@ export default function NewsletterAdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading ? (
+                  {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={2} className="h-24 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -86,8 +73,8 @@ export default function NewsletterAdminPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ) : emails.length > 0 ? (
-                    emails.map((row, index) => (
+                  ) : newsletter.length > 0 ? (
+                    newsletter.map((row: { email: string; createdAt: string }, index: number) => (
                       <TableRow key={row.email} className={index % 2 === 0 ? "bg-muted/5" : ""}>
                         <TableCell className="pl-6 font-medium">
                           <div className="flex items-center gap-3">

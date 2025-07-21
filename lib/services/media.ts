@@ -1,13 +1,4 @@
 import { Media } from '@/lib/types/media'
-import { fetchFromAPI } from '../utils/api'
-
-
-export const getMedia = async ({ page = 1, limit = 12, q = '', folder = 'general' } = {}): Promise<{ data: Media[]; meta: any }> => {
-  const params = new URLSearchParams({ page: String(page), limit: String(limit), folder })
-  if (q) params.append('q', q)
-  const res = await fetchFromAPI<{ data: Media[]; meta: any }>(`/api/media?${params.toString()}`)
-  return res?.data && Array.isArray(res.data) && res.meta ? res : { data: [], meta: { total: 0, page, pages: 0, limit } }
-}
 
 export async function uploadMedia(files: File[], folder: string = 'events'): Promise<Media[]> {
   const formData = new FormData()

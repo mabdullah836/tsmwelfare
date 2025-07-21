@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/shared/theme-provider"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/cn"
 import SecretAdminAccess from "@/components/SecretAdminAccess"
 
 const inter = Inter({

@@ -43,15 +43,3 @@ export interface ApiResponse {
 
 export type VolunteerStatus = 'pending' | 'approved' | 'rejected';
 export type AvailabilityType = 'weekdays' | 'weekends' | 'evenings' | 'flexible';
-
-export interface VolunteerProgram {
-  id: string;
-  title: string;
-  description: string;
-  requirements?: string;
-  startDate?: Date;
-  endDate?: Date;
-  status: 'active' | 'completed' | 'cancelled';
-  maxVolunteers?: number;
-  location?: string;
-} 

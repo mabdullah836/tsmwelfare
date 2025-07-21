@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { exportToCSV } from "@/lib/utils/format";
+import { exportToCSV } from "@/lib/utils/export-csv";
 import { FileText,Download, Users, TrendingUp, DollarSign, Loader2 } from "lucide-react";
 import React from "react";
 
