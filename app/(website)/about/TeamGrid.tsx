@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState } from "react";
 import { motion, easeOut } from "framer-motion";
-import { getTeamMembers } from "@/lib/services/team";
 import { AdminGrid } from "@/components/shared/AdminGrid";
 import { Card } from "@/components/ui/card";
 import type { TeamMember } from "@/lib/types/team";
+import { useTeam } from '@/lib/hooks/useTeam';
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -27,30 +26,20 @@ const hoverEffect = {
 };
 
 export default function TeamGrid() {
-  const [team, setTeam] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getTeamMembers({ page: 1, limit: 12, q: "" })
-      .then(res => {
-        setTeam(res.data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+  const { team, isLoading } = useTeam({ page: 1, limit: 12, q: '' });
 
   return (
     <div className="px-4 py-8 sm:px-6 lg:px-8">
       <AdminGrid
         items={team}
-        loading={loading}
+        loading={isLoading}
         emptyState={{
           title: "No Team Members Found",
           description: "We currently don't have any team members to display. Check back later!",
         }}
         skeletonItems={8}
         gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
-        renderItem={(member, idx) => (
+        renderItem={(member: TeamMember, idx) => (
           <motion.div
             key={member._id || idx}
             custom={idx % 8} // Stagger animation

@@ -10,58 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Download, Filter, X } from "lucide-react"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
-
-const donations = [
-  {
-    id: "DON001",
-    donor: "Ahmed Khan",
-    email: "ahmed@example.com",
-    amount: 25000,
-    type: "Zakat",
-    date: "2024-01-15",
-    status: "Completed",
-  },
-  {
-    id: "DON002",
-    donor: "Fatima Ali",
-    email: "fatima@example.com",
-    amount: 10000,
-    type: "General",
-    date: "2024-01-14",
-    status: "Completed",
-  },
-  {
-    id: "DON003",
-    donor: "Muhammad Hassan",
-    email: "hassan@example.com",
-    amount: 50000,
-    type: "Education",
-    date: "2024-01-13",
-    status: "Pending",
-  },
-  {
-    id: "DON004",
-    donor: "Aisha Malik",
-    email: "aisha@example.com",
-    amount: 15000,
-    type: "Medical",
-    date: "2024-01-12",
-    status: "Completed",
-  },
-  {
-    id: "DON005",
-    donor: "Omar Sheikh",
-    email: "omar@example.com",
-    amount: 30000,
-    type: "Orphan Care",
-    date: "2024-01-11",
-    status: "Completed",
-  },
-]
+import { useDonations } from '@/lib/hooks/useDonations';
+import type { DonationRecord } from '@/lib/types/donation';
 
 export const DonationRecords = React.memo(function DonationRecords() {
+  const { donations, isLoading, totalAmount } = useDonations();
   const [searchTerm, setSearchTerm] = useState("")
-  const [filteredDonations, setFilteredDonations] = useState(donations)
+  const [filteredDonations, setFilteredDonations] = useState<DonationRecord[]>(donations)
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -73,14 +28,14 @@ export const DonationRecords = React.memo(function DonationRecords() {
 
   const filterDonations = (term: string, start: Date | null, end: Date | null) => {
     let filtered = donations.filter(
-      (donation) =>
-        (donation.donor.toLowerCase().includes(term.toLowerCase()) ||
-          donation.email.toLowerCase().includes(term.toLowerCase()) ||
-          donation.type.toLowerCase().includes(term.toLowerCase()))
+      (donation: DonationRecord) =>
+        (donation.donor.toLowerCase().includes(term.toLowerCase()) || 
+        donation.email?.toLowerCase().includes(term.toLowerCase()) ||
+          donation.type?.toLowerCase().includes(term.toLowerCase()))
     )
 
     if (start && end) {
-      filtered = filtered.filter((donation) => {
+      filtered = filtered.filter((donation: DonationRecord) => {
         const donationDate = new Date(donation.date)
         return donationDate >= start && donationDate <= end
       })
@@ -101,8 +56,6 @@ export const DonationRecords = React.memo(function DonationRecords() {
     setEndDate(end)
     filterDonations(searchTerm, start, end)
   }
-
-  const totalAmount = filteredDonations.reduce((sum, donation) => sum + donation.amount, 0)
 
   return (
     <div className="space-y-6">
@@ -204,7 +157,7 @@ export const DonationRecords = React.memo(function DonationRecords() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDonations.map((donation) => (
+                {filteredDonations.map((donation: DonationRecord) => (
                   <TableRow key={donation.id}>
                     <TableCell className="font-medium">{donation.id}</TableCell>
                     <TableCell>
@@ -219,7 +172,7 @@ export const DonationRecords = React.memo(function DonationRecords() {
                     </TableCell>
                     <TableCell>{donation.date}</TableCell>
                     <TableCell>
-                      <Badge variant={donation.status === "Completed" ? "default" : "secondary"}>
+                      <Badge variant={donation.status === "completed" ? "default" : "secondary"}>
                         {donation.status}
                       </Badge>
                     </TableCell>
