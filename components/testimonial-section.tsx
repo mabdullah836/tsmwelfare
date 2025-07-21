@@ -1,5 +1,5 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/cn"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { QuoteIcon } from "lucide-react"
 
