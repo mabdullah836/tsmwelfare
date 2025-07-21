@@ -48,12 +48,12 @@ export function OrganizationHeader({
 
       {(variant === "full" || variant === "text") && (
         <div className="flex flex-col">
-          <Link href="/" className="group">
+          <div className="group">
             <h1 className={`font-bold tracking-tight ${sizeClasses[size].text} text-foreground group-hover:text-primary transition-colors`}>
-              Sirat-e-Mustaqeem
+              The Sirat-e-Mustaqeem
               <span className="text-primary"> Welfare Trust</span>
             </h1>
-          </Link>
+          </div>
           
           {showTagline && (
             <motion.p 

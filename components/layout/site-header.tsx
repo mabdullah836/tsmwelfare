@@ -24,6 +24,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 shadow-sm">
       <div className="container flex h-20 items-center justify-between">
+      <Link href="/">
         <OrganizationHeader 
           variant="full" 
           size="md" 
@@ -35,7 +36,7 @@ export function SiteHeader() {
           size="md" 
           className="md:hidden flex items-center gap-3"
         />
-
+      </Link>
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1">
           {navigationItems.map((item, index) => (
