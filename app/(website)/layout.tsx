@@ -1,5 +1,7 @@
 import { SiteHeader } from "@/components/layout/site-header"
 import { SiteFooter } from "@/components/layout/site-footer"
+import Link from "next/link";
+import { Calculator } from "lucide-react";
 
 export const metadata = {
   title: {
@@ -65,6 +67,19 @@ export default function WebsiteLayout({
       <SiteHeader />
       <main>{children}</main>
       <SiteFooter />
+      {/* Floating Zakat Calculator Button */}
+      <Link
+        href="/zakat-calculator"
+        className="fixed z-50 bottom-4 right-4 md:bottom-10 md:right-10 flex items-center md:justify-center bg-primary text-primary-foreground shadow-lg transition-transform focus-visible:ring-4 focus-visible:ring-primary/40 group
+          rounded-full md:w-20 md:h-20 w-auto h-14 px-6 md:px-0 font-bold
+          md:rounded-full md:flex md:items-center md:w-20 md:h-20
+          hover:scale-105 hover:shadow-xl"
+        aria-label="Open Zakat Calculator"
+        style={{ minWidth: '56px' }}
+      >
+        <Calculator className="w-7 h-7 md:w-10 md:h-10 mx-auto" />
+        <span className="ml-3 text-base md:hidden">Zakat</span>
+      </Link>
     </>
   )
 } 

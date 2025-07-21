@@ -1,78 +1,72 @@
-import { cn } from "@/lib/utils"
 import Image from "next/image"
+import Link from "next/link"
+import { motion } from "framer-motion"
 
-interface OrganizationHeaderProps {
-  variant?: "full" | "compact" | "banner" | "emblem" | "modern"
-  size?: "sm" | "md" | "lg" | "xl"
-  className?: string
+type OrganizationHeaderProps = {
+  variant?: "full" | "icon" | "text"
+  size?: "md" | "lg"
   showTagline?: boolean
+  className?: string
 }
 
 export function OrganizationHeader({
+  variant = "full",
   size = "md",
-  className,
+  showTagline = false,
+  className = ""
 }: OrganizationHeaderProps) {
-  // Increased logo sizes
+  // Size variants
   const sizeClasses = {
-    sm: {
-      logo: "h-12 w-12",
-      title: "text-lg md:text-xl",
-      subtitle: "text-sm",
-      tagline: "text-xs",
-      container: "gap-3",
-      arabic: "text-lg",
-    },
     md: {
-      logo: "h-16 w-16 md:h-20 md:w-20",
-      title: "text-xl md:text-2xl lg:text-3xl",
-      subtitle: "text-base md:text-lg",
-      tagline: "text-sm",
-      container: "gap-4",
-      arabic: "text-base",
+      logo: "h-10 w-10",
+      text: "text-xl",
+      tagline: "text-sm"
     },
     lg: {
-      logo: "h-20 w-20 md:h-24 md:w-24",
-      title: "text-2xl md:text-3xl lg:text-4xl",
-      subtitle: "text-lg md:text-xl",
-      tagline: "text-base",
-      container: "gap-6",
-      arabic: "text-lg",
-    },
-    xl: {
-      logo: "h-24 w-24 md:h-32 md:w-32",
-      title: "text-3xl md:text-4xl lg:text-5xl",
-      subtitle: "text-xl md:text-2xl",
-      tagline: "text-lg",
-      container: "gap-8",
-      arabic: "text-xl",
-    },
+      logo: "h-12 w-12",
+      text: "text-2xl",
+      tagline: "text-base"
+    }
   }
 
-  const currentSize = sizeClasses[size]
-
   return (
-    <div
-      className={cn(
-        "flex flex-col md:flex-row items-center text-center md:text-left",
-        currentSize.container,
-        className,
-      )}
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex items-center gap-3 ${className}`} // Ensure flex and gap-3 are here
     >
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 rounded-full blur-lg"></div>
-        <Image
-          src="/images/logo.png"
-          alt="The Sirat-e-Mustaqeem Welfare Trust Logo"
-          width={120}
-          height={120}
-          className={cn("relative object-contain drop-shadow-xl", currentSize.logo)}
-        />  
-      </div>
-        <div className="flex-1">
-          <p className={cn("text-emerald-700 dark:text-emerald-400 font-extrabold", currentSize.arabic)} dir="rtl">
-            صراط مستقیم ویلفیئر ٹرسٹ
-          </p>
+      {variant !== "text" && (
+        <div className={`relative ${sizeClasses[size].logo} shrink-0`}>
+          <Image
+            src="/images/logo.png"
+            alt="Sirat-e-Mustaqeem Welfare Trust Logo"
+            fill
+            className="object-contain"
+          />
         </div>
-    </div>
+      )}
+
+      {(variant === "full" || variant === "text") && (
+        <div className="flex flex-col">
+          <div className="group">
+            <h1 className={`font-bold tracking-tight ${sizeClasses[size].text} text-foreground group-hover:text-primary transition-colors`}>
+              The Sirat-e-Mustaqeem
+              <span className="text-primary"> Welfare Trust</span>
+            </h1>
+          </div>
+          
+          {showTagline && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className={`${sizeClasses[size].tagline} text-muted-foreground mt-1`}
+            >
+              Guiding towards the straight path
+            </motion.p>
+          )}
+        </div>
+      )}
+    </motion.div>
   )
 }

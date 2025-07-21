@@ -39,20 +39,19 @@ import {
 } from "lucide-react"
 import { AlertMessage } from '@/components/ui/alert-message';
 import { formatDate } from "@/lib/utils/format"
-import { useDonations } from '@/lib/hooks/use-donations';
+import { useDonations } from '@/lib/hooks/useDonations';
 import { DonationRecord } from '@/lib/types/donation';
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
 import { AdminTable } from "@/components/shared/AdminTable";
 import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
+import { useSelection } from '@/lib/hooks/use-selection';
 
 export default function DonationsPage() {
-  // Replace state and fetching logic with useDonations
   const [selectedDonation, setSelectedDonation] = useState<DonationRecord | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null);
-  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
   const [isSingleDeleteOpen, setSingleDeleteOpen] = useState(false);
@@ -60,37 +59,14 @@ export default function DonationsPage() {
   const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
-  const {
-    donations,
-    isLoading,
-    fetchDonations,
-    meta
-  } = useDonations({ page, limit: 10 });
-
-  // Fetch donations from API
-  useEffect(() => {
-    fetchDonations();
-  }, [page, 10, search]);
+  // SWR hook for donations
+  const { donations, meta, isLoading, isError, mutate } = useDonations({ page, limit: 10, q: search });
 
   // Handle row selection
-  const toggleRowSelection = (id: string) => {
-    setRowSelection(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
-
-  const toggleAllRowsSelection = () => {
-    if (Object.keys(rowSelection).length === donations.length) {
-      setRowSelection({});
-    } else {
-      const newSelection: Record<string, boolean> = {};
-      donations.forEach(donation => {
-        if (donation.id) newSelection[donation.id] = true;
-      });
-      setRowSelection(newSelection);
-    }
-  };
+  const selectableDonations = donations
+    .filter((donation: DonationRecord) => typeof donation.id === 'string')
+    .map((donation : DonationRecord) => ({ ...donation, _id: donation.id })) as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableDonations);
 
   // Handle sorting
   const requestSort = (key: string) => {
@@ -101,7 +77,7 @@ export default function DonationsPage() {
     setSortConfig({ key, direction })
   }
 
-  const sortedDonations = [...donations].sort((a, b) => {
+  const sortedDonations = [...donations].sort((a: DonationRecord, b: DonationRecord) => {
     if (!sortConfig) return 0;
     const aValue = a[sortConfig.key as keyof DonationRecord];
     const bValue = b[sortConfig.key as keyof DonationRecord];
@@ -117,12 +93,8 @@ export default function DonationsPage() {
         const response = await fetch(`/api/donation/${id}`, { method: 'DELETE' })
         const data = await response.json()
         if (response.ok && data.success) {
-          fetchDonations(); // Refresh donations after deletion
-          setRowSelection(prev => {
-            const newSelection = {...prev}
-            delete newSelection[id]
-            return newSelection
-          })
+          mutate(); // Refresh donations after deletion
+          toggleSelect(id); // Update selection
           setAlert({ type: 'success', message: 'Donation marked as failed and removed successfully' });
         } else {
           throw new Error('Failed to update donation')
@@ -135,7 +107,7 @@ export default function DonationsPage() {
         })
         const data = await response.json()
         if (response.ok && data.success) {
-          fetchDonations(); // Refresh donations after status change
+          mutate(); // Refresh donations after status change
           setAlert({ type: 'success', message: `Donation marked as ${newStatus} successfully` });
         } else {
           throw new Error('Failed to update donation status')
@@ -147,14 +119,13 @@ export default function DonationsPage() {
   }
 
   const handleDeleteSelected = async () => {
-    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
     setBulkDeleteLoading(true);
     try {
       await Promise.all(selectedIds.map(id => 
         fetch(`/api/donation/${id}`, { method: 'DELETE' })
       ));
-      fetchDonations(); // Refresh donations after bulk deletion
-      setRowSelection({});
+      mutate(); // Refresh donations after bulk deletion
+      toggleSelectAll(); // Deselect all rows
       setDeleteConfirmationOpen(false);
       setAlert({ type: 'success', message: `${selectedIds.length} donation(s) deleted successfully` });
     } catch (error) {
@@ -195,13 +166,13 @@ export default function DonationsPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-sm"
             />
-            {Object.keys(rowSelection).filter(id => rowSelection[id]).length > 0 && (
+            {selectedIds.length > 0 && (
               <Button 
                 variant="destructive" 
                 onClick={() => setDeleteConfirmationOpen(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete ({Object.keys(rowSelection).filter(id => rowSelection[id]).length})
+                Delete ({selectedIds.length})
               </Button>
             )}
           </div>
@@ -213,8 +184,8 @@ export default function DonationsPage() {
                   key: "select",
                   label: (
                     <Checkbox
-                      checked={Object.keys(rowSelection).length === donations.length && donations.length > 0}
-                      onCheckedChange={toggleAllRowsSelection}
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
                       aria-label="Select all"
                       className="translate-y-[2px]"
                     />
@@ -232,12 +203,12 @@ export default function DonationsPage() {
               emptyState={{
                 title: search ? "No donations match your search" : "No donations found",
               }}
-              renderRow={(donation) => (
+              renderRow={(donation: DonationRecord) => (
                 <TableRow key={donation.id}>
                   <TableCell>
                     <Checkbox
-                      checked={!!rowSelection[donation.id || '']}
-                      onCheckedChange={() => toggleRowSelection(donation.id || '')}
+                      checked={!!donation.id && selectedIds.includes(donation.id)}
+                      onCheckedChange={() => donation.id && toggleSelect(donation.id)}
                       aria-label="Select row"
                       className="translate-y-[2px]"
                     />
@@ -307,7 +278,7 @@ export default function DonationsPage() {
           
           <div className="flex items-center justify-end space-x-2 py-4">
             <div className="flex-1 text-sm text-muted-foreground">
-              {Object.keys(rowSelection).filter(id => rowSelection[id]).length} of {donations.length} row(s) selected.
+              {selectedIds.length} of {donations.length} row(s) selected.
             </div>
             <Button
               variant="outline"

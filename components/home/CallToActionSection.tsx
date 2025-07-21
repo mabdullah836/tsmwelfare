@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
+import { Calculator } from "lucide-react";
 
 const CallToActionSection = () => (
   <section className="bg-primary text-primary-foreground py-12 md:py-20">

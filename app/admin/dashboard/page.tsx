@@ -9,7 +9,7 @@ import {
   TopDonorsList,
   RecentActivities
 } from '@/components/dashboard/DashboardWidgets';
-import { exportToCSV } from '@/lib/utils/format';
+import { exportToCSV } from '@/lib/utils/export-csv';
 
 // --- TYPES ---
 type AnalyticsData = {
@@ -140,29 +140,23 @@ export default function AdminDashboard() {
             <StatsCards data={analytics?.stats} loading={loading} />
             <DonationChart
               type="area"
-              data={analytics?.trendsData || []}
               title="Donation Trends"
               description="Recent donation patterns over the last 30 days."
-              loading={loading}
               xKey="date"
               yKey="donations"
             />
             <div className="grid md:grid-cols-2 gap-6">
               <DonationChart
                 type="pie"
-                data={analytics?.pieData || []}
                 title="Donations by Type"
                 description="Breakdown of donation sources."
-                loading={loading}
                 pieNameKey="name"
                 pieValueKey="value"
               />
               <DonationChart
                 type="bar"
-                data={analytics?.monthlyData || []}
                 title="Monthly Donations"
                 description="Donation amounts over recent months."
-                loading={loading}
                 xKey="month"
                 yKey="amount"
               />
