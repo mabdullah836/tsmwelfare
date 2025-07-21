@@ -1,340 +1,268 @@
-    "use client"
+"use client"
 
-    import { useState, useEffect, useMemo } from "react"
-    import { PageHeader } from "@/components/page-header"
-    import { Card, CardContent } from "@/components/ui/card"
-    import { Button } from "@/components/ui/button"
-    import { Image as ImageIcon, Play, Download, Grid, List, Search } from "lucide-react"
+import { useState, useMemo, useCallback } from "react"
+import { PageHeader } from "@/components/page-header"
+import { Button } from "@/components/ui/button"
+import { Image as ImageIcon, Play, Download, Grid, List, Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { UniversalDialog } from '@/components/modals/UniversalDialog'
+import { cn } from "@/lib/utils/cn"
+import { formatDate } from "@/lib/utils/format"
+import Image from "next/image"
+import { AlertMessage } from "@/components/ui/alert-message"
+import { Pagination } from "@/components/ui/pagination"
+import type { Media } from '@/lib/types/media'
+import { useMedia } from '@/lib/hooks/useMedia';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { motion, AnimatePresence } from 'framer-motion'
+import { MediaCard } from '@/components/media/MediaCard';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { getYouTubeId } from "@/lib/utils/format"
+import { useDebounce } from '@/lib/hooks/use-debounce'
+import { AdminGrid } from "@/components/shared/AdminGrid"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
 
-    import { Input } from "@/components/ui/input"
-    import { UniversalDialog } from '@/components/modals/UniversalDialog'
-    import { cn } from "@/lib/utils"
-    import { formatDate } from "@/lib/utils/format"
-    import Image from "next/image"
-    import { AlertMessage } from "@/components/ui/alert-message"
-    import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationPrevious, PaginationNext } from "@/components/ui/pagination"
-    import type { Media } from '@/lib/types/media'
-    import { getMedia } from '@/lib/services/media'
-    import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-    import { motion, AnimatePresence } from 'framer-motion'
-    import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
-    import { getYouTubeId } from "@/lib/utils/format"
-    import { useDebounce } from '@/lib/hooks/use-debounce'
-    import { AdminGrid } from "@/components/shared/AdminGrid";
+export default function MediaPage() {
+  const [view, setView] = useState<"grid" | "list">("grid")
+  const [activeTab, setActiveTab] = useState<'image' | 'video'>('image')
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedItem, setSelectedItem] = useState<Media | null>(null)
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [page, setPage] = useState(1)
+  const debouncedSearch = useDebounce(searchQuery, 400)
 
+  // SWR hook for media
+  const { media, meta, isLoading, isError } = useMedia({ page, limit: 24, q: debouncedSearch, folder: 'general' });
 
-    export default function MediaPage() {
-      const [view, setView] = useState<"grid" | "list">("grid")
-      const [activeTab, setActiveTab] = useState<'image' | 'video'>('image')
-      const [searchQuery, setSearchQuery] = useState("")
-      const [mediaItems, setMediaItems] = useState<Media[]>([])
-      const [loading, setLoading] = useState(true)
-      const [error, setError] = useState<string | null>(null)
-      const [selectedItem, setSelectedItem] = useState<Media | null>(null)
-      const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-      const [page, setPage] = useState(1)
-      const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 24 })
-      const debouncedSearch = useDebounce(searchQuery, 400)
+  // Filtered media logic
+  const filteredMedia = useMemo(() => {
+    return media.filter((item: Media) => {
+      const matchesSearch = item.title?.toLowerCase().includes(debouncedSearch.toLowerCase())
+      const matchesType = item.type === activeTab
+      const isApprovedVideo = item.type !== 'video' || !item.status || item.status === 'approved'
+      return matchesSearch && matchesType && isApprovedVideo
+    })
+  }, [media, debouncedSearch, activeTab])
 
-      useEffect(() => {
-        setPage(1)
-      }, [debouncedSearch, activeTab])
+  const handleItemClick = useCallback((item: Media) => {
+    setSelectedItem(item)
+  }, [])
 
-      useEffect(() => {
-        setLoading(true)
-        getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' }).then(res => {
-          setMediaItems(res.data.filter(item => item.type === activeTab && (item.type !== 'video' || !item.status || item.status === 'approved')))
-          setMeta(res.meta)
-          setLoading(false)
-          setAlert(null)
-        }).catch((err) => {
-          setMediaItems([])
-          setMeta({ total: 0, page: 1, pages: 1, limit: 24 })
-          setLoading(false)
-          setError(err instanceof Error ? err.message : 'Failed to load media')
-        })
-      }, [page, meta.limit, debouncedSearch, activeTab])
+  if (isError) {
+    return (
+      <div className="container py-8">
+        <AlertMessage
+          message={isError.message || 'Failed to load media'}
+          type="error"
+          onClose={() => setAlert(null)}
+        />
+      </div>
+    )
+  }
 
+  return (
+    <>
+      <PageHeader title="Media Gallery">
+        <p className="text-xl text-white/90">
+          Browse through our collection of images and videos showcasing our work and impact in the community.
+        </p>
+      </PageHeader>
 
-      const images = useMemo(() => mediaItems.filter(item => item.type === 'image'), [mediaItems]);
-      const videos = useMemo(() => mediaItems.filter(item => item.type === 'video' && (!item.status || item.status === 'approved')), [mediaItems]);
-
-      const filteredMedia = useMemo(() => mediaItems?.filter(item => {
-        if (!item) return false;
-        const matchesSearch = item.title?.toLowerCase().includes(searchQuery?.toLowerCase() || '');
-        const matchesType = item.type === activeTab;
-        if (item.type === 'video' && item.status && item.status !== 'approved') return false;
-        return matchesSearch && matchesType;
-      }) || [], [mediaItems, searchQuery, activeTab]);
-
-      const paginatedMedia = useMemo(() => {
-        return filteredMedia.slice((page - 1) * meta.limit, page * meta.limit);
-      }, [filteredMedia, page, meta.limit]);
-
-      useEffect(() => {
-        if (page > meta.pages && meta.pages > 0) {
-          setPage(meta.pages)
-        }
-      }, [page, meta.pages])
-
-
-
-      if (error) {
-        return (
-          <div className="container mx-auto py-8 px-4">
-            <div className="text-center text-red-500 min-h-[400px] flex items-center justify-center">
-              {error}
-            </div>
-          </div>
-        )
-      }
-
-      return (
-        <>
-          <PageHeader title="Media Gallery">
-            <p className="text-xl text-white/90">
-              Browse through our collection of images and videos showcasing our work and impact in the community.
-            </p>
-          </PageHeader>
-
-          <div className="container mx-auto py-8 px-4">
-            {alert && (
+      <div className="container py-8 min-h-[70vh]">
+        <AnimatePresence>
+          {alert && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
               <AlertMessage
                 message={alert.message}
                 type={alert.type}
                 onClose={() => setAlert(null)}
               />
-            )}
-            <div className="space-y-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'image' | 'video')}>
-                  <TabsList>
-                    <TabsTrigger value="image" aria-label="Show images">
-                      Images
-                    </TabsTrigger>
-                    <TabsTrigger value="video" aria-label="Show videos">
-                      Videos
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="searchQuery"
-                    type="text"
-                    className="input-class"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search media files..."
-                    aria-label="Search Media Files"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={view === "grid" ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setView("grid")}
-                    aria-label="Grid view"
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={view === "list" ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setView("list")}
-                    aria-label="List view"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              <AdminGrid
-                items={mediaItems}
-                loading={loading}
-                emptyState={{ title: `No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`, description: `No ${activeTab === 'image' ? 'images' : 'videos'} match your current filters. Try adjusting your search or check back later.` }}
-                skeletonItems={meta.limit}
-                gridClassName={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6' : 'flex flex-col gap-4'}
-                renderItem={(item) => (
-                  view === 'grid' ? (
-                    <Card
-                      key={item._id}
-                      className={cn(
-                        "overflow-hidden group cursor-pointer transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 h-full flex flex-col bg-white dark:bg-zinc-900 border border-muted/40",
-                        activeTab === 'image' ? 'hover:ring-2 hover:ring-primary/30' : ''
-                      )}
-                      onClick={() => setSelectedItem(item)}
-                      tabIndex={0}
-                      aria-label={item.title}
-                      role="button"
-                      onKeyDown={e => { if (e.key === 'Enter') setSelectedItem(item) }}
-                    >
-                      <div className="relative aspect-video bg-muted overflow-hidden">
-                        {activeTab === 'image' ? (
-                          <Image
-                            src={item.url}
-                            alt={item.title}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            sizes="(max-width: 768px) 100vw, 33vw"
-                            priority={false}
-                          />
-                        ) : (
-                          <>
-                            <img
-                              src={item.thumbnail || '/placeholder-image.svg'}
-                              alt={item.title}
-                              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-                            />
-                            <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded z-10 shadow">
-                              {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                            </span>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="bg-black/60 rounded-full p-3 flex items-center justify-center shadow-lg">
-                                <Play className="h-8 w-8 text-white" />
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      <CardContent className="p-4">
-                        {item.type === 'video' && (
-                          <div className="mb-2">
-                            <h3 className="font-medium truncate">{item.title}</h3>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-muted-foreground">
-                            {item.createdAt ? formatDate(item.createdAt) : ''}
-                          </p>
-                        </div>
-                        {item.tag && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="bg-muted px-2 py-1 rounded text-xs">{item.tag}</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <Card
-                      key={item._id}
-                      className={cn(
-                        "overflow-hidden group cursor-pointer transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 flex items-center bg-white dark:bg-zinc-900 border border-muted/40",
-                        activeTab === 'image' ? 'hover:ring-2 hover:ring-primary/30' : ''
-                      )}
-                      onClick={() => setSelectedItem(item)}
-                      tabIndex={0}
-                      aria-label={item.title}
-                      role="button"
-                      onKeyDown={e => { if (e.key === 'Enter') setSelectedItem(item) }}
-                    >
-                      <div className="h-16 w-16 relative bg-muted rounded overflow-hidden flex-shrink-0">
-                        {activeTab === 'image' ? (
-                          <Image
-                            src={item.url}
-                            alt={item.title}
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            sizes="64px"
-                            priority={false}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                            <Play className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 p-4">
-                        {item.type === 'video' && (
-                          <h3 className="font-medium truncate">{item.title}</h3>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          {item.size ? item.size.replace('MB', '').trim() : 'N/A'} • {item.createdAt ? formatDate(item.createdAt) : ''}
-                        </p>
-                        {item.tag && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="bg-muted px-2 py-1 rounded text-xs">{item.tag}</span>
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  )
-                )}
+        <div className="space-y-6 pb-12">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'image' | 'video')}>
+              <TabsList>
+                <TabsTrigger value="image">
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  Images
+                </TabsTrigger>
+                <TabsTrigger value="video">
+                  <Play className="w-4 h-4 mr-2" />
+                  Videos
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                className="pl-9"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder={`Search ${activeTab === 'image' ? 'images' : 'videos'}...`}
+                aria-label="Search media"
               />
-              {meta.pages > 1 && (
-                <Pagination className="mt-8 flex justify-center">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious onClick={() => setPage(p => Math.max(1, p - 1))} isActive={page > 1} />
-                    </PaginationItem>
-                    {[...Array(meta.pages)].map((_, i) => (
-                      <PaginationItem key={i}>
-                        <PaginationLink isActive={page === i + 1} onClick={() => setPage(i + 1)}>{i + 1}</PaginationLink>
-                      </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                      <PaginationNext onClick={() => setPage(p => Math.min(meta.pages, p + 1))} isActive={page < meta.pages} />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
             </div>
-
-            <UniversalDialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)} maxWidth="max-w-4xl p-0">
-              <DialogHeader className="p-4 border-b">
-                <DialogTitle>Media</DialogTitle>
-              </DialogHeader>
-              {selectedItem?.type === 'image' && (
-                <div className="relative aspect-video">
-                  <Image
-                    src={selectedItem.url}
-                    alt={selectedItem.title}
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-              )}
-              {selectedItem?.type === 'video' && (
-                <div className="relative aspect-video bg-black flex items-center justify-center">
-                  {/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\//.test(selectedItem.url) ? (
-                    <iframe
-                      src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url)}`}
-                      title="YouTube video player"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full"
-                    />
-                  ) : /^https?:\/\/(www\.)?facebook\.com\//.test(selectedItem.url) ? (
-                    <iframe
-                      src={selectedItem.url}
-                      title="Facebook video player"
-                      allow="autoplay; encrypted-media"
-                      allowFullScreen
-                      className="w-full h-full"
-                    />
-                  ) : (
-                    <div className="text-white p-8">Invalid video URL</div>
-                  )}
-                </div>
-              )}
-              <div className="p-4">
-                {selectedItem?.type === 'video' && (
-                  <h2 className="text-xl font-semibold mb-1">{selectedItem?.title}</h2>
-                )}
-                <p className="text-sm text-muted-foreground mb-2">
-                  {selectedItem && formatDate(selectedItem.createdAt || '')}
-                </p>
-                {selectedItem?.tag && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <span className="bg-muted px-2 py-1 rounded text-xs">{selectedItem.tag}</span>
-                  </div>
-                )}
-              </div>
-            </UniversalDialog>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant={view === "grid" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setView("grid")}
+                aria-label="Grid view"
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={view === "list" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setView("list")}
+                aria-label="List view"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </>
-      )
-    }
 
+          <AdminGrid
+            items={filteredMedia}
+            loading={isLoading}
+            emptyState={{ 
+              title: `No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`, 
+              description: `Try adjusting your search or check back later for new content.`
+            }}
+            gridClassName={cn(
+              view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'flex flex-col gap-4',
+              filteredMedia.length <= 3 ? 'pb-12' : ''
+            )}
+            renderItem={(item: Media) => (
+              <MediaCard 
+                key={item?._id}
+                item={item} 
+                view={view} 
+                activeTab={activeTab}
+                onClick={() => handleItemClick(item)}
+              />
+            )}
+          />
 
+          {meta.pages > 1 && (
+            <Pagination className="mt-8 flex gap-2">
+              <Button
+                variant="outline"
+                disabled={page === 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                className="gap-1 pl-2.5"
+              >
+                Previous
+              </Button>
+              {Array.from({ length: Math.min(5, meta.pages) }, (_, i) => {
+                const pageNum = page <= 3 ? i + 1 : 
+                              page >= meta.pages - 2 ? meta.pages - 4 + i : 
+                              page - 2 + i
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={page === pageNum ? "default" : "outline"}
+                    onClick={() => setPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+              <Button
+                variant="outline"
+                disabled={page === meta.pages}
+                onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
+                className="gap-1 pr-2.5"
+              >
+                Next
+              </Button>
+            </Pagination>
+          )}
+        </div>
+
+        <UniversalDialog 
+          open={!!selectedItem} 
+          onOpenChange={() => setSelectedItem(null)} 
+          className="max-w-4xl p-0 overflow-hidden"
+        >
+          <AnimatePresence mode="wait">
+            {selectedItem && (
+              <motion.div
+                key={selectedItem._id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <DialogHeader className="p-4 border-b">
+                  <DialogTitle>{selectedItem.title}</DialogTitle>
+                </DialogHeader>
+                
+                {selectedItem.type === 'image' ? (
+                  <AspectRatio ratio={16/9}>
+                    <Image
+                      src={selectedItem.url}
+                      alt={selectedItem.title}
+                      fill
+                      className="object-contain"
+                      priority
+                    />
+                  </AspectRatio>
+                ) : (
+                  <AspectRatio ratio={16/9} className="bg-black">
+                    {/youtube|youtu\.be/.test(selectedItem.url) ? (
+                      <iframe
+                        src={`https://www.youtube.com/embed/${getYouTubeId(selectedItem.url)}?autoplay=1`}
+                        title={selectedItem.title}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <video
+                        src={selectedItem.url}
+                        controls
+                        autoPlay
+                        className="w-full h-full"
+                      />
+                    )}
+                  </AspectRatio>
+                )}
+                
+                <div className="p-4 space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Uploaded: {formatDate(selectedItem?.createdAt || '')}
+                  </p>
+                  {selectedItem.tag && (
+                    <div className="flex flex-wrap gap-2">
+                      <span className="bg-muted px-2 py-1 rounded text-xs">{selectedItem.tag}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={selectedItem.url} download target="_blank" rel="noopener noreferrer">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </UniversalDialog>
+      </div>
+    </>
+  )
+}

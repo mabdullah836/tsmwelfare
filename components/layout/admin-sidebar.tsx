@@ -12,9 +12,9 @@ import {
   FileText,
   ExternalLink,
   ChevronLeft,
-
+  Mail
 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/cn"
 import { Button } from "@/components/ui/button"
 
 const navigationItems = [
@@ -52,6 +52,11 @@ const navigationItems = [
     name: "Applications",
     href: "/admin/applications",
     icon: FileText
+  },
+  {
+    name: "Newsletter",
+    href: "/admin/newsletter",
+    icon: Mail
   }
 ]
 

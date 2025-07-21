@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { 
   Card, 
   CardContent, 
@@ -39,27 +39,18 @@ import {
 } from "lucide-react"
 import { AlertMessage } from '@/components/ui/alert-message';
 import { formatDate } from "@/lib/utils/format"
-import { getApplications } from "@/lib/services/application"
 import { Application } from "@/lib/types/application"
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
 import { AdminTable } from "@/components/shared/AdminTable";
 import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
+import { useApplications } from '@/lib/hooks/useApplications';
+import { useSelection } from '@/lib/hooks/use-selection';
 
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState<Application[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [meta, setMeta] = useState({ 
-    total: 0, 
-    page: 1, 
-    pages: 1, 
-    limit: 10 
-  })
-  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
-  const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null)
   const debouncedSearch = useDebounce(search, 400)
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -67,41 +58,14 @@ export default function ApplicationsPage() {
   const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
   const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
-  // Fetch applications from API
-  useEffect(() => {
-    setIsLoading(true)
-    getApplications({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
-      setApplications(res.data)
-      setMeta(res.meta)
-      setIsLoading(false)
-    }).catch(() => {
-      setApplications([])
-      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
-      setIsLoading(false)
-      setAlert({ type: 'error', message: 'Failed to fetch applications' });
-    })
-  }, [page, meta.limit, debouncedSearch])
+  // SWR hook for applications
+  const { applications, meta, isLoading, isError, mutate } = useApplications({ page, limit: 10, q: debouncedSearch });
 
-  // Handle row selection
-  const toggleRowSelection = (id: string) => {
-    setRowSelection(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }))
-  }
-
-  const toggleAllRowsSelection = () => {
-    if (Object.keys(rowSelection).length === applications.length) {
-      setRowSelection({})
-    } else {
-      const newSelection: Record<string, boolean> = {}
-      applications.forEach(application => {
-        if (application._id) newSelection[application._id] = true
-      })
-      setRowSelection(newSelection)
-    }
-  }
+  // Use useSelection for selection management
+  const selectableApplications = applications.filter((application: Application) => typeof application._id === 'string') as { _id: string }[];
+  const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableApplications);
 
   // Handle sorting
   const requestSort = (key: string) => {
@@ -112,14 +76,11 @@ export default function ApplicationsPage() {
     setSortConfig({ key, direction })
   }
 
-  const sortedApplications = [...applications].sort((a, b) => {
+  const sortedApplications = [...applications].sort((a: Application, b: Application) => {
     if (!sortConfig) return 0
-    
     const aValue = a[sortConfig.key as keyof Application]
     const bValue = b[sortConfig.key as keyof Application]
-    
     if (aValue === undefined || bValue === undefined) return 0
-    
     if (aValue < bValue) {
       return sortConfig.direction === 'asc' ? -1 : 1
     }
@@ -135,12 +96,8 @@ export default function ApplicationsPage() {
         const response = await fetch(`/api/application/${id}`, { method: 'DELETE' })
         const data = await response.json()
         if (response.ok && data.success) {
-          setApplications(prev => prev.filter(application => application._id !== id))
-          setRowSelection(prev => {
-            const newSelection = {...prev}
-            delete newSelection[id]
-            return newSelection
-          })
+          mutate(); // Re-fetch applications after deletion
+          toggleSelect(id); // Update selection
           setAlert({ type: 'success', message: 'Application rejected and removed successfully' });
         } else {
           throw new Error('Failed to remove application')
@@ -153,13 +110,7 @@ export default function ApplicationsPage() {
         })
         const data = await response.json()
         if (response.ok && data.success) {
-          setApplications(prev =>
-            prev.map(application =>
-              application._id === id
-                ? { ...application, status: newStatus }
-                : application
-            )
-          )
+          mutate(); // Re-fetch applications after status update
           setAlert({ type: 'success', message: `Application ${newStatus} successfully` });
         } else {
           throw new Error('Failed to update application status')
@@ -171,15 +122,14 @@ export default function ApplicationsPage() {
   }
 
   const handleDeleteSelected = async () => {
-    const selectedIds = Object.keys(rowSelection).filter(id => rowSelection[id]);
     setBulkDeleteLoading(true);
     try {
       await Promise.all(selectedIds.map(id => 
         fetch(`/api/application/${id}`, { method: 'DELETE' })
       ));
-      setApplications(prev => prev.filter(a => !selectedIds.includes(a._id || '')));
-      setRowSelection({});
-      setDeleteConfirmationOpen(false);
+      mutate(); // Re-fetch applications after bulk deletion
+      setSelectedIds([]); // Deselect all rows
+      setIsDeleteConfirmationOpen(false);
       setAlert({ type: 'success', message: `${selectedIds.length} application(s) deleted successfully` });
     } catch (error) {
       setAlert({ type: 'error', message: 'Failed to delete applications' });
@@ -196,16 +146,6 @@ export default function ApplicationsPage() {
     setSingleDeleteOpen(false);
     setSingleDeleteId(null);
   };
-
-  const columns = [
-    { id: 'select', label: 'Select', accessor: 'select' },
-    { id: 'name', label: 'Name', accessor: 'name', sortable: true },
-    { id: 'type', label: 'Type', accessor: 'type', sortable: true },
-    { id: 'email', label: 'Email', accessor: 'email', sortable: true },
-    { id: 'status', label: 'Status', accessor: 'status', sortable: true },
-    { id: 'appliedDate', label: 'Applied Date', accessor: 'createdAt', sortable: true },
-    { id: 'actions', label: 'Actions', accessor: 'actions' }
-  ]
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -229,13 +169,13 @@ export default function ApplicationsPage() {
               onChange={(e) => setSearch(e.target.value)}
               className="max-w-sm"
             />
-            {Object.keys(rowSelection).filter(id => rowSelection[id]).length > 0 && (
+            {selectedIds.length > 0 && (
               <Button 
                 variant="destructive" 
-                onClick={() => setDeleteConfirmationOpen(true)}
+                onClick={() => setIsDeleteConfirmationOpen(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete ({Object.keys(rowSelection).filter(id => rowSelection[id]).length})
+                Delete ({selectedIds.length})
               </Button>
             )}
           </div>
@@ -247,8 +187,8 @@ export default function ApplicationsPage() {
                   key: "select",
                   label: (
                     <Checkbox
-                      checked={Object.keys(rowSelection).length === applications.length && applications.length > 0}
-                      onCheckedChange={toggleAllRowsSelection}
+                      checked={allSelected}
+                      onCheckedChange={toggleSelectAll}
                       aria-label="Select all"
                       className="translate-y-[2px]"
                     />
@@ -267,12 +207,12 @@ export default function ApplicationsPage() {
               emptyState={{
                 title: search ? "No applications match your search" : "No applications found",
               }}
-              renderRow={(application) => (
+              renderRow={(application: Application) => (
                 <TableRow key={application._id}>
                   <TableCell>
                     <Checkbox
-                      checked={!!rowSelection[application._id || '']}
-                      onCheckedChange={() => toggleRowSelection(application._id || '')}
+                      checked={selectedIds.includes(application._id || '')}
+                      onCheckedChange={() => toggleSelect(application._id || '')}
                       aria-label="Select row"
                       className="translate-y-[2px]"
                     />
@@ -345,7 +285,7 @@ export default function ApplicationsPage() {
           
           <div className="flex items-center justify-end space-x-2 py-4">
             <div className="flex-1 text-sm text-muted-foreground">
-              {Object.keys(rowSelection).filter(id => rowSelection[id]).length} of {applications.length} row(s) selected.
+              {selectedIds.length} of {applications.length} row(s) selected.
             </div>
             <Button
               variant="outline"
@@ -452,7 +392,7 @@ export default function ApplicationsPage() {
             description="Are you sure you want to delete the selected applications? This action cannot be undone."
             loading={bulkDeleteLoading}
             onConfirm={handleDeleteSelected}
-            onCancel={() => setDeleteConfirmationOpen(false)}
+            onCancel={() => setIsDeleteConfirmationOpen(false)}
           />
           <ConfirmDeleteModal
             open={isSingleDeleteOpen}

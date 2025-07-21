@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect, useMemo } from "react"
+import { useState,useMemo } from "react"
 import { AlertMessage } from '@/components/ui/alert-message'
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { getMedia, deleteMedia, updateMediaStatus, uploadVideoByUrl } from '@/lib/services/media'
+import { deleteMedia, updateMediaStatus, uploadVideoByUrl } from '@/lib/services/media'
 import type { Media } from '@/lib/types/media'
 import { useDebounce } from '@/lib/hooks/use-debounce'
+import { useMedia } from '@/lib/hooks/useMedia';
 
 import { MediaStats } from '@/components/media/MediaStats'
 import { MediaToolbar } from '@/components/media/MediaToolbar'
@@ -24,9 +25,6 @@ export default function MediaPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid')
   const [filterType, setFilterType] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [mediaItems, setMediaItems] = useState<Media[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [showAddVideo, setShowAddVideo] = useState(false)
   const [showVideoModal, setShowVideoModal] = useState(false)
@@ -37,38 +35,24 @@ export default function MediaPage() {
   const [title, setTitle] = useState('');
   const [tag, setTag] = useState('');
   const [page, setPage] = useState(1)
-  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 12 })
   const debouncedSearch = useDebounce(searchQuery, 400)
   const [showImageModal, setShowImageModal] = useState(false)
   const [activeImage, setActiveImage] = useState<Media | null>(null)
 
-  // Fetch media from API
-  useEffect(() => {
-    setLoading(true)
-    getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' }).then(res => {
-      setMediaItems(res.data)
-      setMeta(res.meta)
-      setLoading(false)
-      setAlert(null)
-    }).catch(() => {
-      setMediaItems([])
-      setMeta({ total: 0, page: 1, pages: 1, limit: 12 })
-      setLoading(false)
-      setAlert({ message: 'Failed to fetch media', type: 'error' })
-    })
-  }, [page, meta.limit, debouncedSearch])
+  // SWR hook for media
+  const { media, meta, isLoading, isError, mutate } = useMedia({ page, limit: 12, q: debouncedSearch, folder: 'general' });
 
   const stats = useMemo(() => ({
-    total: mediaItems.length,
-    images: mediaItems.filter(item => item.type === 'image').length,
-    videos: mediaItems.filter(item => item.type === 'video').length,
-    totalSize: mediaItems.reduce((acc, item) => {
+    total: media.length,
+    images: media.filter((item: Media) => item.type === 'image').length,
+    videos: media.filter((item: Media) => item.type === 'video').length,
+    totalSize: media.reduce((acc: number, item: Media) => {
       const size = parseFloat(String(item.size ?? ''))
       return isNaN(size) ? acc : acc + size
     }, 0)
-  }), [mediaItems])
+  }), [media])
 
-  const selectableMedia = mediaItems.filter(item => typeof item._id === 'string') as { _id: string }[]
+  const selectableMedia = media.filter((item: Media) => typeof item._id === 'string') as { _id: string }[]
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableMedia)
 
   const deleteMediaItems = async (ids: string[]) => {
@@ -79,22 +63,21 @@ export default function MediaPage() {
     })
     const data = await response.json()
     if (response.ok && data.success) {
-      setMediaItems(prev => prev.filter(item => !ids.includes(item._id!)))
       setSelectedIds([])
       setAlert({ message: 'Selected media items deleted.', type: 'success' })
+      mutate()
     } else {
       setAlert({ message: data.message || 'Failed to delete media items.', type: 'error' })
     }
   }
   const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteMediaItems, selectedIds)
 
-  async function handleApprove(media: Media) {
+  async function handleApprove(mediaItem: Media) {
     setApproving(true)
     try {
-      await updateMediaStatus(media._id!, 'approved')
+      await updateMediaStatus(mediaItem._id!, 'approved')
       setAlert({ message: 'Video approved.', type: 'success' })
-      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' })
-      setMediaItems(res.data)
+      mutate()
     } catch {
       setAlert({ message: 'Failed to approve video.', type: 'error' })
     } finally {
@@ -102,17 +85,16 @@ export default function MediaPage() {
     }
   }
 
-  async function handleReject(media: Media) {
+  async function handleReject(mediaItem: Media) {
     setApproving(true)
     try {
-      await deleteMedia(media._id!);
+      await deleteMedia(mediaItem._id!);
       setAlert({ message: 'Video rejected and removed.', type: 'success' });
-      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' });
-      setMediaItems(res.data);
+      mutate()
     } catch {
       setAlert({ message: 'Failed to reject and remove video.', type: 'error' });
     } finally {
-      setApproving(false);
+      setApproving(false)
     }
   }
 
@@ -125,8 +107,7 @@ export default function MediaPage() {
       setThumbnail('');
       setTitle('');
       setTag('');
-      const res = await getMedia({ page, limit: meta.limit, q: debouncedSearch, folder: 'general' });
-      setMediaItems(res.data);
+      mutate()
     } catch (error) {
       setAlert({ message: error instanceof Error ? error.message : 'Failed to add video.', type: 'error' });
     }
@@ -134,9 +115,9 @@ export default function MediaPage() {
 
   // Filter media by type
   const filteredMedia = useMemo(() => {
-    if (filterType === 'all') return mediaItems;
-    return mediaItems.filter(item => item.type === filterType);
-  }, [mediaItems, filterType]);
+    if (filterType === 'all') return media;
+    return media.filter((item: Media) => item.type === filterType);
+  }, [media, filterType]);
 
   return (
     <div className="min-h-screen">
@@ -156,7 +137,7 @@ export default function MediaPage() {
           setFilterType={setFilterType}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          uploading={loading}
+          uploading={isLoading}
           selectedIds={selectedIds}
           setShowAddVideo={setShowAddVideo}
           setShowDeleteConfirm={setShowDeleteConfirm}
@@ -171,14 +152,14 @@ export default function MediaPage() {
           onCancel={() => setShowDeleteConfirm(false)}
           onConfirm={handleBulkDelete}
         />
-        {error && <div className="text-red-600 text-sm">{error}</div>}
+        {isError && <div className="text-red-600 text-sm">Failed to fetch media.</div>}
         <AdminGrid
           items={filteredMedia}
-          loading={loading}
+          loading={isLoading}
           emptyState={{ title: "No media items found", description: searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started' }}
           skeletonItems={meta.limit}
           gridClassName={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full' : 'flex flex-col gap-4'}
-          renderItem={(item) => (
+          renderItem={(item: Media) => (
             item.type === 'image'
               ? <ImageCard
                   key={item._id}

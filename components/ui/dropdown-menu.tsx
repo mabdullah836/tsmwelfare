@@ -2,8 +2,7 @@
 
 import * as React from 'react'
 import * as RadixDropdownMenu from '@radix-ui/react-dropdown-menu'
-import { cn } from '@/lib/utils'
-
+import { cn } from "@/lib/utils/cn"
 export const DropdownMenu = RadixDropdownMenu.Root
 
 export const DropdownMenuTrigger = React.forwardRef<

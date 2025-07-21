@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -24,7 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { getTeamMembers } from "@/lib/services/team"
+import { useTeam } from '@/lib/hooks/useTeam';
 import { TeamMember } from "@/lib/types/team"
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { useForm } from 'react-hook-form';
@@ -32,8 +32,6 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { FormInput } from '@/components/ui/form-input';
 
 export default function AdminTeamPage() {
-  const [team, setTeam] = useState<TeamMember[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
@@ -44,40 +42,28 @@ export default function AdminTeamPage() {
   const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
   const debouncedSearch = useDebounce(search, 400)
 
-  // Fetch team from API
-  useEffect(() => {
-    setIsLoading(true)
-    getTeamMembers({ page: 1, limit: meta.limit, q: debouncedSearch }).then(res => {
-      setTeam(res.data)
-      setMeta(res.meta)
-      setIsLoading(false)
-      setAlert(null)
-    }).catch(() => {
-      setTeam([])
-      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
-      setIsLoading(false)
-      setAlert({ message: 'Failed to fetch team members', type: 'error' })
-    })
-  }, [meta.limit, debouncedSearch])
+  // SWR hook for team
+  const { team, meta: swrMeta, isLoading, isError, mutate } = useTeam({ page: 1, limit: meta.limit, q: debouncedSearch });
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result?.destination) return
 
-    const items = Array.from(team)
+    const items: TeamMember[] = Array.from(team as TeamMember[])
     const [reorderedItem] = items.splice(result.source.index, 1)
     items.splice(result.destination.index, 0, reorderedItem)
 
-    const updatedItems = items.map((item, index) => ({
+    const updatedItems = items.map((item: TeamMember, index: number) => ({
       ...item,
       order: index + 1,
     }))
 
-    setTeam(updatedItems)
+    // Optimistically update UI
+    mutate()
 
     try {
       const updates = updatedItems
-        .filter(item => item._id)
-        .map(item => ({
+        .filter((item: TeamMember) => item._id)
+        .map((item: TeamMember) => ({
           id: item._id!,
           order: item.order,
         }))
@@ -97,6 +83,7 @@ export default function AdminTeamPage() {
         message: "Team member order has been updated successfully",
         type: "success"
       })
+      mutate()
     } catch (error) {
       setAlert({
         message: error instanceof Error ? error.message : "Failed to update team member order",
@@ -150,10 +137,6 @@ export default function AdminTeamPage() {
       }
 
       const updated = await response.json()
-      setTeam(prev => prev.map(member => 
-        member._id === editingMember._id ? updated : member
-      ))
-
       setAlert({
         message: `Successfully updated ${updated.name}'s profile`,
         type: "success"
@@ -161,6 +144,7 @@ export default function AdminTeamPage() {
 
       setIsDialogOpen(false)
       setEditingMember(null)
+      mutate()
     } catch (error) {
       setAlert({
         message: error instanceof Error ? error.message : "Failed to update team member",
@@ -214,14 +198,13 @@ export default function AdminTeamPage() {
       }
 
       const createdMember = await response.json()
-      setTeam(prev => [...prev, createdMember])
-
       setAlert({
         message: `Successfully added ${createdMember.name} to the team`,
         type: "success"
       })
 
       setIsDialogOpen(false)
+      mutate()
     } catch (error) {
       setAlert({
         message: error instanceof Error ? error.message : "Failed to add team member",
@@ -290,18 +273,18 @@ export default function AdminTeamPage() {
     );
   };
 
-  const uniqueRoles = ["all", ...Array.from(new Set(team.map(m => m.role)))]
+  const uniqueRoles = ["all", ...Array.from(new Set((team as TeamMember[]).map((m: TeamMember) => m.role)))]
 
-  const selectableTeam = team.filter(member => typeof member._id === 'string') as { _id: string }[];
+  const selectableTeam = (team as TeamMember[]).filter((member: TeamMember) => typeof member._id === 'string') as { _id: string }[];
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableTeam);
 
   const deleteTeamMembers = async (ids: string[]) => {
     for (const id of ids) {
       await fetch(`/api/team/${id}`, { method: 'DELETE' });
     }
-    setTeam(prev => prev.filter(member => member._id && !ids.includes(member._id)));
     setSelectedIds([]);
     setAlert({ type: 'success', message: 'Selected team members deleted.' });
+    mutate()
   };
   const { showDeleteConfirm, setShowDeleteConfirm, handleBulkDelete } = useBulkDelete(deleteTeamMembers, selectedIds);
 
@@ -402,7 +385,7 @@ export default function AdminTeamPage() {
           emptyState={{ title: "No team members yet", description: "Add your first team member to get started." }}
           skeletonItems={meta.limit}
           gridClassName="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          renderItem={(member, idx) => (
+          renderItem={(member: TeamMember, idx: number) => (
             <div key={member._id || idx} className="relative">
               <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(member._id || '')} onCheckedChange={() => member._id && toggleSelect(member._id)} />
               <Card>

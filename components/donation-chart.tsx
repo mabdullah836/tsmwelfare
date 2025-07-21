@@ -4,15 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, Legend } from "recharts";
 import React from "react";
+import { useDonations } from '@/lib/hooks/useDonations';
 
 type ChartType = "bar" | "area" | "pie";
 
 type DonationChartProps = {
-  type: ChartType;
-  data: any[];
+  type: "bar" | "area" | "pie";
   title?: string;
   description?: string;
-  loading?: boolean;
   xKey?: string;
   yKey?: string;
   color?: string;
@@ -34,10 +33,8 @@ const DEFAULT_PIE_COLORS = [
 
 export function DonationChart({
   type,
-  data,
   title,
   description,
-  loading = false,
   xKey = "name",
   yKey = "amount",
   color = "hsl(var(--primary))",
@@ -45,6 +42,7 @@ export function DonationChart({
   pieValueKey = "value",
   pieColors = DEFAULT_PIE_COLORS,
 }: DonationChartProps) {
+  const { donations, isLoading } = useDonations();
   return (
     <Card>
       {(title || description) && (
@@ -54,13 +52,13 @@ export function DonationChart({
         </CardHeader>
       )}
       <CardContent className={type === "pie" ? "h-72 flex items-center justify-center" : "h-[300px]"}>
-        {loading ? (
+        {isLoading ? (
           <Skeleton className="h-full w-full" />
-        ) : !data || data.length === 0 ? (
+        ) : !donations || donations.length === 0 ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">No data available</div>
         ) : type === "bar" ? (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
+            <BarChart data={donations}>
               <XAxis dataKey={xKey} fontSize={12} axisLine={false} tickLine={false} />
               <YAxis fontSize={12} axisLine={false} tickLine={false} />
               <Tooltip formatter={(value: number) => [`Rs. ${Number(value).toLocaleString()}`, "Amount"]} wrapperStyle={{ fontSize: 12 }} />
@@ -70,7 +68,7 @@ export function DonationChart({
           </ResponsiveContainer>
         ) : type === "area" ? (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
+            <AreaChart data={donations}>
               <defs>
                 <linearGradient id="colorDonations" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={color} stopOpacity={0.8} />
@@ -88,7 +86,7 @@ export function DonationChart({
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={donations}
                 dataKey={pieValueKey}
                 nameKey={pieNameKey}
                 cx="50%"
@@ -96,7 +94,7 @@ export function DonationChart({
                 outerRadius={80}
                 label
               >
-                {data.map((entry, idx) => (
+                {donations.map((entry: any, idx: number) => (
                   <Cell key={entry[pieNameKey] || idx} fill={pieColors[idx % pieColors.length]} />
                 ))}
               </Pie>

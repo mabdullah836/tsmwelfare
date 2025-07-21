@@ -6,7 +6,6 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme'; // Use env var in production
 
-// NOTE: Set JWT_SECRET in your environment for production. Consider using httpOnly cookies for better security in production.
 
 export async function POST(request: Request) {
   try {

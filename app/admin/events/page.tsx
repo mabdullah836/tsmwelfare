@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,8 +11,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import { GridIcon, ListIcon } from "lucide-react"
@@ -23,18 +21,16 @@ import { ConfirmDialog } from '@/components/modals/ConfirmDialog'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
 import { uploadMedia } from '@/lib/services/media'
-import { getUpcomingEvents } from '@/lib/services/event'
 import { Event } from "@/lib/types/event"
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { useForm } from 'react-hook-form';
 import { FileUpload } from '@/components/ui/file-upload';
 import { FormInput } from '@/components/ui/form-input';
+import { useEvents } from '@/lib/hooks/useEvents';
 
 import { AdminGrid } from "@/components/shared/AdminGrid"
 
 export default function AdminEventsPage() {
-  const [events, setEvents] = useState<Event[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
@@ -45,21 +41,8 @@ export default function AdminEventsPage() {
   const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
   const debouncedSearch = useDebounce(search, 400)
 
-  // Fetch events from API
-  useEffect(() => {
-    setIsLoading(true)
-    getUpcomingEvents({ page, limit: meta.limit, q: debouncedSearch }).then(res => {
-      setEvents(res.data)
-      setMeta(res.meta)
-      setIsLoading(false)
-      setAlert(null)
-    }).catch(() => {
-      setEvents([])
-      setMeta({ total: 0, page: 1, pages: 1, limit: 10 })
-      setIsLoading(false)
-      setAlert({ message: 'Failed to fetch events', type: 'error' })
-    })
-  }, [page, meta.limit, debouncedSearch])
+  // SWR hook for events
+  const { events, meta: swrMeta, isLoading, isError, mutate } = useEvents({ page, limit: meta.limit, q: debouncedSearch });
 
   const handleEditEvent = async (formData: FormData) => {
     if (!editingEvent) return
@@ -95,9 +78,7 @@ export default function AdminEventsPage() {
       }
 
       const updated = await response.json()
-      setEvents(prev => prev.map(event => 
-        event._id === editingEvent._id ? updated : event
-      ))
+      mutate((prev: Event[] | undefined) => (prev ? prev.map((event: Event) => event._id === editingEvent._id ? updated : event) : []));
 
       setAlert({
         message: `Successfully updated event "${updatedEvent.title}"`,
@@ -148,7 +129,7 @@ export default function AdminEventsPage() {
       }
 
       const createdEvent = await response.json()
-      setEvents(prev => [...prev, createdEvent])
+      mutate((prev: Event[] | undefined) => (prev ? [...prev, createdEvent] : [createdEvent]));
 
       setAlert({
         message: `Successfully created new event "${createdEvent.title}"`,
@@ -244,14 +225,14 @@ export default function AdminEventsPage() {
     );
   };
 
-  const selectableEvents = events.filter(event => typeof event._id === 'string') as { _id: string }[];
+  const selectableEvents = events.filter((event : Event) => typeof event._id === 'string') as { _id: string }[];
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableEvents);
 
   const deleteEvents = async (ids: string[]) => {
     for (const id of ids) {
       await fetch(`/api/events/${id}`, { method: 'DELETE' });
     }
-    setEvents(prev => prev.filter(event => event._id && !ids.includes(event._id)));
+    mutate((prev: Event[] | undefined) => (prev ? prev.filter((event: Event) => event._id && !ids.includes(event._id)) : []));
     setSelectedIds([]);
     setAlert({ type: 'success', message: 'Selected events deleted.' });
   };
@@ -344,7 +325,7 @@ export default function AdminEventsPage() {
           emptyState={{ title: "No events scheduled", description: "Add your first event to get started." }}
           skeletonItems={meta.limit}
           gridClassName={viewMode === 'grid' ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}
-          renderItem={(event) => (
+          renderItem={(event: Event) => (
             <div key={event._id} className="relative group">
               <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id || '')} onCheckedChange={() => event._id && toggleSelect(event._id)} />
               <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { AlertCircle, CheckCircle2, X } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/cn"
 
 interface AlertMessageProps {
   message: string
