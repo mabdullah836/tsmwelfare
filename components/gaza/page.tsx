@@ -24,7 +24,7 @@ export default function GazaPage() {
       <section className="py-16 md:py-24 bg-gradient-to-b from-red-50 to-amber-50 dark:from-red-950/30 dark:to-amber-950/20 relative z-10">
         <div className="container">
           {/* Hero Section */}
-          <motion.div 
+          <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeIn}
@@ -37,10 +37,10 @@ export default function GazaPage() {
               </h2>
             </div>
             <p className="text-xl text-red-700 dark:text-red-300 mb-8 leading-relaxed">
-              Our brothers and sisters in Gaza are facing unprecedented suffering. 
+              Our brothers and sisters in Gaza are facing unprecedented suffering.
               Your urgent support can provide life-saving aid to families under siege.
             </p>
-            
+
             <Button
               size="lg"
               className="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-medium shadow-lg hover:shadow-red-300/50 dark:hover:shadow-red-900/30 transition-all"
@@ -56,7 +56,7 @@ export default function GazaPage() {
           {/* Main Content */}
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
             {/* Left Column */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               animate="visible"
               variants={fadeIn}
@@ -91,7 +91,7 @@ export default function GazaPage() {
                   <div>
                     <h4 className="font-bold text-red-800 dark:text-red-200 mb-2">Urgent Need</h4>
                     <p className="text-red-700 dark:text-red-300">
-                      Over 2 million people are without adequate food, water or medical care. 
+                      Over 2 million people are without adequate food, water or medical care.
                       Your donation today can literally save lives tomorrow.
                     </p>
                   </div>
@@ -100,7 +100,7 @@ export default function GazaPage() {
             </motion.div>
 
             {/* Right Column - Images */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               animate="visible"
               variants={fadeIn}
@@ -131,7 +131,8 @@ export default function GazaPage() {
           </div>
 
           {/* Donation Impact Section */}
-          <motion.div 
+          {/* Emergency Aid Packages Section */}
+          <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeIn}
@@ -142,35 +143,64 @@ export default function GazaPage() {
                 <div className="text-center">
                   <h3 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-4 flex justify-center items-center gap-3">
                     <CrosshairIcon className="h-6 w-6" />
-                    Your Impact Matters
+                    Emergency Survival Packages
                   </h3>
                   <p className="text-xl text-red-700 dark:text-red-300 mb-8 max-w-3xl mx-auto">
-                    Every contribution directly supports Palestinians in desperate need. 
-                    Here's what your donation can provide:
+                    Current prices in Gaza have reached catastrophic levels. Here's what's needed:
                   </p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                    {[
-                      { amount: "Rs. 500", desc: "Emergency Meal Pack" },
-                      { amount: "Rs. 2,000", desc: "Family Food Package" },
-                      { amount: "Rs. 5,000", desc: "Medical Supplies" },
-                      { amount: "Rs. 10,000", desc: "Shelter Support" }
-                    ].map((item, index) => (
-                      <motion.div
-                        key={index}
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeIn}
-                        transition={{ delay: 0.7 + index * 0.1 }}
-                        className="bg-white dark:bg-red-800/80 p-4 rounded-lg shadow hover:shadow-md transition-shadow border border-red-100 dark:border-red-700"
-                      >
-                        <p className="font-bold text-xl text-red-800 dark:text-red-200 mb-1">
-                          {item.amount}
-                        </p>
-                        <p className="text-sm text-red-600 dark:text-red-300">
-                          {item.desc}
-                        </p>
-                      </motion.div>
-                    ))}
+
+                  <div className="grid md:grid-cols-2 gap-8 mb-8">
+                    {/* Left Column - Basic Survival */}
+                    <div className="space-y-6">
+                      <h4 className="font-bold text-lg text-red-800 dark:text-red-200 border-b pb-2">
+                        Basic Survival (1 Family)
+                      </h4>
+                      {[
+                        { item: "1 Week Food Supply", cost: "Rs. 50,000" },
+                        { item: "Clean Water (1 Week)", cost: "Rs. 75,000" },
+                        { item: "Emergency Medicine Kit", cost: "Rs. 30,000" },
+                        { item: "Blankets & Warm Clothes", cost: "Rs. 25,000" }
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex justify-between border-b pb-2">
+                          <span>{item.item}</span>
+                          <span className="font-bold text-red-600 dark:text-red-300">{item.cost}</span>
+                        </div>
+                      ))}
+                      <div className="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
+                        <p className="font-bold">Total for Basic Survival Package: <span className="text-red-600 dark:text-red-300">Rs. 180,000</span></p>
+                      </div>
+                    </div>
+
+                    {/* Right Column - Community Support */}
+                    <div className="space-y-6">
+                      <h4 className="font-bold text-lg text-red-800 dark:text-red-200 border-b pb-2">
+                        Community Support
+                      </h4>
+                      {[
+                        { item: "Water Truck (10,000 liters)", cost: "Rs. 150,000" },
+                        { item: "Food for 50 Families (1 Week)", cost: "Rs. 250,000" },
+                        { item: "Field Hospital Supplies", cost: "Rs. 500,000" },
+                        { item: "Rebuild Destroyed Home", cost: "Rs. 350,000" }
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex justify-between border-b pb-2">
+                          <span>{item.item}</span>
+                          <span className="font-bold text-red-600 dark:text-red-300">{item.cost}</span>
+                        </div>
+                      ))}
+                      <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
+                        <p>Any amount helps - we combine donations to fund these larger projects</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-red-900/40 p-6 rounded-lg border border-red-200 dark:border-red-700 max-w-2xl mx-auto">
+                    <h4 className="font-bold text-lg text-red-800 dark:text-red-200 mb-3">How Your Donation Helps</h4>
+                    <div className="space-y-3 text-sm">
+                      <p>• Rs. 10,000 provides emergency flour for baking bread</p>
+                      <p>• Rs. 25,000 buys clean drinking water for a family for 2 weeks</p>
+                      <p>• Rs. 50,000 covers emergency medical treatment for an injured child</p>
+                      <p>• Rs. 100,000+ helps fund fuel for hospital generators</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
