@@ -9,7 +9,6 @@ import {
   CardTitle 
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { 
   TableCell, 
@@ -21,21 +20,19 @@ import {
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuLabel, 
-  DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
 import { 
   MoreHorizontal, 
   Trash2, 
-  CheckCircle2, 
-  XCircle, 
   Eye,
   Mail,
   User,
   Calendar,
   Gift,
   ClipboardList,
-  FileText
+  Phone,
+  MessageSquare
 } from "lucide-react"
 import { AlertMessage } from '@/components/ui/alert-message';
 import { formatDate } from "@/lib/utils/format"
@@ -46,27 +43,40 @@ import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal';
 import { AdminTable } from "@/components/shared/AdminTable";
 import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
 import { useSelection } from '@/lib/hooks/use-selection';
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete';
 
 export default function DonationsPage() {
   const [selectedDonation, setSelectedDonation] = useState<DonationRecord | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null);
-  const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [isSingleDeleteOpen, setSingleDeleteOpen] = useState(false);
-  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
-  const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
-  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
-
+  
   // SWR hook for donations
   const { donations, meta, isLoading, isError, mutate } = useDonations({ page, limit: 10, q: search });
 
   // Handle row selection
   const selectableDonations = donations
-    .filter((donation: DonationRecord) => typeof donation.id === 'string')
-    .map((donation : DonationRecord) => ({ ...donation, _id: donation.id })) as { _id: string }[];
+    .filter((donation: DonationRecord) => typeof donation._id === 'string')
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableDonations);
+
+  const deleteDonations = async (ids: string[]) => {
+    const response = await fetch('/api/donations', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      setSelectedIds([]);
+      setAlert({ type: 'success', message: `${ids.length} donation(s) deleted successfully` });
+      mutate();
+    } else {
+      setAlert({ type: 'error', message: data.message || 'Failed to delete donations' });
+    }
+  };
+
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteDonations, selectedIds);
 
   // Handle sorting
   const requestSort = (key: string) => {
@@ -86,63 +96,6 @@ export default function DonationsPage() {
     if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
   });
-
-  const handleStatusChange = async (id: string, newStatus: 'completed' | 'failed') => {
-    try {
-      if (newStatus === 'failed') {
-        const response = await fetch(`/api/donation/${id}`, { method: 'DELETE' })
-        const data = await response.json()
-        if (response.ok && data.success) {
-          mutate(); // Refresh donations after deletion
-          toggleSelect(id); // Update selection
-          setAlert({ type: 'success', message: 'Donation marked as failed and removed successfully' });
-        } else {
-          throw new Error('Failed to update donation')
-        }
-      } else {
-        const response = await fetch(`/api/donation/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
-        })
-        const data = await response.json()
-        if (response.ok && data.success) {
-          mutate(); // Refresh donations after status change
-          setAlert({ type: 'success', message: `Donation marked as ${newStatus} successfully` });
-        } else {
-          throw new Error('Failed to update donation status')
-        }
-      }
-    } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to update donation status' });
-    }
-  }
-
-  const handleDeleteSelected = async () => {
-    setBulkDeleteLoading(true);
-    try {
-      await Promise.all(selectedIds.map(id => 
-        fetch(`/api/donation/${id}`, { method: 'DELETE' })
-      ));
-      mutate(); // Refresh donations after bulk deletion
-      toggleSelectAll(); // Deselect all rows
-      setDeleteConfirmationOpen(false);
-      setAlert({ type: 'success', message: `${selectedIds.length} donation(s) deleted successfully` });
-    } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to delete donations' });
-    } finally {
-      setBulkDeleteLoading(false);
-    }
-  };
-
-  const handleSingleDelete = async () => {
-    if (!singleDeleteId) return;
-    setSingleDeleteLoading(true);
-    await handleStatusChange(singleDeleteId, 'failed');
-    setSingleDeleteLoading(false);
-    setSingleDeleteOpen(false);
-    setSingleDeleteId(null);
-  };
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -169,7 +122,7 @@ export default function DonationsPage() {
             {selectedIds.length > 0 && (
               <Button 
                 variant="destructive" 
-                onClick={() => setDeleteConfirmationOpen(true)}
+                onClick={() => setShowDeleteConfirm(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete ({selectedIds.length})
@@ -194,7 +147,7 @@ export default function DonationsPage() {
                 },
                 { key: "donor", label: "Donor", className: "min-w-[160px]" },
                 { key: "amount", label: "Amount", className: "min-w-[120px]" },
-                { key: "status", label: "Status", className: "w-32 text-center" },
+                { key: "type", label: "Donation Type", className: "w-50" },
                 { key: "donationDate", label: "Donation Date", className: "w-40" },
                 { key: "actions", label: "Actions", className: "w-16 text-center" },
               ]}
@@ -204,37 +157,26 @@ export default function DonationsPage() {
                 title: search ? "No donations match your search" : "No donations found",
               }}
               renderRow={(donation: DonationRecord) => (
-                <TableRow key={donation.id}>
+                <TableRow key={donation._id}>
                   <TableCell>
                     <Checkbox
-                      checked={!!donation.id && selectedIds.includes(donation.id)}
-                      onCheckedChange={() => donation.id && toggleSelect(donation.id)}
+                      checked={!!donation._id && selectedIds.includes(donation._id)}
+                      onCheckedChange={() => donation._id && toggleSelect(donation._id)}
                       aria-label="Select row"
                       className="translate-y-[2px]"
                     />
                   </TableCell>
                   <TableCell className="font-medium truncate">
-                    {donation.donor}
+                    {donation.donor.firstName} {donation.donor.lastName}
                   </TableCell>
                   <TableCell className="truncate">
-                    ${donation.amount.toFixed(2)}
+                    {donation.amount.toFixed(2)}
                   </TableCell>
-                  <TableCell className="w-32 text-center">
-                    <Badge 
-                      variant={
-                        donation.status === 'completed' 
-                          ? 'secondary' 
-                          : donation.status === 'failed' 
-                          ? 'destructive' 
-                          : 'outline'
-                      } 
-                      className="capitalize"
-                    >
-                      {donation.status || 'pending'}
-                    </Badge>
+                  <TableCell className="truncate">
+                    {donation.type}
                   </TableCell>
                   <TableCell className="w-40">
-                    {donation.date ? formatDate(donation.date) : 'N/A'}
+                    {donation.createdAt ? formatDate(donation.createdAt) : 'N/A'}
                   </TableCell>
                   <TableCell className="w-16 text-center">
                     <DropdownMenu>
@@ -248,22 +190,6 @@ export default function DonationsPage() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => setSelectedDonation(donation)}>
                           <Eye className="mr-2 h-4 w-4" /> View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleStatusChange(donation.id || '', 'completed')}
-                          className={donation.status === 'completed' ? 'opacity-50 pointer-events-none' : ''}
-                        >
-                          <CheckCircle2 className="mr-2 h-4 w-4" /> Mark Complete
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSingleDeleteId(donation.id || '');
-                            setSingleDeleteOpen(true);
-                          }}
-                          className={donation.status === 'failed' ? 'opacity-50 pointer-events-none' : ''}
-                        >
-                          <XCircle className="mr-2 h-4 w-4" /> Mark Failed
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -303,24 +229,10 @@ export default function DonationsPage() {
             onOpenChange={(open) => !open && setSelectedDonation(null)}
             title={
               <>
-                <User /> {selectedDonation?.donor}
+                <User /> {selectedDonation?.donor.firstName} {selectedDonation?.donor.lastName}
               </>
             }
-            statusBadge={selectedDonation && (
-              <Badge
-                variant={
-                  selectedDonation.status === 'completed'
-                    ? 'secondary'
-                    : selectedDonation.status === 'failed'
-                    ? 'destructive'
-                    : 'outline'
-                }
-                className="capitalize"
-              >
-                {selectedDonation.status || 'pending'}
-              </Badge>
-            )}
-            description={selectedDonation ? 'donation details.' : undefined}
+            description={selectedDonation ? 'Donation Details' : undefined}
           >
             {selectedDonation && (
               <div className="space-y-6">
@@ -329,43 +241,38 @@ export default function DonationsPage() {
                     <ClipboardList className="w-4 h-4 text-muted-foreground" />Donation Information
                   </h3>
                   <p className="text-sm flex items-center gap-2">
-                    <Gift className="w-4 h-4 text-muted-foreground" /> Amount: ${selectedDonation.amount.toFixed(2)}
+                    <Gift className="w-4 h-4 text-muted-foreground" /> Amount: {selectedDonation.amount.toFixed(2)}
                   </p>
                   <p className="text-sm flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    Donated on {selectedDonation.date ? formatDate(selectedDonation.date) : 'N/A'}
+                    Donated on {selectedDonation.createdAt ? formatDate(selectedDonation.createdAt) : 'N/A'}
                   </p>
                 </div>
-                {selectedDonation.paymentMethod && (
-                  <div className="space-y-2">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-muted-foreground" />Payment Method
-                    </h3>
-                    <p className="text-sm">{selectedDonation.paymentMethod}</p>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" /> Donor Information
+                  </h3>
+                  <p className="text-sm flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" /> Email: {selectedDonation.donor.email}
+                  </p>
+                  <p className="text-sm flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-muted-foreground" /> Phone: {selectedDonation.donor.phone}
+                  </p>
+                  <p className="text-sm flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-muted-foreground" /> Message: {selectedDonation.message}
+                  </p>
+                </div>
               </div>
             )}
           </AdminDetailsSheet>
 
           <ConfirmDeleteModal
-            open={isDeleteConfirmationOpen}
+            open={showDeleteConfirm}
             title="Delete Donations"
             description="Are you sure you want to delete the selected donations? This action cannot be undone."
-            loading={bulkDeleteLoading}
-            onConfirm={handleDeleteSelected}
-            onCancel={() => setDeleteConfirmationOpen(false)}
-          />
-          <ConfirmDeleteModal
-            open={isSingleDeleteOpen}
-            title="Mark Donation as Failed?"
-            description="Are you sure you want to mark this donation as failed? This action cannot be undone."
-            loading={singleDeleteLoading}
-            onConfirm={handleSingleDelete}
-            onCancel={() => {
-              setSingleDeleteOpen(false);
-              setSingleDeleteId(null);
-            }}
+            loading={deleting}
+            onConfirm={handleBulkDelete}
+            onCancel={() => setShowDeleteConfirm(false)}
           />
         </CardContent>
       </Card>

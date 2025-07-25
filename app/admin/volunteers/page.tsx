@@ -1,5 +1,4 @@
 "use client"
-
 import { useState } from "react"
 import { 
   Card, 
@@ -46,28 +45,23 @@ import { AdminTable } from "@/components/shared/AdminTable";
 import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
 import { useVolunteers } from '@/lib/hooks/useVolunteers';
 import { useSelection } from '@/lib/hooks/use-selection';
+import { changeResourceStatus } from '@/lib/utils/changeResourceStatus';
+import { useBulkDelete } from '@/lib/hooks/use-bulk-delete';
 
 export default function VolunteersPage() {
   const [selectedVolunteer, setSelectedVolunteer] = useState<VolunteerFormData | null>(null)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [isDeleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false)
   const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null)
   const debouncedSearch = useDebounce(search, 400)
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [isSingleDeleteOpen, setSingleDeleteOpen] = useState(false);
-  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
-  const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
-  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
-  // SWR hook for volunteers
-  const { volunteers, meta, isLoading, isError, mutate } = useVolunteers({ page, limit: 10, q: debouncedSearch });
+  const { volunteers, meta, isLoading, mutate } = useVolunteers({ page, limit: 10, q: debouncedSearch });
 
-  // Use useSelection for selection management
   const selectableVolunteers = volunteers.filter((volunteer: VolunteerFormData) => typeof volunteer._id === 'string') as { _id: string }[];
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableVolunteers);
+  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteVolunteers, selectedIds);
 
-  // Handle sorting
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc'
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -93,71 +87,29 @@ export default function VolunteersPage() {
     return 0
   })
 
+  // Add this function for bulk deletion
+  async function deleteVolunteers(ids: string[]) {
+    const response = await fetch('/api/volunteer', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      setSelectedIds([]);
+      setAlert({ type: 'success', message: `${ids.length} volunteer(s) deleted successfully` });
+      mutate();
+    } else {
+      setAlert({ type: 'error', message: data.message || 'Failed to delete volunteers' });
+    }
+  };
+
   const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected') => {
-    try {
-      if (newStatus === 'rejected') {
-        const response = await fetch(`/api/volunteer/${id}`, { method: 'DELETE' })
-        const data = await response.json()
-        if (response.ok && data.success) {
-          mutate(); // Re-fetch and update the list
-          toggleSelect(id); // Update selection
-          setAlert({ type: 'success', message: 'Volunteer rejected and removed successfully' });
-        } else {
-          throw new Error('Failed to remove volunteer')
-        }
-      } else {
-        const response = await fetch(`/api/volunteer/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
-        })
-        const data = await response.json()
-        if (response.ok && data.success) {
-          mutate(); // Re-fetch and update the list
-          setAlert({ type: 'success', message: `Volunteer ${newStatus} successfully` });
-        } else {
-          throw new Error('Failed to update volunteer status')
-        }
-      }
-    } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to update volunteer status' });
-    }
-  }
-
-  const handleDeleteSelected = async () => {
-    setBulkDeleteLoading(true);
-    try {
-      await Promise.all(selectedIds.map(id => 
-        fetch(`/api/volunteer/${id}`, { method: 'DELETE' })
-      ));
-      mutate(); // Re-fetch and update the list
-      toggleSelectAll(); // Deselect all rows
-      setDeleteConfirmationOpen(false);
-      setAlert({ type: 'success', message: `${selectedIds.length} volunteer(s) deleted successfully` });
-    } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to delete volunteers' });
-    } finally {
-      setBulkDeleteLoading(false);
+    const result = await changeResourceStatus({ resource: 'volunteer', id, newStatus, statusMap: { approve: 'approved', reject: 'rejected' } });
+    if (result.success) {
+      mutate();
     }
   };
-
-  const handleSingleDelete = async () => {
-    if (!singleDeleteId) return;
-    setSingleDeleteLoading(true);
-    await handleStatusChange(singleDeleteId, 'rejected');
-    setSingleDeleteLoading(false);
-    setSingleDeleteOpen(false);
-    setSingleDeleteId(null);
-  };
-
-  const columns = [
-    { id: 'select', label: 'Select', accessor: 'select' },
-    { id: 'name', label: 'Name', accessor: 'name', sortable: true },
-    { id: 'email', label: 'Email', accessor: 'email', sortable: true },
-    { id: 'status', label: 'Status', accessor: 'status', sortable: true },
-    { id: 'appliedDate', label: 'Applied Date', accessor: 'createdAt', sortable: true },
-    { id: 'actions', label: 'Actions', accessor: 'actions' }
-  ]
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -184,7 +136,7 @@ export default function VolunteersPage() {
             {selectedIds.length > 0 && (
               <Button 
                 variant="destructive" 
-                onClick={() => setDeleteConfirmationOpen(true)}
+                onClick={() => setShowDeleteConfirm(true)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete ({selectedIds.length})
@@ -276,10 +228,7 @@ export default function VolunteersPage() {
                           <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => {
-                            setSingleDeleteId(volunteer._id || '');
-                            setSingleDeleteOpen(true);
-                          }}
+                          onClick={() => handleStatusChange(volunteer._id || '', 'rejected')}
                           className={volunteer.status === 'rejected' ? 'opacity-50 pointer-events-none' : ''}
                         >
                           <XCircle className="mr-2 h-4 w-4" /> Reject
@@ -389,23 +338,12 @@ export default function VolunteersPage() {
           </AdminDetailsSheet>
 
           <ConfirmDeleteModal
-            open={isDeleteConfirmationOpen}
+            open={showDeleteConfirm}
             title="Delete Volunteers"
             description="Are you sure you want to delete the selected volunteer applications? This action cannot be undone."
-            loading={bulkDeleteLoading}
-            onConfirm={handleDeleteSelected}
-            onCancel={() => setDeleteConfirmationOpen(false)}
-          />
-          <ConfirmDeleteModal
-            open={isSingleDeleteOpen}
-            title="Reject Volunteer?"
-            description="Are you sure you want to reject and remove this volunteer? This action cannot be undone."
-            loading={singleDeleteLoading}
-            onConfirm={handleSingleDelete}
-            onCancel={() => {
-              setSingleDeleteOpen(false);
-              setSingleDeleteId(null);
-            }}
+            loading={deleting}
+            onConfirm={handleBulkDelete}
+            onCancel={() => setShowDeleteConfirm(false)}
           />
         </CardContent>
       </Card>

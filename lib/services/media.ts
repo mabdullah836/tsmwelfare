@@ -12,11 +12,6 @@ export async function uploadMedia(files: File[], folder: string = 'events'): Pro
   return await response.json()
 }
 
-export async function deleteMedia(id: string): Promise<void> {
-  const response = await fetch(`/api/media/${id}`, { method: 'DELETE' })
-  if (!response.ok) throw new Error('Failed to delete media')
-}
-
 export async function uploadVideoByUrl({ videoUrl, thumbnail, title, tag, folder = 'general' }: {
   videoUrl: string;
   thumbnail: string;
@@ -35,16 +30,6 @@ export async function uploadVideoByUrl({ videoUrl, thumbnail, title, tag, folder
     body: formData,
   });
   if (!response.ok) throw new Error('Failed to add video');
-  return await response.json();
-}
-
-export async function updateMediaStatus(id: string, status: 'pending' | 'approved' | 'rejected', thumbnail?: string): Promise<Media> {
-  const response = await fetch('/api/media', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, status, thumbnail }),
-  });
-  if (!response.ok) throw new Error('Failed to update media status');
   return await response.json();
 }
 

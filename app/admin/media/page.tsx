@@ -5,10 +5,11 @@ import { AlertMessage } from '@/components/ui/alert-message'
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { deleteMedia, updateMediaStatus, uploadVideoByUrl } from '@/lib/services/media'
+import { uploadVideoByUrl } from '@/lib/services/media'
 import type { Media } from '@/lib/types/media'
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { useMedia } from '@/lib/hooks/useMedia';
+import { changeResourceStatus } from '@/lib/utils/changeResourceStatus';
 
 import { MediaStats } from '@/components/media/MediaStats'
 import { MediaToolbar } from '@/components/media/MediaToolbar'
@@ -72,31 +73,35 @@ export default function MediaPage() {
   }
   const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteMediaItems, selectedIds)
 
-  async function handleApprove(mediaItem: Media) {
-    setApproving(true)
+  const handleStatusChange = async ({
+    mediaItem,
+    newStatus,
+  }: {
+    mediaItem: Media;
+    newStatus: 'approved' | 'rejected';
+  }) => {
+    setApproving(true);
     try {
-      await updateMediaStatus(mediaItem._id!, 'approved')
-      setAlert({ message: 'Video approved.', type: 'success' })
-      mutate()
-    } catch {
-      setAlert({ message: 'Failed to approve video.', type: 'error' })
+      const result = await changeResourceStatus({
+        resource: 'media',
+        id: mediaItem._id!,
+        newStatus,
+        statusMap: { approve: 'approved', reject: 'rejected' },
+      });
+  
+      if (result.success) {
+        const action = newStatus === 'approved' ? 'approved' : 'rejected and removed';
+        setAlert({ message: `Video ${action}.`, type: 'success' });
+        mutate();
+      } else {
+        const action = newStatus === 'approved' ? 'approve video' : 'reject and remove video';
+        setAlert({ message: result.message || `Failed to ${action}.`, type: 'error' });
+      }
     } finally {
-      setApproving(false)
+      setApproving(false);
     }
-  }
-
-  async function handleReject(mediaItem: Media) {
-    setApproving(true)
-    try {
-      await deleteMedia(mediaItem._id!);
-      setAlert({ message: 'Video rejected and removed.', type: 'success' });
-      mutate()
-    } catch {
-      setAlert({ message: 'Failed to reject and remove video.', type: 'error' });
-    } finally {
-      setApproving(false)
-    }
-  }
+  };
+  
 
   const handleSave = async () => {
     try {
@@ -152,33 +157,43 @@ export default function MediaPage() {
           onCancel={() => setShowDeleteConfirm(false)}
           onConfirm={handleBulkDelete}
         />
-        {isError && <div className="text-red-600 text-sm">Failed to fetch media.</div>}
+        { isError && <div className="text-red-600 text-sm">Failed to fetch media.</div>}
         <AdminGrid
           items={filteredMedia}
           loading={isLoading}
           emptyState={{ title: "No media items found", description: searchQuery || filterType !== 'all' ? 'Try adjusting your filters or search terms' : 'Upload your first media file to get started' }}
           skeletonItems={meta.limit}
           gridClassName={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full' : 'flex flex-col gap-4'}
-          renderItem={(item: Media) => (
-            item.type === 'image'
-              ? <ImageCard
-                  key={item._id}
-                  media={item}
-                  selected={selectedIds.includes(item._id!)}
-                  onSelect={() => toggleSelect(item._id!)}
-                  onClick={() => { setActiveImage(item); setShowImageModal(true); setShowVideoModal(false); }}
-                />
-              : <VideoCard
-                  key={item._id}
-                  media={item}
-                  selected={selectedIds.includes(item._id!)}
-                  onSelect={() => toggleSelect(item._id!)}
-                  onClick={() => { setActiveVideo(item); setShowVideoModal(true); setShowImageModal(false); }}
-                  onApprove={() => handleApprove(item)}
-                  onReject={() => handleReject(item)}
-                  approving={approving}
-                />
-          )}
+          renderItem={(item: Media) =>
+            item.type === 'image' ? (
+              <ImageCard
+                key={item._id}
+                media={item}
+                selected={selectedIds.includes(item._id!)}
+                onSelect={() => toggleSelect(item._id!)}
+                onClick={() => {
+                  setActiveImage(item);
+                  setShowImageModal(true);
+                  setShowVideoModal(false);
+                }}
+              />
+            ) : (
+              <VideoCard
+                key={item._id}
+                media={item}
+                selected={selectedIds.includes(item._id!)}
+                onSelect={() => toggleSelect(item._id!)}
+                onClick={() => {
+                  setActiveVideo(item);
+                  setShowVideoModal(true);
+                  setShowImageModal(false);
+                }}
+                onApprove={() => handleStatusChange({ mediaItem: item, newStatus: 'approved' })}
+                onReject={() => handleStatusChange({ mediaItem: item, newStatus: 'rejected' })}
+                approving={approving}
+              />
+            )
+          }          
         />
         <UniversalDialog open={showImageModal} onOpenChange={setShowImageModal}>
           {activeImage && (

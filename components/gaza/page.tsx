@@ -1,158 +1,183 @@
+"use client"
+
+import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { HeartIcon, HandHeartIcon } from "lucide-react"
+import { HeartIcon, HandHeartIcon, FlameIcon, CrosshairIcon, AlertTriangleIcon } from "lucide-react"
 import { CustomImage } from "../shared/custom-image"
 import { Button } from "../ui/button"
 
+// Simple fadeIn animation variant
+const fadeIn = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+}
+
 export default function GazaPage() {
   return (
-    <>
-       <section className="py-12 md:py-20 bg-red-50 dark:bg-red-950/20">
+    <div className="relative">
+      {/* Decorative elements */}
+      <div className="absolute inset-0 overflow-hidden opacity-10 dark:opacity-5">
+        <div className="absolute top-20 left-1/4 w-24 h-24 rounded-full bg-red-300 blur-xl"></div>
+        <div className="absolute bottom-20 right-1/3 w-32 h-32 rounded-full bg-amber-300 blur-xl"></div>
+      </div>
+
+      <section className="py-16 md:py-24 bg-gradient-to-b from-red-50 to-amber-50 dark:from-red-950/30 dark:to-amber-950/20 relative z-10">
         <div className="container">
-          <div className="text-center max-w-4xl mx-auto mb-12">
-            <div className="flex items-center justify-center mb-4">
-              <HandHeartIcon className="h-8 w-8 text-red-600 mr-3" />
-              <h2 className="text-3xl md:text-4xl font-bold text-red-800 dark:text-red-200">
-                Emergency Support for Gaza Palestine
+          {/* Hero Section */}
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={fadeIn}
+            className="text-center max-w-4xl mx-auto mb-16"
+          >
+            <div className="flex items-center justify-center mb-6">
+              <HandHeartIcon className="h-10 w-10 text-red-600 mr-3" />
+              <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-800 to-amber-800 dark:from-red-300 dark:to-amber-300 bg-clip-text text-transparent">
+                Emergency Support for Gaza
               </h2>
             </div>
-            <p className="text-lg text-red-700 dark:text-red-300 mb-6">
-              Our brothers and sisters in Gaza need our urgent help. We are
-              collecting donations to send emergency aid to families who are
-              suffering.
+            <p className="text-xl text-red-700 dark:text-red-300 mb-8 leading-relaxed">
+              Our brothers and sisters in Gaza are facing unprecedented suffering. 
+              Your urgent support can provide life-saving aid to families under siege.
             </p>
-          </div>
+            
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 text-white font-medium shadow-lg hover:shadow-red-300/50 dark:hover:shadow-red-900/30 transition-all"
+              asChild
+            >
+              <a href="/donate" className="flex items-center gap-2">
+                <HeartIcon className="w-5 h-5" />
+                Donate Now to Save Lives
+              </a>
+            </Button>
+          </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-12">
-            <div className="space-y-6">
-              <Card className="border-red-200 dark:border-red-800">
+          {/* Main Content */}
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+            {/* Left Column */}
+            <motion.div 
+              initial="hidden"
+              animate="visible"
+              variants={fadeIn}
+              transition={{ delay: 0.2 }}
+              className="space-y-8"
+            >
+              <Card className="border-red-200 dark:border-red-800 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader>
-                  <CardTitle className="text-red-800 dark:text-red-200">
-                    What We're Doing for Gaza
+                  <CardTitle className="text-2xl text-red-800 dark:text-red-200 flex items-center gap-3">
+                    <FlameIcon className="h-6 w-6 text-red-600" />
+                    Our Gaza Relief Efforts
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="h-2 w-2 rounded-full bg-red-600 mt-2"></div>
-                    <p>
-                      Collecting donations from our community to send emergency
-                      food packages
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="h-2 w-2 rounded-full bg-red-600 mt-2"></div>
-                    <p>
-                      Working with trusted organizations to deliver aid directly
-                      to Gaza families
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="h-2 w-2 rounded-full bg-red-600 mt-2"></div>
-                    <p>
-                      Organizing special prayer gatherings for our Palestinian
-                      brothers and sisters
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="h-2 w-2 rounded-full bg-red-600 mt-2"></div>
-                    <p>
-                      Raising awareness in our local community about the
-                      situation in Gaza
-                    </p>
-                  </div>
+                <CardContent className="space-y-6">
+                  {[
+                    "Providing emergency food packages to starving families",
+                    "Delivering medical supplies to overwhelmed hospitals",
+                    "Supporting orphaned children with essential care",
+                    "Distributing clean water in devastated areas"
+                  ].map((item, index) => (
+                    <div key={index} className="flex items-start gap-4">
+                      <div className="flex-shrink-0 h-2 w-2 rounded-full bg-red-600 mt-3"></div>
+                      <p className="text-muted-foreground">{item}</p>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium"
-                >
-                  <a
-                    href="/donate?type=gaza"
-                    className="flex items-center gap-2"
-                  >
-                    <HeartIcon className="w-5 h-5" />
-                    Donate for Gaza Now
-                  </a>
-                </Button>
+              <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-start gap-4">
+                  <AlertTriangleIcon className="h-6 w-6 text-red-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h4 className="font-bold text-red-800 dark:text-red-200 mb-2">Urgent Need</h4>
+                    <p className="text-red-700 dark:text-red-300">
+                      Over 2 million people are without adequate food, water or medical care. 
+                      Your donation today can literally save lives tomorrow.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="space-y-4">
+            {/* Right Column - Images */}
+            <motion.div 
+              initial="hidden"
+              animate="visible"
+              variants={fadeIn}
+              transition={{ delay: 0.4 }}
+              className="space-y-6"
+            >
               <CustomImage
                 src="/images/gaza-appeal.jpeg"
                 alt="Gaza Palestine Emergency Appeal - Send Aid to Gaza & Save Lives Today"
-                className="h-[250px]"
+                className="h-[300px] rounded-lg shadow-lg"
                 overlay={false}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <CustomImage
                   src="/images/gaza-solidarity.jpeg"
                   alt="Palestine solidarity with Al-Aqsa Mosque and Palestinian flags"
-                  className="h-[120px]"
+                  className="h-[150px] rounded-lg shadow"
                   overlay={false}
                 />
                 <CustomImage
                   src="/images/gaza-child.jpeg"
                   alt="Child in Gaza receiving food aid - showing the urgent humanitarian need"
-                  className="h-[120px]"
+                  className="h-[150px] rounded-lg shadow"
                   overlay={false}
                 />
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          <Card className="bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
-                  Every Donation Counts - No Matter How Small
-                </h3>
-                <p className="text-red-700 dark:text-red-300 mb-4">
-                  Even Rs. 500 can provide a meal for a hungry family in Gaza.
-                  Your donation will be sent through trusted Islamic relief
-                  organizations to ensure it reaches those who need it most.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                  <div className="bg-white dark:bg-red-800 p-3 rounded-lg">
-                    <p className="font-bold text-red-800 dark:text-red-200">
-                      Rs. 500
-                    </p>
-                    <p className="text-sm text-red-600 dark:text-red-300">
-                      One Family Meal
-                    </p>
-                  </div>
-                  <div className="bg-white dark:bg-red-800 p-3 rounded-lg">
-                    <p className="font-bold text-red-800 dark:text-red-200">
-                      Rs. 2,000
-                    </p>
-                    <p className="text-sm text-red-600 dark:text-red-300">
-                      Food Package
-                    </p>
-                  </div>
-                  <div className="bg-white dark:bg-red-800 p-3 rounded-lg">
-                    <p className="font-bold text-red-800 dark:text-red-200">
-                      Rs. 5,000
-                    </p>
-                    <p className="text-sm text-red-600 dark:text-red-300">
-                      Medical Supplies
-                    </p>
-                  </div>
-                  <div className="bg-white dark:bg-red-800 p-3 rounded-lg">
-                    <p className="font-bold text-red-800 dark:text-red-200">
-                      Rs. 10,000
-                    </p>
-                    <p className="text-sm text-red-600 dark:text-red-300">
-                      Emergency Kit
-                    </p>
+          {/* Donation Impact Section */}
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={fadeIn}
+            transition={{ delay: 0.6 }}
+          >
+            <Card className="bg-gradient-to-r from-red-100 to-amber-50 dark:from-red-900/30 dark:to-amber-900/20 border-red-200 dark:border-red-800 shadow-lg">
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-red-800 dark:text-red-200 mb-4 flex justify-center items-center gap-3">
+                    <CrosshairIcon className="h-6 w-6" />
+                    Your Impact Matters
+                  </h3>
+                  <p className="text-xl text-red-700 dark:text-red-300 mb-8 max-w-3xl mx-auto">
+                    Every contribution directly supports Palestinians in desperate need. 
+                    Here's what your donation can provide:
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                    {[
+                      { amount: "Rs. 500", desc: "Emergency Meal Pack" },
+                      { amount: "Rs. 2,000", desc: "Family Food Package" },
+                      { amount: "Rs. 5,000", desc: "Medical Supplies" },
+                      { amount: "Rs. 10,000", desc: "Shelter Support" }
+                    ].map((item, index) => (
+                      <motion.div
+                        key={index}
+                        initial="hidden"
+                        animate="visible"
+                        variants={fadeIn}
+                        transition={{ delay: 0.7 + index * 0.1 }}
+                        className="bg-white dark:bg-red-800/80 p-4 rounded-lg shadow hover:shadow-md transition-shadow border border-red-100 dark:border-red-700"
+                      >
+                        <p className="font-bold text-xl text-red-800 dark:text-red-200 mb-1">
+                          {item.amount}
+                        </p>
+                        <p className="text-sm text-red-600 dark:text-red-300">
+                          {item.desc}
+                        </p>
+                      </motion.div>
+                    ))}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </section>
-
-    </>
+    </div>
   )
 }

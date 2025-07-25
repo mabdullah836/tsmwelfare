@@ -1,164 +1,305 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { InfoIcon } from "lucide-react"
+import { InfoIcon, Smartphone, Mail, CreditCard, Landmark } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
 
 export default function BankDetailsPage() {
   return (
     <>
-      <PageHeader title="Bank Details">
+      <PageHeader title="Bank & Payment Details">
         <p className="text-xl text-white/90">
-          Secure banking information for donations and transactions with our organization.
+          Secure payment information for donations and transactions with our organization.
         </p>
       </PageHeader>
 
       <section className="py-16">
         <div className="container max-w-4xl">
-          <Alert className="mb-8">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>Important Notice</AlertTitle>
+          <Alert className="mb-8 border-primary/30 bg-primary/5">
+            <InfoIcon className="h-5 w-5 text-primary" />
+            <AlertTitle className="text-primary">Verification Required</AlertTitle>
             <AlertDescription>
-              Please verify these bank details by calling our office before making any large transactions.
+              For security, please verify these details by calling our office (+92 300 1234567) before making any transactions.
             </AlertDescription>
           </Alert>
 
           <Tabs defaultValue="domestic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="domestic">Domestic Transfers</TabsTrigger>
-              <TabsTrigger value="international">International Transfers</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 bg-muted !h-14">
+              <TabsTrigger value="domestic" className="py-3">
+                <Landmark className="h-4 w-4 mr-2" />
+                Bank Transfer
+              </TabsTrigger>
+              <TabsTrigger value="easypaisa" className="py-3">
+                <Smartphone className="h-4 w-4 mr-2" />
+                EasyPaisa
+              </TabsTrigger>
+              <TabsTrigger value="international" className="py-3">
+                <Landmark className="h-4 w-4 mr-2" />
+                International
+              </TabsTrigger>
             </TabsList>
+            
             <TabsContent value="domestic" className="mt-6">
-              <Card>
+              <Card className="border-0 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Domestic Bank Details</CardTitle>
-                  <CardDescription>Use these details for transfers within the United States.</CardDescription>
+                  <CardTitle className="text-2xl">Domestic Bank Details</CardTitle>
+                  <CardDescription>For transfers within Pakistan</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
                     <TableBody>
                       <TableRow>
                         <TableCell className="font-medium">Bank Name</TableCell>
-                        <TableCell>First National Bank</TableCell>
+                        <TableCell>Meezan Bank</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="font-medium">Account Name</TableCell>
-                        <TableCell>Organization Name Inc.</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Account Number</TableCell>
-                        <TableCell>123456789</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Routing Number</TableCell>
-                        <TableCell>987654321</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Account Type</TableCell>
-                        <TableCell>Checking</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Bank Address</TableCell>
-                        <TableCell>
-                          100 Main Street
-                          <br />
-                          City, State 12345
-                          <br />
-                          United States
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="international" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>International Bank Details</CardTitle>
-                  <CardDescription>Use these details for transfers from outside the United States.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell className="font-medium">Bank Name</TableCell>
-                        <TableCell>First National Bank</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">Account Name</TableCell>
-                        <TableCell>Organization Name Inc.</TableCell>
+                        <TableCell className="font-medium">Account Title</TableCell>
+                        <TableCell>The Sirat-e-Mustaqeem Welfare Trust</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">Account Number</TableCell>
-                        <TableCell>123456789</TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">SWIFT Code</TableCell>
-                        <TableCell>FNBAUS12</TableCell>
+                        <TableCell>1234567890123</TableCell>
                       </TableRow>
                       <TableRow>
                         <TableCell className="font-medium">IBAN</TableCell>
-                        <TableCell>US12 FNBA 1234 5678 9012 3456 78</TableCell>
+                        <TableCell>PK36MEZN0001234567890123</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="font-medium">Bank Address</TableCell>
+                        <TableCell className="font-medium">Branch Code</TableCell>
+                        <TableCell>0123</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Branch Address</TableCell>
                         <TableCell>
                           Mansehra Colony, Lal Kothi Stop
                           <br />
                           Landhi, Karachi
-                          <br />
-                          Pakistan
                         </TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
+                  <div className="mt-6 p-4 bg-muted rounded-lg">
+                    <h4 className="font-medium mb-2">Transfer Instructions</h4>
+                    <ol className="list-decimal pl-5 space-y-1 text-sm">
+                      <li>Add "Donation" in the payment reference</li>
+                      <li>For receipts, include your name & phone number</li>
+                      <li>Email transfer receipt to donations@sirat-e-mustaqeem.org</li>
+                    </ol>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="easypaisa" className="mt-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-2xl">EasyPaisa Mobile Payments</CardTitle>
+                  <CardDescription>Fast and secure mobile wallet transfers</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <Smartphone className="h-8 w-8 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold">EasyPaisa Account</h3>
+                      <p className="text-muted-foreground">Send to our registered mobile number</p>
+                    </div>
+                  </div>
+
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">Account Name</TableCell>
+                        <TableCell>The Sirat-e-Mustaqeem Welfare Trust</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Mobile Number</TableCell>
+                        <TableCell>0300 1234567</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">CNIC</TableCell>
+                        <TableCell>12345-6789012-3</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Payment Methods</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge variant="secondary">EasyPaisa App</Badge>
+                            <Badge variant="secondary">USSD Code</Badge>
+                            <Badge variant="secondary">Agent Location</Badge>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+
+                  <div className="mt-6 grid md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                      <h4 className="font-medium mb-2 text-green-700">Via EasyPaisa App</h4>
+                      <ol className="list-decimal pl-5 space-y-1 text-sm text-green-600">
+                        <li>Open EasyPaisa App</li>
+                        <li>Select "Send Money"</li>
+                        <li>Enter our mobile number</li>
+                        <li>Add donation reference</li>
+                      </ol>
+                    </div>
+                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                      <h4 className="font-medium mb-2 text-blue-700">Via USSD Code</h4>
+                      <ol className="list-decimal pl-5 space-y-1 text-sm text-blue-600">
+                        <li>Dial *786# from your mobile</li>
+                        <li>Select "Send Money"</li>
+                        <li>Enter our mobile number</li>
+                        <li>Confirm transaction</li>
+                      </ol>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="international" className="mt-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-2xl">International Transfers</CardTitle>
+                  <CardDescription>For donations from outside Pakistan</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell className="font-medium">Bank Name</TableCell>
+                        <TableCell>Meezan Bank</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Account Name</TableCell>
+                        <TableCell>The Sirat-e-Mustaqeem Welfare Trust</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Account Number</TableCell>
+                        <TableCell>1234567890123</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">SWIFT Code</TableCell>
+                        <TableCell>MEZNPKKA</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">IBAN</TableCell>
+                        <TableCell>PK36MEZN0001234567890123</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">Bank Address</TableCell>
+                        <TableCell>
+                          Meezan House, Bahadurabad
+                          <br />
+                          Karachi, Pakistan
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                  <div className="mt-6 p-4 bg-muted rounded-lg">
+                    <h4 className="font-medium mb-2">Important Notes</h4>
+                    <ul className="list-disc pl-5 space-y-1 text-sm">
+                      <li>Include "Charity Donation" in transfer details</li>
+                      <li>Email transfer receipt to international@sirat-e-mustaqeem.org</li>
+                      <li>Allow 3-5 business days for processing</li>
+                    </ul>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
 
           <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">Payment Instructions</h2>
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
+            <h2 className="text-2xl font-bold mb-6">Payment Instructions by Purpose</h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="bg-primary/5">
                   <CardTitle>For Donations</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ol className="list-decimal pl-5 space-y-2">
-                    <li>Include "Donation" in the payment reference.</li>
-                    <li>Add your name and contact information if you'd like a receipt.</li>
-                    <li>For specific programs, include the program name in the reference.</li>
-                    <li>Email a copy of the transfer receipt to donations@organization.org.</li>
-                  </ol>
+                <CardContent className="pt-6">
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Include "Donation" in payment reference</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Add name & contact for receipt</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Email receipt to donations@sirat-e-mustaqeem.org</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>For Program Payments</CardTitle>
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="bg-primary/5">
+                  <CardTitle>For Zakat</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ol className="list-decimal pl-5 space-y-2">
-                    <li>Include the program name and your participant ID in the reference.</li>
-                    <li>Email a copy of the transfer receipt to programs@organization.org.</li>
-                    <li>Allow 2-3 business days for payment processing.</li>
-                  </ol>
+                <CardContent className="pt-6">
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Clearly mark as "Zakat" in reference</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Include your CNIC for verification</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Email to zakat@sirat-e-mustaqeem.org</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>For Vendor Payments</CardTitle>
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="bg-primary/5">
+                  <CardTitle>For Sponsorships</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ol className="list-decimal pl-5 space-y-2">
-                    <li>Include the invoice number in the payment reference.</li>
-                    <li>Email a copy of the transfer receipt to finance@organization.org.</li>
-                    <li>Include your vendor ID if applicable.</li>
-                  </ol>
+                <CardContent className="pt-6">
+                  <ul className="space-y-3">
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Include sponsor ID in reference</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Specify sponsored person/child</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="bg-primary/10 text-primary rounded-full p-1 mr-3">
+                        <InfoIcon className="h-3 w-3" />
+                      </span>
+                      <span>Email to sponsorships@sirat-e-mustaqeem.org</span>
+                    </li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -168,43 +309,44 @@ export default function BankDetailsPage() {
 
       <section className="py-16 bg-muted">
         <div className="container max-w-4xl">
-          <h2 className="text-2xl font-bold mb-6 text-center">Alternative Payment Methods</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card>
+          <h2 className="text-2xl font-bold mb-8 text-center">Other Payment Options</h2>
+          <div className="grid sm:grid-cols-2 gap-6">
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>Credit Card</CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <CreditCard className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <CardTitle>Credit/Debit Card</CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">Make secure credit card payments through our online donation portal.</p>
-                <a href="/donate" className="text-primary font-medium hover:underline">
-                  Go to Donation Page →
-                </a>
+                <p className="mb-4 text-muted-foreground">Secure online payments through our donation portal</p>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/donate">Donate Online Now</Link>
+                </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle>Check by Mail</CardTitle>
+                <div className="flex items-center gap-3">
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <Mail className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <CardTitle>Check/Cash by Mail</CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">Send checks payable to "The Sirat-e-Mustaqeem Welfare Trust" to our head office address:</p>
-                <address className="not-italic text-muted-foreground">
+                <p className="mb-4 text-muted-foreground">Send to our head office address:</p>
+                <address className="not-italic mb-4">
+                  The Sirat-e-Mustaqeem Welfare Trust
+                  <br />
                   Mansehra Colony, Lal Kothi Stop
                   <br />
-                  Landhi, Karachi
-                  <br />
-                  Pakistan
+                  Landhi, Karachi, Pakistan
                 </address>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>PayPal</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">Send payments to our PayPal account for quick and easy transactions.</p>
-                <p className="text-muted-foreground">PayPal ID: donations@sirat-e-mustaqeem.org</p>
+                <p className="text-sm text-muted-foreground">Mark envelope as "Donation"</p>
               </CardContent>
             </Card>
           </div>
