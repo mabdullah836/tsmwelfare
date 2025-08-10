@@ -107,7 +107,7 @@ export default function ServicesPage() {
                 </div>
                 <div className="relative h-[400px] rounded-xl overflow-hidden border shadow-lg">
                   <Image
-                    src="/images/community-outreach.jpg"
+                    src="/images/community.png"
                     alt="Community members at an outdoor event"
                     fill
                     className="object-cover"
@@ -121,7 +121,7 @@ export default function ServicesPage() {
               <div className="grid md:grid-cols-2 gap-12 items-center">
                 <div className="relative h-[400px] rounded-xl overflow-hidden border shadow-lg order-2 md:order-1">
                   <Image
-                    src="/images/education-program.jpg"
+                    src="/images/education-program.webp"
                     alt="Students learning in a classroom"
                     fill
                     className="object-cover"

@@ -27,13 +27,13 @@ export function DonationCounter() {
             We're trying to raise money to help 50 kids go to school this year. We're almost there!
           </p>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+          <div className="bg-card rounded-xl shadow-lg p-6 mb-8 border border-border">
             <div className="mb-2 flex justify-between text-base font-medium">
               <span className="text-primary">Rs. {current.toLocaleString()} raised</span>
               <span className="text-primary">Goal: Rs. {goal.toLocaleString()}</span>
             </div>
             
-            <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-4 mb-6 overflow-hidden">
+            <div className="w-full bg-muted rounded-full h-4 mb-6 overflow-hidden">
               <div
                 className="h-4 rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-1000 ease-out"
                 style={{ width: `${progress}%` }}

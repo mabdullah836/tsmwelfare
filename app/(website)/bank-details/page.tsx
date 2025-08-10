@@ -104,8 +104,8 @@ export default function BankDetailsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="bg-green-100 p-3 rounded-lg">
-                      <Smartphone className="h-8 w-8 text-green-600" />
+                    <div className="bg-green-100 dark:bg-green-900/20 p-3 rounded-lg">
+                      <Smartphone className="h-8 w-8 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
                       <h3 className="font-bold">EasyPaisa Account</h3>
@@ -141,18 +141,18 @@ export default function BankDetailsPage() {
                   </Table>
 
                   <div className="mt-6 grid md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                      <h4 className="font-medium mb-2 text-green-700">Via EasyPaisa App</h4>
-                      <ol className="list-decimal pl-5 space-y-1 text-sm text-green-600">
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <h4 className="font-medium mb-2 text-green-700 dark:text-green-300">Via EasyPaisa App</h4>
+                      <ol className="list-decimal pl-5 space-y-1 text-sm text-green-600 dark:text-green-400">
                         <li>Open EasyPaisa App</li>
                         <li>Select "Send Money"</li>
                         <li>Enter our mobile number</li>
                         <li>Add donation reference</li>
                       </ol>
                     </div>
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                      <h4 className="font-medium mb-2 text-blue-700">Via USSD Code</h4>
-                      <ol className="list-decimal pl-5 space-y-1 text-sm text-blue-600">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-medium mb-2 text-blue-700 dark:text-blue-300">Via USSD Code</h4>
+                      <ol className="list-decimal pl-5 space-y-1 text-sm text-blue-600 dark:text-blue-400">
                         <li>Dial *786# from your mobile</li>
                         <li>Select "Send Money"</li>
                         <li>Enter our mobile number</li>
@@ -314,8 +314,8 @@ export default function BankDetailsPage() {
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <CreditCard className="h-6 w-6 text-blue-600" />
+                  <div className="bg-blue-100 dark:bg-blue-900/20 p-2 rounded-lg">
+                    <CreditCard className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <CardTitle>Credit/Debit Card</CardTitle>
                 </div>
@@ -331,8 +331,8 @@ export default function BankDetailsPage() {
             <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="bg-purple-100 p-2 rounded-lg">
-                    <Mail className="h-6 w-6 text-purple-600" />
+                  <div className="bg-purple-100 dark:bg-purple-900/20 p-2 rounded-lg">
+                    <Mail className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <CardTitle>Check/Cash by Mail</CardTitle>
                 </div>

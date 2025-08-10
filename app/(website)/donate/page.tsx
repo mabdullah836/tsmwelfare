@@ -110,7 +110,7 @@ export default function DonatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       {alert && (
         <Alert variant={alert.type === "error" ? "destructive" : "default"}>
           <AlertTriangle className="h-4 w-4" />
@@ -128,35 +128,35 @@ export default function DonatePage() {
       <section className="py-16">
         <div className="container max-w-6xl">
           {isSubmitted ? (
-            <Card className="max-w-2xl mx-auto border-0 bg-white shadow-xl rounded-2xl overflow-hidden">
+            <Card className="max-w-2xl mx-auto border-0 bg-card shadow-xl rounded-2xl overflow-hidden">
               <CardContent className="p-0">
                 <div className="bg-primary/5 py-12 px-8 text-center">
                   <div className="bg-primary/10 p-4 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
                     <Heart className="h-12 w-12 text-primary" />
                   </div>
                   <h2 className="text-3xl font-bold mb-4">Thank You!</h2>
-                  <p className="text-lg text-gray-600 mb-6">
+                  <p className="text-lg text-muted-foreground mb-6">
                     Your generous donation of <span className="font-semibold text-primary">Rs. {donationAmount ? Number.parseInt(donationAmount).toLocaleString() : "0"}</span> will make a real difference.
                   </p>
                 </div>
                 <div className="p-8">
-                  <div className="bg-gray-50 p-6 rounded-xl mb-8">
+                  <div className="bg-muted/50 p-6 rounded-xl mb-8">
                     <h3 className="font-medium text-lg mb-4 text-center">Donation Receipt</h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center pb-3 border-b">
-                        <span className="text-gray-600">Transaction ID</span>
+                        <span className="text-muted-foreground">Transaction ID</span>
                         <span className="font-medium">DON-{Math.random().toString(36).substring(2, 10).toUpperCase()}</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b">
-                        <span className="text-gray-600">Amount</span>
+                        <span className="text-muted-foreground">Amount</span>
                         <span className="font-medium">Rs. {donationAmount ? Number.parseInt(donationAmount).toLocaleString() : "0"}</span>
                       </div>
                       <div className="flex justify-between items-center pb-3 border-b">
-                        <span className="text-gray-600">Fund</span>
+                        <span className="text-muted-foreground">Fund</span>
                         <span className="font-medium capitalize">{watchedType?.replace(/-/g, ' ') || "General Fund"}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Date</span>
+                        <span className="text-muted-foreground">Date</span>
                         <span className="font-medium">{new Date().toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -175,8 +175,8 @@ export default function DonatePage() {
           ) : (
             <div className="grid lg:grid-cols-12 gap-8">
               <div className="lg:col-span-8">
-                <Card className="border-0 bg-white shadow-sm rounded-xl overflow-hidden">
-                  <CardHeader className="border-b bg-gray-50/50">
+                <Card className="border-0 bg-card shadow-sm rounded-xl overflow-hidden">
+                  <CardHeader className="border-b bg-muted/50">
                     <CardTitle className="text-2xl">Donation Details</CardTitle>
                     <CardDescription>Tell us about your donation</CardDescription>
                   </CardHeader>
@@ -234,7 +234,7 @@ export default function DonatePage() {
                               onChange: handleCustomAmountChange,
                               disabled: !useCustomAmount && donationAmount !== "",
                               className: !useCustomAmount && donationAmount !== "" 
-                                ? "bg-gray-100 cursor-not-allowed" 
+                                ? "bg-muted cursor-not-allowed" 
                                 : "",
                               placeholder: useCustomAmount || !donationAmount 
                                 ? "Enter amount" 
@@ -298,11 +298,11 @@ export default function DonatePage() {
                           ].map((option) => (
                             <div 
                               key={option.value} 
-                              className={`flex items-start space-x-3 cursor-pointer p-3 rounded-lg ${option.highlight ? 'bg-red-50 border border-red-200' : 'hover:bg-gray-50'}`}
+                              className={`flex items-start space-x-3 cursor-pointer p-3 rounded-lg ${option.highlight ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' : 'hover:bg-muted/50'}`}
                               onClick={() => setValue("donationType", option.value)}
                             >
                               <div className="relative mt-1">
-                                <Circle className={`h-5 w-5 ${watchedType === option.value ? 'text-primary fill-primary' : 'text-gray-300'}`} />
+                                <Circle className={`h-5 w-5 ${watchedType === option.value ? 'text-primary fill-primary' : 'text-muted-foreground'}`} />
                               </div>
                               <Label htmlFor={option.value} className="flex flex-col cursor-pointer flex-1">
                                 <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ export default function DonatePage() {
                                     <Badge variant="destructive" className="text-xs">Urgent</Badge>
                                   )}
                                 </div>
-                                <span className="text-sm text-gray-500 font-normal">{option.desc}</span>
+                                <span className="text-sm text-muted-foreground font-normal">{option.desc}</span>
                               </Label>
                             </div>
                           ))}
@@ -370,7 +370,7 @@ export default function DonatePage() {
               </div>
 
               <div className="lg:col-span-4">
-                <Card className="sticky top-8 border-0 bg-white shadow-lg rounded-xl overflow-hidden">
+                <Card className="sticky top-8 border-0 bg-card shadow-lg rounded-xl overflow-hidden">
                   <CardHeader className="bg-primary/5 border-b">
                     <CardTitle className="text-xl">Donation Summary</CardTitle>
                   </CardHeader>
@@ -378,23 +378,23 @@ export default function DonatePage() {
                     <div className="space-y-6">
                       <div className="space-y-4">
                         <div className="flex justify-between items-center py-3 border-b">
-                          <span className="text-gray-600">Amount</span>
+                          <span className="text-muted-foreground">Amount</span>
                           <span className="font-bold text-lg">
                             {watchedAmount ? `Rs. ${Number.parseInt(watchedAmount).toLocaleString()}` : "—"}
                           </span>
                         </div>
                         <div className="flex justify-between items-center py-3 border-b">
-                          <span className="text-gray-600">Fund</span>
+                          <span className="text-muted-foreground">Fund</span>
                           <span className="font-medium capitalize">
                             {watchedType?.replace(/-/g, ' ') || "—"}
                           </span>
                         </div>
                       </div>
                       {watchedType === "gaza-relief" && (
-                        <Alert className="border-red-200 bg-red-50">
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                          <AlertTitle className="text-red-600">Urgent Gaza Appeal</AlertTitle>
-                          <AlertDescription className="text-red-600">
+                        <Alert className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+                          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          <AlertTitle className="text-red-600 dark:text-red-400">Urgent Gaza Appeal</AlertTitle>
+                          <AlertDescription className="text-red-600 dark:text-red-400">
                             Your donation will provide immediate relief to families in Gaza.
                           </AlertDescription>
                         </Alert>
@@ -419,7 +419,7 @@ export default function DonatePage() {
                           )}
                         </Button>
                       </div>
-                      <p className="text-xs text-center text-gray-500 mt-2">
+                      <p className="text-xs text-center text-muted-foreground mt-2">
                         Your donation is tax deductible. We respect your privacy and will never share your information.
                       </p>
                     </div>
@@ -431,17 +431,17 @@ export default function DonatePage() {
         </div>
       </section>
 
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted/30">
         <div className="container max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">More Ways to Support</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Discover additional opportunities to make an impact and join our community of changemakers.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
+            <Card className="border-0 bg-card shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
               <CardHeader className="pb-0">
                 <div className="bg-primary/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
                   <Calendar className="h-6 w-6 text-primary" />
@@ -456,7 +456,7 @@ export default function DonatePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
+            <Card className="border-0 bg-card shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
               <CardHeader className="pb-0">
                 <div className="bg-primary/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
                   <Package className="h-6 w-6 text-primary" />
@@ -471,7 +471,7 @@ export default function DonatePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
+            <Card className="border-0 bg-card shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
               <CardHeader className="pb-0">
                 <div className="bg-primary/10 p-3 rounded-lg w-12 h-12 flex items-center justify-center mb-4">
                   <Users className="h-6 w-6 text-primary" />

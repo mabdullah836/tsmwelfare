@@ -329,7 +329,7 @@ export default function AdminEventsPage() {
             <div key={event._id} className="relative group">
               <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id || '')} onCheckedChange={() => event._id && toggleSelect(event._id)} />
               <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">
-                <div className="relative h-48 w-full bg-gray-100">
+                <div className="relative h-48 w-full bg-muted">
                   {event.imageUrl && (
                     <Image
                       src={event.imageUrl}
@@ -339,10 +339,10 @@ export default function AdminEventsPage() {
                     />
                   )}
                   <div className="absolute top-2 right-2 flex flex-col items-end gap-2 z-20">
-                    <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                    <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full shadow">
                       {(event.status || 'upcoming').charAt(0).toUpperCase() + (event.status || 'upcoming').slice(1)}
                     </span>
-                    <span className="bg-white/80 text-xs px-2 py-0.5 rounded shadow text-gray-700">
+                    <span className="bg-background/80 text-foreground text-xs px-2 py-0.5 rounded shadow">
                       {format(new Date(event.date), 'MMM d, yyyy')}
                     </span>
                   </div>

@@ -157,7 +157,7 @@ export default function MediaPage() {
           onCancel={() => setShowDeleteConfirm(false)}
           onConfirm={handleBulkDelete}
         />
-        { isError && <div className="text-red-600 text-sm">Failed to fetch media.</div>}
+        { isError && <div className="text-destructive text-sm">Failed to fetch media.</div>}
         <AdminGrid
           items={filteredMedia}
           loading={isLoading}

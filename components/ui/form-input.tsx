@@ -82,7 +82,7 @@ export const FormInput = <T extends Record<string, any>>({
       <div className="space-y-2">
         <Label htmlFor={id}>
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-destructive ml-1">*</span>}
         </Label>
         <Select
           onValueChange={onValueChange}
@@ -99,7 +99,7 @@ export const FormInput = <T extends Record<string, any>>({
             ))}
           </SelectContent>
         </Select>
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
     )
   }
@@ -109,7 +109,7 @@ export const FormInput = <T extends Record<string, any>>({
       <div className="space-y-2">
         <Label htmlFor={id}>
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-destructive ml-1">*</span>}
         </Label>
         <Textarea
           id={id}
@@ -117,7 +117,7 @@ export const FormInput = <T extends Record<string, any>>({
           placeholder={placeholder}
           rows={rows}
         />
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
     )
   }
@@ -126,7 +126,7 @@ export const FormInput = <T extends Record<string, any>>({
     <div className="space-y-2">
       <Label htmlFor={id}>
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-destructive ml-1">*</span>}
       </Label>
       <Input
         id={id}
@@ -135,7 +135,7 @@ export const FormInput = <T extends Record<string, any>>({
         placeholder={placeholder}
         {...inputProps}
       />
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   )
 } 

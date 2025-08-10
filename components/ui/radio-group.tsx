@@ -70,20 +70,20 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
             {...props}
           />
           <div className={cn(
-            "flex items-center justify-center w-5 h-5 rounded-full border-2 border-gray-300 transition-all",
+            "flex items-center justify-center w-5 h-5 rounded-full border-2 border-input transition-all",
             "group-hover:border-primary",
-            checked ? "border-primary bg-primary" : "bg-white",
-            props.disabled ? "group-hover:border-gray-300" : ""
+            checked ? "border-primary bg-primary" : "bg-background",
+            props.disabled ? "group-hover:border-input" : ""
           )}>
             {showCheckIcon && checked && (
-              <Check className="h-3 w-3 text-white" strokeWidth={3} />
+              <Check className="h-3 w-3 text-primary-foreground" strokeWidth={3} />
             )}
           </div>
         </div>
         {children && (
           <span className={cn(
-            "text-sm font-medium text-gray-700",
-            props.disabled ? "text-gray-400" : ""
+            "text-sm font-medium text-foreground",
+            props.disabled ? "text-muted-foreground" : ""
           )}>
             {children}
           </span>

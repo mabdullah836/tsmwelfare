@@ -141,7 +141,7 @@ export function ApplicationForm() {
       </p>
 
       <div className="space-y-4">
-        <label className="block text-sm font-medium">Supporting Documents<span className="text-red-500 ml-1">*</span></label>
+        <label className="block text-sm font-medium">Supporting Documents<span className="text-destructive ml-1">*</span></label>
         <FileUpload
           name="documents"
           control={control}
@@ -150,7 +150,7 @@ export function ApplicationForm() {
           accept="image/*,application/pdf"
           preview
         />
-        {errors.documents && <p className="text-sm text-red-500">{errors.documents.message as string}</p>}
+        {errors.documents && <p className="text-sm text-destructive">{errors.documents.message as string}</p>}
       </div>
 
       <Button type="submit" disabled={isSubmitting}>
