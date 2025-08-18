@@ -5,8 +5,16 @@ const donationSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  type: {
+    type: String,
+    required: true
+  },
   donor: {
-    name: {
+    firstName: {
+      type: String,
+      required: true
+    },
+    lastName: {
       type: String,
       required: true
     },
@@ -19,29 +27,18 @@ const donationSchema = new mongoose.Schema({
       required: true
     }
   },
-  project: {
+  message: {
     type: String,
-    required: true
-  },
-  paymentMethod: {
-    type: String,
-    enum: ['cash', 'bank', 'online', 'other'],
-    default: 'other',
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'completed', 'failed'],
-    default: 'pending'
+    required: false
   },
   transactionId: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   createdAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    required: true
   }
 });
 

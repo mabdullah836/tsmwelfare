@@ -8,7 +8,7 @@ const UrduTitleSection = () => (
           className="text-2xl md:text-3xl lg:text-4xl font-bold text-emerald-700 dark:text-emerald-400"
           dir="rtl"
         >
-          صراط مستقیم ویلفیئر ٹرسٹ
+          دی صراط مستقیم ویلفیئر ٹرسٹ 
         </h2>
       </div>
     </div>

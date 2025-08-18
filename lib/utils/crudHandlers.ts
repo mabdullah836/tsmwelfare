@@ -44,8 +44,28 @@ export async function handlePost({ model, data, preSave }: {
     if (preSave) toSave = await preSave(data);
     const item = await model.create(toSave);
     return NextResponse.json(item, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to create item' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Create item error:', error);
+    
+    // Handle MongoDB duplicate key error
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0];
+      return NextResponse.json({ 
+        error: `${field.toLocaleUpperCase()} already exists. Please use a different ${field}.` 
+      }, { status: 400 });
+    }
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map((err: any) => err.message);
+      return NextResponse.json({ 
+        error: `Validation failed: ${validationErrors.join(', ')}` 
+      }, { status: 400 });
+    }
+    
+    return NextResponse.json({ 
+      error: error.message || 'Failed to create item' 
+    }, { status: 500 });
   }
 }
 

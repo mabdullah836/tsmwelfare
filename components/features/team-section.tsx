@@ -36,7 +36,7 @@ export function TeamSection() {
             ))}
           </div>
         ) : isError ? (
-          <div className="text-center text-red-500 py-12">{isError.message || 'Failed to load team members'}</div>
+          <div className="text-center text-destructive py-12">{isError.message || 'Failed to load team members'}</div>
         ) : team.length === 0 ? (
           <div className="text-center text-muted-foreground py-12">No team members found.</div>
         ) : (

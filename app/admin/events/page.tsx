@@ -147,9 +147,9 @@ export default function AdminEventsPage() {
     }
   }
 
-  const EventForm = ({ event }: { event?: Event }) => {
+  const EventForm = ({ event, submitting }: { event?: Event; submitting: boolean }) => {
     const isEditing = !!event;
-    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, reset, control } = useForm({
+    const { register, handleSubmit, formState: { errors }, setValue, reset, watch } = useForm({
       defaultValues: {
         title: event?.title || '',
         description: event?.description || '',
@@ -161,54 +161,43 @@ export default function AdminEventsPage() {
     });
 
     const onSubmit = (data: any) => {
-      if (isEditing) handleEditEvent(data);
-      else handleAddEvent(data);
+      const formData = new FormData();
+      formData.append('title', data.title ?? '');
+      formData.append('description', data.description ?? '');
+      formData.append('date', data.date ?? '');
+      formData.append('time', data.time ?? '');
+      formData.append('location', data.location ?? '');
+      if (data.image) {
+        formData.append('image', data.image);
+      }
+      if (isEditing) handleEditEvent(formData);
+      else handleAddEvent(formData);
       reset();
     };
 
     return (
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormInput
-          id="title"
-          label="Title"
-          register={register}
-          errors={errors}
-          required
-        />
-        <FormInput
-          id="description"
-          label="Description"
-          register={register}
-          errors={errors}
-          required
-          rows={4}
-        />
-        <FormInput
-          id="date"
-          label="Date"
-          type="date"
-          register={register}
-          errors={errors}
-          required
-        />
-        <FormInput
-          id="time"
-          label="Time"
-          type="time"
-          register={register}
-          errors={errors}
-          required
-        />
-        <FormInput
-          id="location"
-          label="Location"
-          register={register}
-          errors={errors}
-          required
-        />
+        {[
+          { id: 'title', label: 'Title', required: true },
+          { id: 'description', label: 'Description', required: true, rows: 4 },
+          { id: 'date', label: 'Date', required: true, type: 'date' },
+          { id: 'time', label: 'Time', required: true, type: 'time' },
+          { id: 'location', label: 'Location', required: true },
+        ].map((field) => (
+          <FormInput
+            key={field.id}
+            id={field.id as string}
+            label={field.label as string}
+            type={(field as any).type}
+            register={register}
+            errors={errors}
+            required={field.required as boolean}
+            rows={(field as any).rows}
+          />
+        ))}
         <FileUpload
           name="image"
-          control={control}
+          form={{ setValue, watch }}
           label={event?.imageUrl ? "Change Image" : "Image"}
           accept="image/*"
           preview
@@ -218,8 +207,8 @@ export default function AdminEventsPage() {
             <Image src={event.imageUrl} alt={event.title} fill className="object-cover" />
           </div>
         )}
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Event" : "Add Event")}
+        <Button type="submit" disabled={submitting}>
+          {submitting ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Event" : "Add Event")}
         </Button>
       </form>
     );
@@ -314,7 +303,7 @@ export default function AdminEventsPage() {
                     }
                   </DialogDescription>
                 </DialogHeader>
-                <EventForm event={editingEvent || undefined} />
+                <EventForm event={editingEvent || undefined} submitting={isSubmitting} />
               </DialogContent>
             </Dialog>
           </div>
@@ -329,7 +318,7 @@ export default function AdminEventsPage() {
             <div key={event._id} className="relative group">
               <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(event._id || '')} onCheckedChange={() => event._id && toggleSelect(event._id)} />
               <Card className="transition-shadow shadow-md hover:shadow-xl border-0 overflow-hidden">
-                <div className="relative h-48 w-full bg-gray-100">
+                <div className="relative h-48 w-full bg-muted">
                   {event.imageUrl && (
                     <Image
                       src={event.imageUrl}
@@ -339,10 +328,10 @@ export default function AdminEventsPage() {
                     />
                   )}
                   <div className="absolute top-2 right-2 flex flex-col items-end gap-2 z-20">
-                    <span className="bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                    <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full shadow">
                       {(event.status || 'upcoming').charAt(0).toUpperCase() + (event.status || 'upcoming').slice(1)}
                     </span>
-                    <span className="bg-white/80 text-xs px-2 py-0.5 rounded shadow text-gray-700">
+                    <span className="bg-background/80 text-foreground text-xs px-2 py-0.5 rounded shadow">
                       {format(new Date(event.date), 'MMM d, yyyy')}
                     </span>
                   </div>

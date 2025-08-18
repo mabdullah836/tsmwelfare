@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Application } from '@/models/Application'
-import { handleBulkDelete, handleGetAll, handlePost, handleGetPaginated } from '@/lib/utils/crudHandlers'
+import { handleBulkDelete, handlePost, handleGetPaginated } from '@/lib/utils/crudHandlers'
 import { withDbConnection } from '@/lib/mongodb'
 
 export async function GET(request: NextRequest) {
@@ -19,8 +19,24 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const data = await request.json()
-  return await withDbConnection(() => handlePost({ model: Application, data }))
+  try {
+    const data = await request.json()    
+    // Validate required fields
+    const requiredFields = ['type', 'name', 'cnic', 'email', 'phone', 'address', 'description', 'documents']
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        console.error(`Missing required field: ${field}`)
+        return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 })
+      }
+    }
+    
+    return await withDbConnection(() => handlePost({ model: Application, data }))
+  } catch (error) {
+    console.error("Application POST error:", error)
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Failed to process application' 
+    }, { status: 500 })
+  }
 }
 
 export async function DELETE(request: Request) {

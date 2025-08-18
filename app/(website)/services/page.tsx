@@ -7,8 +7,26 @@ import Image from "next/image";
 import { PageHeader } from "@/components/page-header";
 import Link from "next/link";
 import { AdminGrid } from "@/components/shared/AdminGrid";
+import { ReusableCarousel } from "@/components/shared/carousel";
 
 export default function ServicesPage() {
+  const seviceData = [
+    {
+      title: "Community Garden Initiative",
+      description: "Our urban garden now provides fresh produce to 200+ families each month while teaching sustainable practices.",
+      image: "/images/garden-project.jpg"
+    },
+    {
+      title: "Youth Mentorship Program",
+      description: "87% of participants showed improved academic performance and self-confidence after one year.",
+      image: "/images/youth-mentorship.jpg"
+    },
+    {
+      title: "Senior Companion Services",
+      description: "Helping older adults remain independent with weekly check-ins and assistance.",
+      image: "/images/senior-services.jpg"
+    }
+  ]
   return (
     <>
         <PageHeader title="Our Services">
@@ -89,7 +107,7 @@ export default function ServicesPage() {
                 </div>
                 <div className="relative h-[400px] rounded-xl overflow-hidden border shadow-lg">
                   <Image
-                    src="/images/community-outreach.jpg"
+                    src="/images/community.png"
                     alt="Community members at an outdoor event"
                     fill
                     className="object-cover"
@@ -103,7 +121,7 @@ export default function ServicesPage() {
               <div className="grid md:grid-cols-2 gap-12 items-center">
                 <div className="relative h-[400px] rounded-xl overflow-hidden border shadow-lg order-2 md:order-1">
                   <Image
-                    src="/images/education-program.jpg"
+                    src="/images/education-program.webp"
                     alt="Students learning in a classroom"
                     fill
                     className="object-cover"
@@ -276,50 +294,11 @@ export default function ServicesPage() {
           </div>
 
           <div className="max-w-6xl mx-auto">
-            <Carousel className="h-[500px]">
-              <CarouselContent>
-                {[
-                  {
-                    title: "Community Garden Initiative",
-                    description: "Our urban garden now provides fresh produce to 200+ families each month while teaching sustainable practices.",
-                    image: "/images/garden-project.jpg"
-                  },
-                  {
-                    title: "Youth Mentorship Program",
-                    description: "87% of participants showed improved academic performance and self-confidence after one year.",
-                    image: "/images/youth-mentorship.jpg"
-                  },
-                  {
-                    title: "Senior Companion Services",
-                    description: "Helping older adults remain independent with weekly check-ins and assistance.",
-                    image: "/images/senior-services.jpg"
-                  }
-                ].map((item, index) => (
-                  <CarouselItem key={index}>
-                    <div className="h-full rounded-2xl overflow-hidden relative group">
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        priority
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-10">
-                        <h3 className="text-3xl font-bold text-white mb-3">{item.title}</h3>
-                        <p className="text-white/90 text-lg max-w-2xl">{item.description}</p>
-                        <Button variant="secondary" className="mt-6 w-fit" asChild>
-                          <Link href="/stories">
-                            Read Full Story
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="left-4 h-12 w-12" />
-              <CarouselNext className="right-4 h-12 w-12" />
-            </Carousel>
+            <ReusableCarousel
+              variant="story"
+              height="h-[500px]"
+              items={seviceData}
+            />
           </div>
         </div>
       </section>

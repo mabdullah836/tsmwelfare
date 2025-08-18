@@ -172,6 +172,7 @@ export async function GET_ANALYTICS(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    console.log("data",data);
     const donation = await withDbConnection(async () => {
       return Donation.create(data);
     });

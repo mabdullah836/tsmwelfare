@@ -46,6 +46,7 @@ import { AdminTable } from "@/components/shared/AdminTable";
 import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
 import { useApplications } from '@/lib/hooks/useApplications';
 import { useSelection } from '@/lib/hooks/use-selection';
+import { changeResourceStatus } from '@/lib/utils/changeResourceStatus';
 
 export default function ApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
@@ -54,16 +55,11 @@ export default function ApplicationsPage() {
   const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null)
   const debouncedSearch = useDebounce(search, 400)
   const [alert, setAlert] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [isSingleDeleteOpen, setSingleDeleteOpen] = useState(false);
-  const [singleDeleteId, setSingleDeleteId] = useState<string | null>(null);
-  const [singleDeleteLoading, setSingleDeleteLoading] = useState(false);
   const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
 
-  // SWR hook for applications
-  const { applications, meta, isLoading, isError, mutate } = useApplications({ page, limit: 10, q: debouncedSearch });
+  const { applications, meta, isLoading, mutate } = useApplications({ page, limit: 10, q: debouncedSearch });
 
-  // Use useSelection for selection management
   const selectableApplications = applications.filter((application: Application) => typeof application._id === 'string') as { _id: string }[];
   const { selectedIds, setSelectedIds, allSelected, toggleSelectAll, toggleSelect } = useSelection(selectableApplications);
 
@@ -90,37 +86,6 @@ export default function ApplicationsPage() {
     return 0
   })
 
-  const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected') => {
-    try {
-      if (newStatus === 'rejected') {
-        const response = await fetch(`/api/application/${id}`, { method: 'DELETE' })
-        const data = await response.json()
-        if (response.ok && data.success) {
-          mutate(); // Re-fetch applications after deletion
-          toggleSelect(id); // Update selection
-          setAlert({ type: 'success', message: 'Application rejected and removed successfully' });
-        } else {
-          throw new Error('Failed to remove application')
-        }
-      } else {
-        const response = await fetch(`/api/application/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
-        })
-        const data = await response.json()
-        if (response.ok && data.success) {
-          mutate(); // Re-fetch applications after status update
-          setAlert({ type: 'success', message: `Application ${newStatus} successfully` });
-        } else {
-          throw new Error('Failed to update application status')
-        }
-      }
-    } catch (error) {
-      setAlert({ type: 'error', message: 'Failed to update application status' });
-    }
-  }
-
   const handleDeleteSelected = async () => {
     setBulkDeleteLoading(true);
     try {
@@ -138,13 +103,11 @@ export default function ApplicationsPage() {
     }
   };
 
-  const handleSingleDelete = async () => {
-    if (!singleDeleteId) return;
-    setSingleDeleteLoading(true);
-    await handleStatusChange(singleDeleteId, 'rejected');
-    setSingleDeleteLoading(false);
-    setSingleDeleteOpen(false);
-    setSingleDeleteId(null);
+  const handleStatusChange = async (id: string, newStatus: 'approved' | 'rejected') => {
+    const result = await changeResourceStatus({ resource: 'application', id, newStatus, statusMap: { approve: 'approved', reject: 'rejected' } });
+    if (result.success) {
+      mutate();
+    }
   };
 
   return (
@@ -264,10 +227,7 @@ export default function ApplicationsPage() {
                           <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => {
-                            setSingleDeleteId(application._id || '');
-                            setSingleDeleteOpen(true);
-                          }}
+                          onClick={() => handleStatusChange(application._id || '', 'rejected')}
                           className={application.status === 'rejected' ? 'opacity-50 pointer-events-none' : ''}
                         >
                           <XCircle className="mr-2 h-4 w-4" /> Reject
@@ -393,17 +353,6 @@ export default function ApplicationsPage() {
             loading={bulkDeleteLoading}
             onConfirm={handleDeleteSelected}
             onCancel={() => setIsDeleteConfirmationOpen(false)}
-          />
-          <ConfirmDeleteModal
-            open={isSingleDeleteOpen}
-            title="Reject Application?"
-            description="Are you sure you want to reject and remove this application? This action cannot be undone."
-            loading={singleDeleteLoading}
-            onConfirm={handleSingleDelete}
-            onCancel={() => {
-              setSingleDeleteOpen(false);
-              setSingleDeleteId(null);
-            }}
           />
         </CardContent>
       </Card>
