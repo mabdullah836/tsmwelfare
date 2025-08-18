@@ -31,14 +31,12 @@ export default function MediaPage() {
   const [showVideoModal, setShowVideoModal] = useState(false)
   const [activeVideo, setActiveVideo] = useState<Media | null>(null)
   const [approving, setApproving] = useState(false)
-  const [url, setUrl] = useState('');
-  const [thumbnail, setThumbnail] = useState('');
-  const [title, setTitle] = useState('');
-  const [tag, setTag] = useState('');
+  // Video add modal uses its own internal form; no external state needed here
   const [page, setPage] = useState(1)
   const debouncedSearch = useDebounce(searchQuery, 400)
   const [showImageModal, setShowImageModal] = useState(false)
   const [activeImage, setActiveImage] = useState<Media | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   // SWR hook for media
   const { media, meta, isLoading, isError, mutate } = useMedia({ page, limit: 12, q: debouncedSearch, folder: 'general' });
@@ -103,19 +101,66 @@ export default function MediaPage() {
   };
   
 
-  const handleSave = async () => {
+  const handleSave = async (data: { title: string; url: string; tag?: string; thumbnail?: File | null }) => {
     try {
-      await uploadVideoByUrl({ videoUrl: url, thumbnail, title, tag: tag.trim() });
+      const formData = new FormData();
+      formData.append('videoUrl', data.url);
+      if (data.thumbnail instanceof File) {
+        // If File object, upload as file (API supports both)
+        formData.append('thumbnail', data.thumbnail);
+      }
+      if (data.title) formData.append('title', data.title);
+      if (data.tag) formData.append('tag', data.tag.trim());
+      formData.append('folder', 'general');
+
+      const response = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error('Failed to add video');
+
       setAlert({ message: 'Video added successfully.', type: 'success' });
       setShowAddVideo(false);
-      setUrl('');
-      setThumbnail('');
-      setTitle('');
-      setTag('');
-      mutate()
+      mutate();
     } catch (error) {
       setAlert({ message: error instanceof Error ? error.message : 'Failed to add video.', type: 'error' });
     }
+  };
+
+  const uploadFiles = async (files: File[]) => {
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file);
+      });
+      formData.append('folder', 'general');
+
+      const response = await fetch('/api/media/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload files');
+      }
+
+      setAlert({ message: 'Files uploaded successfully.', type: 'success' });
+      mutate(); // Refresh the media list
+    } catch (error) {
+      setAlert({ message: error instanceof Error ? error.message : 'Failed to upload files.', type: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    await uploadFiles(files);
+    // Reset the file input
+    e.target.value = '';
   };
 
   // Filter media by type
@@ -142,12 +187,16 @@ export default function MediaPage() {
           setFilterType={setFilterType}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          uploading={isLoading}
+          uploading={uploading}
           selectedIds={selectedIds}
           setShowAddVideo={setShowAddVideo}
           setShowDeleteConfirm={setShowDeleteConfirm}
           allSelected={allSelected}
           toggleSelectAll={toggleSelectAll}
+          onSelectFiles={(value: File[] | File | null) => {
+            const files = Array.isArray(value) ? value : value ? [value] : [];
+            uploadFiles(files);
+          }}
         />
         <ConfirmDeleteModal
           open={showDeleteConfirm}
@@ -237,15 +286,8 @@ export default function MediaPage() {
         <AddVideoDialog
           open={showAddVideo}
           onOpenChange={setShowAddVideo}
-          url={url}
-          setUrl={setUrl}
-          thumbnail={thumbnail}
-          setThumbnail={setThumbnail}
-          title={title}
-          setTitle={setTitle}
-          tag={tag}
-          setTag={setTag}
           onSave={handleSave}
+          saving={uploading}
         />
       </div>
     </div>

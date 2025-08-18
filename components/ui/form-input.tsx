@@ -78,6 +78,8 @@ export const FormInput = <T extends Record<string, any>>({
   }
 
   if (options) {
+    const currentValue = watch ? watch(id as any) : undefined;
+    
     return (
       <div className="space-y-2">
         <Label htmlFor={id}>
@@ -85,6 +87,7 @@ export const FormInput = <T extends Record<string, any>>({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
         <Select
+          value={currentValue || ""}
           onValueChange={onValueChange}
           {...(register ? register(id as any, getRegisterOptions()) : {})}
         >

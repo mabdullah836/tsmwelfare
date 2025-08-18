@@ -4,6 +4,7 @@ import { Upload, Grid, List, Search } from "lucide-react"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Checkbox } from "@/components/ui/checkbox"
+import { FileUpload } from '@/components/ui/file-upload'
 
 export const MediaToolbar = ({
   searchQuery,
@@ -12,7 +13,7 @@ export const MediaToolbar = ({
   setFilterType,
   view,
   setView,
-  handleUpload,
+  onSelectFiles,
   uploading,
   setShowAddVideo,
   selectedIds,
@@ -54,14 +55,16 @@ export const MediaToolbar = ({
         {filterType === 'video' ? (
           <Button type="button" onClick={() => setShowAddVideo(true)}><Upload className="mr-2 h-4 w-4" /> Add Video</Button>
         ) : (
-          <>
-            <input type="file" id="file-upload" multiple accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-            <label htmlFor="file-upload">
-              <Button type="button" disabled={uploading} onClick={() => document.getElementById('file-upload')?.click()}>
-                <Upload className="mr-2 h-4 w-4" /> {uploading ? 'Uploading...' : 'Upload Files'}
-              </Button>
-            </label>
-          </>
+          <FileUpload
+            name="mediaFiles"
+            multiple
+            accept="image/*,video/*"
+            preview={false}
+            onChange={onSelectFiles}
+            variant="compact"
+            buttonText={uploading ? 'Uploading...' : 'Upload Files'}
+            className="h-8 px-3"
+          />
         )}
       </div>
       {selectedIds.length > 0 && (

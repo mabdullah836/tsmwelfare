@@ -25,6 +25,7 @@ import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
 import { useTeam } from '@/lib/hooks/useTeam';
+import { uploadMedia } from '@/lib/services/media';
 import { TeamMember } from "@/lib/types/team"
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { useForm } from 'react-hook-form';
@@ -101,21 +102,8 @@ export default function AdminTeamPage() {
       let imageUrl = editingMember.imageUrl
 
       if (imageFile?.size > 0) {
-        const imageData = new FormData()
-        imageData.append('files', imageFile)
-        imageData.append('folder', 'team-members')
-        const uploadResponse = await fetch('/api/media/upload', {
-          method: 'POST',
-          body: imageData,
-        })
-        
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json()
-          throw new Error(error.message || 'Failed to upload image')
-        }
-        
-        const uploadResult = await uploadResponse.json()
-        imageUrl = uploadResult[0]?.url // Access first uploaded file's URL
+        const uploaded = await uploadMedia([imageFile], 'team-members')
+        imageUrl = uploaded[0]?.url
       }
 
       const updatedMember = {
@@ -162,21 +150,8 @@ export default function AdminTeamPage() {
       let imageUrl = undefined
 
       if (imageFile?.size > 0) {
-        const imageData = new FormData()
-        imageData.append('files', imageFile)
-        imageData.append('folder', 'team-members')
-        const uploadResponse = await fetch('/api/media/upload', {
-          method: 'POST',
-          body: imageData,
-        })
-        
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json()
-          throw new Error(error.message || 'Failed to upload image')
-        }
-        
-        const uploadResult = await uploadResponse.json()
-        imageUrl = uploadResult[0]?.url
+        const uploaded = await uploadMedia([imageFile], 'team-members')
+        imageUrl = uploaded[0]?.url
       }
 
       const newMember = {
@@ -215,9 +190,9 @@ export default function AdminTeamPage() {
     }
   }
 
-  const TeamMemberForm = ({ member }: { member?: TeamMember }) => {
+  const TeamMemberForm = ({ member, submitting }: { member?: TeamMember; submitting: boolean }) => {
     const isEditing = !!member;
-    const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, reset, control } = useForm({
+    const { register, handleSubmit, formState: { errors }, setValue, reset, watch } = useForm({
       defaultValues: {
         name: member?.name || '',
         role: member?.role || '',
@@ -227,47 +202,45 @@ export default function AdminTeamPage() {
     });
 
     const onSubmit = (data: any) => {
-      if (isEditing) handleEditMember(data);
-      else handleAddMember(data);
+      const formData = new FormData();
+      formData.append('name', data.name ?? '');
+      formData.append('role', data.role ?? '');
+      formData.append('bio', data.bio ?? '');
+      if (data.image) {
+        formData.append('image', data.image);
+      }
+      if (isEditing) handleEditMember(formData);
+      else handleAddMember(formData);
       reset();
     };
 
     return (
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <FormInput
-          id="name"
-          label="Name"
-          register={register}
-          errors={errors}
-          required
-          placeholder="Enter name"
-        />
-        <FormInput
-          id="role"
-          label="Role"
-          register={register}
-          errors={errors}
-          required
-          placeholder="Enter role"
-        />
-        <FormInput
-          id="bio"
-          label="Bio"
-          register={register}
-          errors={errors}
-          required
-          rows={4}
-          placeholder="Enter bio"
-        />
+        {[
+          { id: 'name', label: 'Name', required: true, placeholder: 'Enter name' },
+          { id: 'role', label: 'Role', required: true, placeholder: 'Enter role' },
+          { id: 'bio', label: 'Bio', required: true, rows: 4, placeholder: 'Enter bio' },
+        ].map((field) => (
+          <FormInput
+            key={field.id}
+            id={field.id as string}
+            label={field.label as string}
+            register={register}
+            errors={errors}
+            required={field.required as boolean}
+            rows={(field as any).rows}
+            placeholder={(field as any).placeholder}
+          />
+        ))}
         <FileUpload
           name="image"
-          control={control}
+          form={{ setValue, watch }}
           label={member?.imageUrl ? "Change Image" : "Image"}
           accept="image/*"
           preview
         />
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Member" : "Add Member")}
+        <Button type="submit" disabled={submitting}>
+          {submitting ? (isEditing ? "Updating..." : "Adding...") : (isEditing ? "Update Member" : "Add Member")}
         </Button>
       </form>
     );
@@ -331,7 +304,7 @@ export default function AdminTeamPage() {
                     }
                   </DialogDescription>
                 </DialogHeader>
-                <TeamMemberForm member={editingMember || undefined} />
+                <TeamMemberForm member={editingMember || undefined} submitting={isSubmitting} />
               </DialogContent>
             </Dialog>
           </div>

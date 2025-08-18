@@ -2,17 +2,22 @@ import { UniversalDialog } from '@/components/modals/UniversalDialog';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
-import { FileUpload } from '@/components/ui/file-upload';
 import { FormInput } from '@/components/ui/form-input';
+import { FileUpload } from '@/components/ui/file-upload';
 
-export const AddVideoDialog = ({ open, onOpenChange, onSave }: any) => {
+interface AddVideoDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: { title: string; url: string; tag?: string; thumbnail?: File | null }) => void;
+  saving?: boolean;
+}
 
-  const { register, handleSubmit, formState: { errors }, reset, control } = 
-  useForm({
+export const AddVideoDialog: React.FC<AddVideoDialogProps> = ({ open, onOpenChange, onSave, saving }) => {
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm({
     defaultValues: {
       title: '',
       url: '',
-      thumbnail: null,
+      thumbnail: null as File | null,
       tag: '',
     },
   });
@@ -44,7 +49,7 @@ export const AddVideoDialog = ({ open, onOpenChange, onSave }: any) => {
         />
         <FileUpload
           name="thumbnail"
-          control={control}
+          form={{ setValue, watch }}
           label="Thumbnail"
           accept="image/*"
           preview
@@ -56,7 +61,7 @@ export const AddVideoDialog = ({ open, onOpenChange, onSave }: any) => {
           errors={errors}
           placeholder="Tag"
         />
-        <Button type="submit">Save Video</Button>
+        <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Video'}</Button>
       </form>
     </UniversalDialog>
   );
