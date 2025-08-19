@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react"
 import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
-import { Image as ImageIcon, Play, Download, Grid, List, Search } from "lucide-react"
+import { Image as ImageIcon, Play, Download, Grid, List, Search, Clock, Tag } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { UniversalDialog } from '@/components/modals/UniversalDialog'
 import { cn } from "@/lib/utils/cn"
@@ -86,115 +86,151 @@ export default function MediaPage() {
           )}
         </AnimatePresence>
 
-        <div className="space-y-6 pb-12">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'image' | 'video')}>
-              <TabsList>
-                <TabsTrigger value="image">
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  Images
-                </TabsTrigger>
-                <TabsTrigger value="video">
-                  <Play className="w-4 h-4 mr-2" />
-                  Videos
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                className="pl-9"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={`Search ${activeTab === 'image' ? 'images' : 'videos'}...`}
-                aria-label="Search media"
-              />
+        <div className="space-y-8 pb-12">
+          <motion.div 
+            className="bg-gradient-to-r from-card/50 to-card/30 backdrop-blur-sm rounded-2xl p-6 border border-border/50"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-4">
+                <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'image' | 'video')}>
+                  <TabsList className="grid w-full grid-cols-2 lg:w-auto">
+                    <TabsTrigger value="image" className="flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4" />
+                      <span className="hidden sm:inline">Images</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="video" className="flex items-center gap-2">
+                      <Play className="w-4 h-4" />
+                      <span className="hidden sm:inline">Videos</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    className="pl-10 pr-4 h-11 bg-background/50 border-border/50 focus:bg-background transition-colors"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder={`Search ${activeTab === 'image' ? 'images' : 'videos'}...`}
+                    aria-label="Search media"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-muted-foreground hidden sm:block">
+                  {filteredMedia.length} {activeTab === 'image' ? 'images' : 'videos'} found
+                </div>
+                <div className="flex items-center gap-2 bg-background/50 rounded-lg p-1">
+                  <Button
+                    variant={view === "grid" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setView("grid")}
+                    aria-label="Grid view"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={view === "list" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setView("list")}
+                    aria-label="List view"
+                    className="h-8 w-8 p-0"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant={view === "grid" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setView("grid")}
-                aria-label="Grid view"
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={view === "list" ? "default" : "outline"}
-                size="icon"
-                onClick={() => setView("list")}
-                aria-label="List view"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          </motion.div>
 
-          <AdminGrid
-            items={filteredMedia}
-            loading={isLoading}
-            emptyState={{ 
-              title: `No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`, 
-              description: `Try adjusting your search or check back later for new content.`
-            }}
-            gridClassName={cn(
-              view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'flex flex-col gap-4',
-              filteredMedia.length <= 3 ? 'pb-12' : ''
-            )}
-            renderItem={(item: Media) => (
-              <MediaCard 
-                key={item?._id}
-                item={item} 
-                view={view} 
-                activeTab={activeTab}
-                onClick={() => handleItemClick(item)}
-              />
-            )}
-          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <AdminGrid
+              items={filteredMedia}
+              loading={isLoading}
+              emptyState={{ 
+                title: `No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`, 
+                description: `Try adjusting your search or check back later for new content.`
+              }}
+              gridClassName={cn(
+                view === 'grid' 
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6' 
+                  : 'flex flex-col gap-3',
+                filteredMedia.length <= 3 ? 'pb-12' : ''
+              )}
+              renderItem={(item: Media) => (
+                <MediaCard 
+                  key={item?._id}
+                  item={item} 
+                  view={view} 
+                  activeTab={activeTab}
+                  onClick={() => handleItemClick(item)}
+                />
+              )}
+            />
+          </motion.div>
 
           {meta.pages > 1 && (
-            <Pagination className="mt-8 flex gap-2">
-              <Button
-                variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="gap-1 pl-2.5"
-              >
-                Previous
-              </Button>
-              {Array.from({ length: Math.min(5, meta.pages) }, (_, i) => {
-                const pageNum = page <= 3 ? i + 1 : 
-                              page >= meta.pages - 2 ? meta.pages - 4 + i : 
-                              page - 2 + i
-                return (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <Pagination className="mt-12 flex justify-center">
+                <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm rounded-xl p-2 border border-border/50">
                   <Button
-                    key={pageNum}
-                    variant={page === pageNum ? "default" : "outline"}
-                    onClick={() => setPage(pageNum)}
+                    variant="ghost"
+                    disabled={page === 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className="gap-1 pl-2.5 disabled:opacity-50"
                   >
-                    {pageNum}
+                    Previous
                   </Button>
-                )
-              })}
-              <Button
-                variant="outline"
-                disabled={page === meta.pages}
-                onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
-                className="gap-1 pr-2.5"
-              >
-                Next
-              </Button>
-            </Pagination>
+                  {Array.from({ length: Math.min(5, meta.pages) }, (_, i) => {
+                    const pageNum = page <= 3 ? i + 1 : 
+                                  page >= meta.pages - 2 ? meta.pages - 4 + i : 
+                                  page - 2 + i
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={page === pageNum ? "default" : "ghost"}
+                        onClick={() => setPage(pageNum)}
+                        className={cn(
+                          "w-10 h-10",
+                          page === pageNum && "bg-primary text-primary-foreground shadow-lg"
+                        )}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                  <Button
+                    variant="ghost"
+                    disabled={page === meta.pages}
+                    onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
+                    className="gap-1 pr-2.5 disabled:opacity-50"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </Pagination>
+            </motion.div>
           )}
         </div>
 
         <UniversalDialog 
           open={!!selectedItem} 
           onOpenChange={() => setSelectedItem(null)} 
-          className="max-w-4xl p-0 overflow-hidden"
+          className="max-w-5xl p-0 overflow-hidden rounded-2xl border-0 shadow-2xl"
         >
           <AnimatePresence mode="wait">
             {selectedItem && (
@@ -205,8 +241,8 @@ export default function MediaPage() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <DialogHeader className="p-4 border-b">
-                  <DialogTitle>{selectedItem.title}</DialogTitle>
+                <DialogHeader className="p-6 border-b bg-gradient-to-r from-card to-card/80">
+                  <DialogTitle className="text-xl font-semibold">{selectedItem.title}</DialogTitle>
                 </DialogHeader>
                 
                 {selectedItem.type === 'image' ? (
@@ -240,19 +276,25 @@ export default function MediaPage() {
                   </AspectRatio>
                 )}
                 
-                <div className="p-4 space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Uploaded: {formatDate(selectedItem?.createdAt || '')}
-                  </p>
-                  {selectedItem.tag && (
-                    <div className="flex flex-wrap gap-2">
-                      <span className="bg-muted px-2 py-1 rounded text-xs">{selectedItem.tag}</span>
+                <div className="p-6 space-y-4 bg-gradient-to-b from-card/50 to-card">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>Uploaded: {formatDate(selectedItem?.createdAt || '')}</span>
+                      </div>
+                      {selectedItem.tag && (
+                        <div className="flex items-center gap-2">
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                          <span className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary px-3 py-1 rounded-full text-xs font-medium border border-primary/20">
+                            {selectedItem.tag}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button variant="outline" size="sm" asChild>
+                    <Button variant="outline" size="sm" asChild className="gap-2">
                       <a href={selectedItem.url} download target="_blank" rel="noopener noreferrer">
-                        <Download className="w-4 h-4 mr-2" />
+                        <Download className="w-4 h-4" />
                         Download
                       </a>
                     </Button>

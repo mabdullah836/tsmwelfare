@@ -1,3 +1,5 @@
+"use client";
+
 export const metadata = {
   title: "Events | Sirat-e-Mustaqeem Welfare Trust | Community Service in Pakistan",
   description:
@@ -9,8 +11,6 @@ export const metadata = {
     "non-profit events"
   ]
 };
-
-"use client";
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
