@@ -77,23 +77,25 @@ export default function ServicesPage() {
       id: "education",
       label: "Education",
       icon: <BookOpen className="h-5 w-5 mr-2" />,
-      badge: "Education Focus",
+      badge: "Education Support",
       badgeIcon: <BookOpen className="h-4 w-4 text-blue-600" />,
-      title: "Education Initiatives",
-      description: "We provide learning opportunities for all ages, from literacy programs to vocational training, helping community members gain skills for better futures.",
+      title: "Education Support Services",
+      description: "We provide financial and educational support to students who cannot afford school fees, uniforms, books, and courses. Our mission is to ensure no child is denied education due to financial constraints.",
       image: "/images/education-program.jpg",
-      imageAlt: "Students learning in a classroom",
-      imageCaption: "Empowering Through Education",
-      imageSubtext: "Knowledge opens doors to opportunity",
+      imageAlt: "Students receiving educational support",
+      imageCaption: "Supporting Education Access",
+      imageSubtext: "Breaking financial barriers to learning",
       imageOrder: "order-2 md:order-1",
       contentOrder: "order-1 md:order-2",
       features: [
-        "After-school tutoring programs",
-        "Adult education and GED preparation",
-        "Digital literacy workshops"
+        "School fees payment assistance for needy students",
+        "Free uniforms and educational materials distribution",
+        "Course enrollment support for vocational training",
+        "Free tutoring and academic support services",
+        "Scholarship programs for deserving students"
       ],
-      ctaText: "View Education Opportunities",
-      ctaLink: "/education-programs",
+      ctaText: "Apply for Education Support",
+      ctaLink: "/apply",
       ctaGradient: "from-blue-600 to-primary"
     },
     {
@@ -399,9 +401,9 @@ export default function ServicesPage() {
                         />
                         {tab.imageCaption && (
                           <div className="absolute bottom-6 left-6 right-6 z-20">
-                            <div className="bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
-                              <h4 className="font-bold text-lg mb-1">{tab.imageCaption}</h4>
-                              <p className="text-sm text-muted-foreground">{tab.imageSubtext}</p>
+                            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-white/20 dark:border-gray-700/50">
+                              <h4 className="font-bold text-lg mb-1 text-gray-900 dark:text-white">{tab.imageCaption}</h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-300">{tab.imageSubtext}</p>
                             </div>
                           </div>
                         )}
