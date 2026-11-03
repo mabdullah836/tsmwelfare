@@ -11,10 +11,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { AdminGrid } from "@/components/shared/AdminGrid"
+import { TablePagination } from "@/components/shared/TablePagination"
 import Image from "next/image"
 import { Draggable, DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd"
 import { Edit2Icon, GridIcon, ListIcon } from "lucide-react"
@@ -40,11 +39,12 @@ export default function AdminTeamPage() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [search, setSearch] = useState("")
   const [roleFilter, setRoleFilter] = useState("all")
-  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const meta = { limit: 10 }
+  const [page, setPage] = useState(1)
   const debouncedSearch = useDebounce(search, 400)
 
   // SWR hook for team
-  const { team, meta: swrMeta, isLoading, isError, mutate } = useTeam({ page: 1, limit: meta.limit, q: debouncedSearch });
+  const { team, meta: swrMeta, isLoading, mutate } = useTeam({ page, limit: meta.limit, q: debouncedSearch });
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result?.destination) return
@@ -262,17 +262,22 @@ export default function AdminTeamPage() {
   const { showDeleteConfirm, setShowDeleteConfirm, handleBulkDelete } = useBulkDelete(deleteTeamMembers, selectedIds);
 
   return (
-    <div className="min-h-screen">
-      <div className="container py-10">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Manage Team Members</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+    <div>
+      <div>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="page-title">Manage Team Members</h1>
+            <p className="page-description">Add, edit and reorder the team members shown on the website.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
                 className="h-8 w-8 p-0"
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
               >
                 <GridIcon className="h-4 w-4" />
               </Button>
@@ -281,6 +286,8 @@ export default function AdminTeamPage() {
                 size="sm"
                 onClick={() => setViewMode('list')}
                 className="h-8 w-8 p-0"
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
               >
                 <ListIcon className="h-4 w-4" />
               </Button>
@@ -313,9 +320,11 @@ export default function AdminTeamPage() {
           <div className="flex items-center gap-2 flex-1 flex-wrap">
             <span className="font-medium">Filter by role:</span>
             <Input
+              type="search"
+              aria-label="Search team members by name or role"
               placeholder="Search by name or role..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
               className="w-full md:w-72"
             />
             <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -357,7 +366,7 @@ export default function AdminTeamPage() {
           loading={isLoading}
           emptyState={{ title: "No team members yet", description: "Add your first team member to get started." }}
           skeletonItems={meta.limit}
-          gridClassName="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          gridClassName={viewMode === 'grid' ? "grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "flex flex-col gap-4"}
           renderItem={(member: TeamMember, idx: number) => (
             <div key={member._id || idx} className="relative">
               <Checkbox className="absolute top-2 left-2 z-10" checked={selectedIds.includes(member._id || '')} onCheckedChange={() => member._id && toggleSelect(member._id)} />
@@ -393,6 +402,11 @@ export default function AdminTeamPage() {
             </div>
           )}
         />
+        {swrMeta.pages > 1 && (
+          <div className="mt-6">
+            <TablePagination page={page} pages={swrMeta.pages} total={swrMeta.total} onPageChange={setPage} />
+          </div>
+        )}
       </div>
       {alert && (
         <AlertMessage

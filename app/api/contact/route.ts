@@ -6,10 +6,29 @@ import {
   contactAutoReplyText,
   contactAutoReplyHtml,
 } from '@/lib/emailTemplates/contact';
+import { rateLimit } from '@/lib/rate-limit';
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const asText = (value: unknown, max: number) => (typeof value === 'string' ? value.trim().slice(0, max) : '');
+// Strip characters that could break out of a quoted display name or header line.
+const headerSafe = (value: string) => value.replace(/[\r\n"<>]/g, ' ').trim();
 
 export async function POST(request: Request) {
   try {
-    const { name, email, subject, message } = await request.json();
+    const limited = rateLimit(request, 'contact', { limit: 5, windowMs: 10 * 60 * 1000 });
+    if (limited) return limited;
+
+    const body = await request.json().catch(() => null);
+    const name = asText(body?.name, 200);
+    const email = asText(body?.email, 320);
+    const subject = asText(body?.subject, 300);
+    const message = asText(body?.message, 10000);
+    if (!name || !subject || !message || !EMAIL_RE.test(email)) {
+      return NextResponse.json(
+        { success: false, message: "Please provide a valid name, email, subject and message." },
+        { status: 400 }
+      );
+    }
 
     // Create a transporter using Gmail SMTP
     const transporter = nodemailer.createTransport({
@@ -23,11 +42,11 @@ export async function POST(request: Request) {
     });
 
     // Send the email
-    const info = await transporter.sendMail({
-      from: `"${name}" <${process.env.SMTP_USER}>`,
+    await transporter.sendMail({
+      from: `"${headerSafe(name)}" <${process.env.SMTP_USER}>`,
       to: process.env.CONTACT_EMAIL,
       replyTo: email,
-      subject: `Contact Form: ${subject}`,
+      subject: `Contact Form: ${headerSafe(subject)}`,
       text: contactAdminText({ name, email, subject, message }),
       html: contactAdminHtml({ name, email, subject, message }),
     });

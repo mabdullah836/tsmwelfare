@@ -2,67 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design tokens. Colours are HSL triplets consumed by tailwind.config.ts.
+ * Foreground/background pairs are chosen to meet WCAG 2.2 AA (>= 4.5:1 for text).
+ */
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 173 80% 36%;
+    --primary: 175 84% 27%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary-foreground: 222 47% 11%;
 
     --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 215 16% 42%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 172 45% 94%;
+    --accent-foreground: 175 84% 20%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 173 80% 36%;
+    --success: 152 69% 28%;
+    --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --warning: 32 95% 34%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 217 80% 45%;
+    --info-foreground: 0 0% 100%;
+
+    /* Deep brand band (stays dark in both themes) and a warm highlight. */
+    --ink: 186 52% 11%;
+    --ink-foreground: 180 20% 96%;
+    --ink-muted: 180 12% 72%;
+    --gold: 38 90% 46%;
+    --gold-soft: 40 90% 94%;
+
+    --border: 214 32% 91%;
+    --input: 214 28% 84%;
+    --ring: 175 84% 32%;
+
+    --radius: 0.625rem;
+
+    --header-height: 4rem;
+    --sidebar-width: 16rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 47% 7%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 222 40% 10%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 40% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 173 70% 40%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 172 66% 50%;
+    --primary-foreground: 222 47% 7%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 68%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 173 70% 40%;
+    --success: 152 60% 45%;
+    --success-foreground: 222 47% 7%;
+
+    --warning: 38 92% 55%;
+    --warning-foreground: 222 47% 7%;
+
+    --info: 213 94% 68%;
+    --info-foreground: 222 47% 7%;
+
+    --ink: 186 45% 9%;
+    --ink-foreground: 180 20% 96%;
+    --ink-muted: 180 10% 70%;
+    --gold: 40 92% 58%;
+    --gold-soft: 38 40% 14%;
+
+    --border: 217 33% 18%;
+    --input: 217 33% 24%;
+    --ring: 172 66% 50%;
   }
 }
 
@@ -70,8 +108,14 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: calc(var(--header-height) + 1rem);
+  }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+    text-rendering: optimizeLegibility;
   }
   h1,
   h2,
@@ -79,91 +123,70 @@
   h4,
   h5,
   h6 {
-    @apply font-bold;
+    @apply font-display font-bold tracking-tight;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  ::selection {
+    @apply bg-primary/20;
   }
 }
 
 @layer components {
-  .hero-section {
-    @apply relative overflow-hidden bg-gradient-to-r from-primary/90 to-primary py-20 md:py-32;
+  /* Admin page scaffold: consistent title block used across dashboard screens */
+  .page-header {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
+  }
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+  .page-description {
+    @apply mt-1 text-sm text-muted-foreground;
   }
 
-  .section-padding {
-    @apply py-12 md:py-20;
+  /* Public site: a dotted texture used behind hero areas (pure CSS, no image request). */
+  .bg-dots {
+    background-image: radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-primary/20 bg-accent px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-foreground;
+  }
+  .prose-site {
+    @apply max-w-none text-base leading-7 text-muted-foreground;
+  }
+  .prose-site h2 {
+    @apply mb-3 mt-10 text-2xl text-foreground;
+  }
+  .prose-site h3 {
+    @apply mb-2 mt-6 text-lg text-foreground;
+  }
+  .prose-site p {
+    @apply mb-4;
+  }
+  .prose-site ul {
+    @apply mb-4 list-disc space-y-1 pl-6;
+  }
+  .prose-site a {
+    @apply font-medium text-primary underline-offset-4 hover:underline;
   }
 
-  .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
 
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  .card-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6;
-  }
-
-  .feature-card {
-    @apply bg-card dark:bg-card rounded-lg p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-border;
-  }
-
-  /* Carousel Styles */
-  .carousel-container {
-    @apply relative overflow-hidden rounded-lg;
-  }
-
-  .carousel-item {
-    @apply absolute inset-0 transition-all duration-500 ease-in-out;
-  }
-
-  .carousel-item.active {
-    @apply opacity-100 transform scale-100;
-  }
-
-  .carousel-item:not(.active) {
-    @apply opacity-0 transform scale-95;
-  }
-
-  /* Media Gallery Styles */
-  .media-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
-  }
-
-  .media-item {
-    @apply relative overflow-hidden rounded-lg transition-transform duration-300 hover:scale-[1.02];
-  }
-
-  .media-overlay {
-    @apply absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-300;
-  }
-
-  .media-item:hover .media-overlay {
-    @apply opacity-100;
-  }
-
-  .media-content {
-    @apply absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-2 transition-transform duration-300;
-  }
-
-  .media-item:hover .media-content {
-    @apply translate-y-0;
-  }
-
-  /* Dialog/Modal Styles */
-  .dialog-content {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
-  }
-
-  .dialog-overlay {
-    @apply fixed inset-0 bg-black/80 backdrop-blur-sm;
-  }
-
-  .dialog-container {
-    @apply relative bg-background rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden;
-  }
-
-  /* New floating animations */
   @keyframes float {
     0%,
     100% {
@@ -174,37 +197,19 @@
     }
   }
 
-  @keyframes float-delayed {
-    0%,
-    100% {
-      transform: translateY(0px) rotate(0deg);
-    }
-    50% {
-      transform: translateY(-30px) rotate(-180deg);
-    }
-  }
-
-  @keyframes float-slow {
-    0%,
-    100% {
-      transform: translateY(0px) scale(1);
-    }
-    50% {
-      transform: translateY(-15px) scale(1.1);
-    }
-  }
-
   .animate-float {
     animation: float 6s ease-in-out infinite;
   }
+}
 
-  .animate-float-delayed {
-    animation: float-delayed 8s ease-in-out infinite;
-    animation-delay: 2s;
-  }
-
-  .animate-float-slow {
-    animation: float-slow 10s ease-in-out infinite;
-    animation-delay: 4s;
+/* Respect users who ask the OS for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

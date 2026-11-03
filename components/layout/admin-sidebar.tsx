@@ -1,127 +1,79 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { 
-  LayoutDashboard,
-  Users,
-  Image as ImageIcon,
-  DollarSign,
-  Calendar,
-  UserPlus,
-  FileText,
-  ExternalLink,
-  ChevronLeft,
-  Mail
-} from "lucide-react"
+import { ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils/cn"
-import { Button } from "@/components/ui/button"
-
-const navigationItems = [
-  {
-    name: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard
-  },
-  {
-    name: "Team",
-    href: "/admin/team",
-    icon: Users
-  },
-  {
-    name: "Media",
-    href: "/admin/media",
-    icon: ImageIcon
-  },
-  {
-    name: "Donations",
-    href: "/admin/donations",
-    icon: DollarSign
-  },
-  {
-    name: "Events",
-    href: "/admin/events",
-    icon: Calendar
-  },
-  {
-    name: "Volunteers",
-    href: "/admin/volunteers",
-    icon: UserPlus
-  },
-  {
-    name: "Applications",
-    href: "/admin/applications",
-    icon: FileText
-  },
-  {
-    name: "Newsletter",
-    href: "/admin/newsletter",
-    icon: Mail
-  }
-]
+import { adminNavGroups, adminSettingsItem, isActivePath, type AdminNavItem } from "@/components/layout/admin-nav"
 
 interface AdminSidebarProps {
-  isOpen?: boolean
-  onClose?: () => void
+  onNavigate?: () => void
 }
 
-export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+function NavLink({ item, pathname, onNavigate }: { item: AdminNavItem; pathname: string; onNavigate?: () => void }) {
+  const active = isActivePath(pathname, item.href)
+  return (
+    <Link
+      href={item.href}
+      aria-current={active ? "page" : undefined}
+      onClick={onNavigate}
+      className={cn(
+        "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        active
+          ? "bg-accent text-accent-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      <item.icon
+        className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground group-hover:text-foreground")}
+        aria-hidden
+      />
+      <span>{item.name}</span>
+    </Link>
+  )
+}
+
+export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
   const pathname = usePathname()
   return (
-    <div className="h-full w-64 flex flex-col border-r bg-background transition-all duration-300">
-      {/* Logo and Title */}
-      <div className="flex items-center justify-between px-4 py-6 border-b bg-background z-50">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold">TSM</span>
-          </div>
-          <div>
-            <h2 className="font-semibold">Admin Panel</h2>
-            <p className="text-xs text-muted-foreground">TSM Welfare</p>
-          </div>
+    <div className="flex h-full w-full flex-col bg-card">
+      <div className="flex h-[var(--header-height)] shrink-0 items-center gap-3 border-b px-5">
+        <Image src="/images/logo.png" alt="" width={32} height={32} className="h-8 w-8 object-contain" />
+        <div className="leading-tight">
+          <p className="text-sm font-semibold">TSM Welfare</p>
+          <p className="text-xs text-muted-foreground">Admin console</p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="h-8 w-8 md:hidden"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
       </div>
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2 py-4">
-        {navigationItems.map((item) => {
-          const isActive = pathname === item.href
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-accent",
-                isActive ? "bg-accent" : "transparent"
-              )}
-              onClick={() => {
-                if (onClose) onClose()
-              }}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.name}</span>
-            </Link>
-          )
-        })}
+
+      <nav aria-label="Admin" className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+        {adminNavGroups.map((group) => (
+          <div key={group.label}>
+            <p className="mb-2 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground/80">{group.label}</p>
+            <ul className="space-y-1">
+              {group.items.map((item) => (
+                <li key={item.href}>
+                  <NavLink item={item} pathname={pathname} onNavigate={onNavigate} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
-      {/* User Menu and View Website */}
-      <div className="p-4 border-t space-y-4">
+
+      <div className="shrink-0 space-y-1 border-t px-3 py-4">
+        <NavLink item={adminSettingsItem} pathname={pathname} onNavigate={onNavigate} />
         <Link
           href="/"
           target="_blank"
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
-          <ExternalLink className="h-4 w-4 shrink-0" />
-          <span>View Website</span>
+          <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+          <span>View website</span>
+          <span className="sr-only">(opens in a new tab)</span>
         </Link>
       </div>
     </div>
   )
-} 
+}

@@ -1,4 +1,5 @@
 import React from "react";
+import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import { TableSkeleton } from "@/components/shared/skeletons/TableSkeleton";
 import { NoRecords } from "@/components/ui/no-records";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -41,7 +42,7 @@ export function AdminTable<T>({
   sortOrder,
 }: AdminTableProps<T>) {
   return (
-    <div className={`overflow-x-auto ${className}`}>
+    <div className={`w-full ${className}`}>
       <Table>
         <TableHeader>
           <TableRow>
@@ -52,19 +53,25 @@ export function AdminTable<T>({
                 <TableHead
                   key={col.key}
                   className={col.className || ""}
-                  onClick={isSortable ? () => handleSort && handleSort(col.key) : undefined}
                   aria-sort={isSorted ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
-                  style={{ cursor: isSortable ? "pointer" : undefined }}
                   scope="col"
                 >
-                  <span className="inline-flex items-center">
-                    {col.label}
-                    {isSorted && (
-                      <span className="ml-1 text-xs">
-                        {sortOrder === "asc" ? "▲" : "▼"}
-                      </span>
-                    )}
-                  </span>
+                  {isSortable && typeof col.label === "string" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSort(col.key)}
+                      className="-mx-2 inline-flex items-center gap-1 rounded-md px-2 py-1 transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      {col.label}
+                      {isSorted ? (
+                        sortOrder === "asc" ? <ArrowUp className="h-3.5 w-3.5" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" aria-hidden />
+                      )}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center">{col.label}</span>
+                  )}
                 </TableHead>
               );
             })}

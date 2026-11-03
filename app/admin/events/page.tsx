@@ -29,6 +29,7 @@ import { FormInput } from '@/components/ui/form-input';
 import { useEvents } from '@/lib/hooks/useEvents';
 
 import { AdminGrid } from "@/components/shared/AdminGrid"
+import { TablePagination } from "@/components/shared/TablePagination"
 
 export default function AdminEventsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,11 +39,11 @@ export default function AdminEventsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [meta, setMeta] = useState<{ total: number; page: number; pages: number; limit: number }>({ total: 0, page: 1, pages: 1, limit: 10 })
+  const meta = { limit: 10 }
   const debouncedSearch = useDebounce(search, 400)
 
   // SWR hook for events
-  const { events, meta: swrMeta, isLoading, isError, mutate } = useEvents({ page, limit: meta.limit, q: debouncedSearch });
+  const { events, meta: swrMeta, isLoading, mutate } = useEvents({ page, limit: meta.limit, q: debouncedSearch });
 
   const handleEditEvent = async (formData: FormData) => {
     if (!editingEvent) return
@@ -225,11 +226,11 @@ export default function AdminEventsPage() {
     setSelectedIds([]);
     setAlert({ type: 'success', message: 'Selected events deleted.' });
   };
-  const { showDeleteConfirm, setShowDeleteConfirm, deleting, handleBulkDelete } = useBulkDelete(deleteEvents, selectedIds);
+  const { showDeleteConfirm, setShowDeleteConfirm, handleBulkDelete } = useBulkDelete(deleteEvents, selectedIds);
 
   return (
-    <div className="min-h-screen">
-      <div className="container">
+    <div>
+      <div>
         {alert && (
           <AlertMessage
             message={alert.message}
@@ -237,21 +238,28 @@ export default function AdminEventsPage() {
             onClose={() => setAlert(null)}
           />
         )}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-          <h1 className="text-3xl font-bold">Manage Events</h1>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="page-title">Manage Events</h1>
+            <p className="page-description">Create and update events shown on the public events page.</p>
+          </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
             <Input
+              type="search"
+              aria-label="Search events"
               placeholder="Search events..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-48"
+              onChange={e => { setSearch(e.target.value); setPage(1) }}
+              className="min-w-0 flex-1 md:w-56 md:flex-none"
             />
-         <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+            <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setViewMode('grid')}
                 className="h-8 w-8 p-0"
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
               >
                 <GridIcon className="h-4 w-4" />
               </Button>
@@ -260,6 +268,8 @@ export default function AdminEventsPage() {
                 size="sm"
                 onClick={() => setViewMode('list')}
                 className="h-8 w-8 p-0"
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
               >
                 <ListIcon className="h-4 w-4" />
               </Button>
@@ -345,6 +355,11 @@ export default function AdminEventsPage() {
             </div>
           )}
         />
+        {swrMeta.pages > 1 && (
+          <div className="mt-6">
+            <TablePagination page={page} pages={swrMeta.pages} total={swrMeta.total} onPageChange={setPage} />
+          </div>
+        )}
         <ConfirmDialog
           open={showDeleteConfirm}
           title="Delete Events"

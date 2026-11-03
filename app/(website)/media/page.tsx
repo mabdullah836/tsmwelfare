@@ -6,15 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Image as ImageIcon, Play, Download, Grid, List, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { UniversalDialog } from '@/components/modals/UniversalDialog'
-import { cn } from "@/lib/utils/cn"
 import { formatDate } from "@/lib/utils/format"
 import Image from "next/image"
 import { AlertMessage } from "@/components/ui/alert-message"
-import { Pagination } from "@/components/ui/pagination"
+import { TablePagination } from "@/components/shared/TablePagination"
 import type { Media } from '@/lib/types/media'
 import { useMedia } from '@/lib/hooks/useMedia';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { motion, AnimatePresence } from 'framer-motion'
 import { MediaCard } from '@/components/media/MediaCard';
 import { DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { getYouTubeId } from "@/lib/utils/format"
@@ -62,71 +60,64 @@ export default function MediaPage() {
 
   return (
     <>
-      <PageHeader title="Media Gallery">
-        <p className="text-xl text-white/90">
-          Browse through our collection of images and videos showcasing our work and impact in the community.
-        </p>
+      <PageHeader title="Media gallery" eyebrow="Our work in pictures">
+        <p>Browse through our collection of images and videos showcasing our work and impact in the community.</p>
       </PageHeader>
 
-      <div className="container py-8 min-h-[70vh]">
-        <AnimatePresence>
-          {alert && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <AlertMessage
-                message={alert.message}
-                type={alert.type}
-                onClose={() => setAlert(null)}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="container min-h-[60vh] py-10 md:py-14">
+        {alert && (
+          <AlertMessage
+            message={alert.message}
+            type={alert.type}
+            onClose={() => setAlert(null)}
+          />
+        )}
 
-        <div className="space-y-6 pb-12">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-8 pb-12">
+          <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center">
             <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'image' | 'video')}>
-              <TabsList>
-                <TabsTrigger value="image">
-                  <ImageIcon className="w-4 h-4 mr-2" />
+              <TabsList className="h-10 rounded-xl">
+                <TabsTrigger value="image" className="gap-2 rounded-lg px-4">
+                  <ImageIcon className="h-4 w-4" aria-hidden />
                   Images
                 </TabsTrigger>
-                <TabsTrigger value="video">
-                  <Play className="w-4 h-4 mr-2" />
+                <TabsTrigger value="video" className="gap-2 rounded-lg px-4">
+                  <Play className="h-4 w-4" aria-hidden />
                   Videos
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
               <Input
-                type="text"
+                type="search"
                 className="pl-9"
                 value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                onChange={e => { setSearchQuery(e.target.value); setPage(1) }}
                 placeholder={`Search ${activeTab === 'image' ? 'images' : 'videos'}...`}
                 aria-label="Search media"
               />
             </div>
-            
-            <div className="flex items-center gap-2">
+
+            <div className="hidden items-center gap-1 rounded-xl bg-muted p-1 sm:flex">
               <Button
-                variant={view === "grid" ? "default" : "outline"}
+                variant={view === "grid" ? "default" : "ghost"}
                 size="icon"
+                className="h-8 w-8"
                 onClick={() => setView("grid")}
                 aria-label="Grid view"
+                aria-pressed={view === "grid"}
               >
                 <Grid className="h-4 w-4" />
               </Button>
               <Button
-                variant={view === "list" ? "default" : "outline"}
+                variant={view === "list" ? "default" : "ghost"}
                 size="icon"
+                className="h-8 w-8"
                 onClick={() => setView("list")}
                 aria-label="List view"
+                aria-pressed={view === "list"}
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -136,19 +127,16 @@ export default function MediaPage() {
           <AdminGrid
             items={filteredMedia}
             loading={isLoading}
-            emptyState={{ 
-              title: `No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`, 
+            emptyState={{
+              title: `No ${activeTab === 'image' ? 'Images' : 'Videos'} Found`,
               description: `Try adjusting your search or check back later for new content.`
             }}
-            gridClassName={cn(
-              view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'flex flex-col gap-4',
-              filteredMedia.length <= 3 ? 'pb-12' : ''
-            )}
+            gridClassName={view === 'grid' ? 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'flex flex-col gap-3'}
             renderItem={(item: Media) => (
-              <MediaCard 
+              <MediaCard
                 key={item?._id}
-                item={item} 
-                view={view} 
+                item={item}
+                view={view}
                 activeTab={activeTab}
                 onClick={() => handleItemClick(item)}
               />
@@ -156,38 +144,7 @@ export default function MediaPage() {
           />
 
           {meta.pages > 1 && (
-            <Pagination className="mt-8 flex gap-2">
-              <Button
-                variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                className="gap-1 pl-2.5"
-              >
-                Previous
-              </Button>
-              {Array.from({ length: Math.min(5, meta.pages) }, (_, i) => {
-                const pageNum = page <= 3 ? i + 1 : 
-                              page >= meta.pages - 2 ? meta.pages - 4 + i : 
-                              page - 2 + i
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={page === pageNum ? "default" : "outline"}
-                    onClick={() => setPage(pageNum)}
-                  >
-                    {pageNum}
-                  </Button>
-                )
-              })}
-              <Button
-                variant="outline"
-                disabled={page === meta.pages}
-                onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
-                className="gap-1 pr-2.5"
-              >
-                Next
-              </Button>
-            </Pagination>
+            <TablePagination page={page} pages={meta.pages} total={meta.total} onPageChange={setPage} />
           )}
         </div>
 
@@ -196,15 +153,8 @@ export default function MediaPage() {
           onOpenChange={() => setSelectedItem(null)} 
           className="max-w-4xl p-0 overflow-hidden"
         >
-          <AnimatePresence mode="wait">
-            {selectedItem && (
-              <motion.div
-                key={selectedItem._id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
+          {selectedItem && (
+              <div key={selectedItem._id}>
                 <DialogHeader className="p-4 border-b">
                   <DialogTitle>{selectedItem.title}</DialogTitle>
                 </DialogHeader>
@@ -258,9 +208,8 @@ export default function MediaPage() {
                     </Button>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </UniversalDialog>
       </div>
     </>

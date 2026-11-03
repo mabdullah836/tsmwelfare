@@ -1,5 +1,20 @@
 import { NextResponse } from 'next/server';
 
+const MAX_PAGE_SIZE = 100;
+
+// Search terms are matched literally; unescaped user input would otherwise be
+// interpreted as a regular expression (and could be used for ReDoS).
+export function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export function parsePagination(searchParams: URLSearchParams, defaultLimit = 10) {
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(searchParams.get('limit') || String(defaultLimit), 10) || defaultLimit));
+  const search = (searchParams.get('q') || '').slice(0, 200);
+  return { page, limit, search };
+}
+
 // Generic bulk delete handler
 export async function handleBulkDelete({ model, ids, perItemCleanup }: {
   model: any,
@@ -29,6 +44,7 @@ export async function handleGetAll({ model, sort = {}, query = {} }: {
     const items = await model.find(query).sort(sort);
     return NextResponse.json(items);
   } catch (error) {
+    console.error('Fetch items error:', error);
     return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
   }
 }
@@ -63,9 +79,7 @@ export async function handlePost({ model, data, preSave }: {
       }, { status: 400 });
     }
     
-    return NextResponse.json({ 
-      error: error.message || 'Failed to create item' 
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create item' }, { status: 500 });
   }
 }
 
@@ -85,6 +99,7 @@ export async function handlePatchOrPut({ model, id, data, preUpdate }: {
     }
     return NextResponse.json(item);
   } catch (error) {
+    console.error('Update item error:', error);
     return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
   }
 }
@@ -101,10 +116,10 @@ export async function handleGetPaginated({ model, sort = {}, query = {}, page = 
 }) {
   try {
     const skip = (page - 1) * limit;
-    let finalQuery = { ...query };
+    const finalQuery = { ...query };
     if (search && searchFields.length > 0) {
       finalQuery.$or = searchFields.map(field => ({
-        [field]: { $regex: search, $options: 'i' }
+        [field]: { $regex: escapeRegex(search), $options: 'i' }
       }));
     }
     const [total, data] = await Promise.all([
@@ -117,6 +132,7 @@ export async function handleGetPaginated({ model, sort = {}, query = {}, page = 
       meta: { total, page, pages, limit }
     });
   } catch (error) {
+    console.error('Failed to fetch items:', error);
     return NextResponse.json({ error: 'Failed to fetch items' }, { status: 500 });
   }
 } 

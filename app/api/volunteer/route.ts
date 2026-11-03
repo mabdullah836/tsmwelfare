@@ -1,13 +1,11 @@
 import { NextRequest } from 'next/server'
 import { VolunteerModel } from '@/models/volunteer'
-import { handleBulkDelete, handleGetAll, handlePost, handleGetPaginated } from '@/lib/utils/crudHandlers'
+import { handleBulkDelete, handlePost, handleGetPaginated, parsePagination } from '@/lib/utils/crudHandlers'
 import { withDbConnection } from '@/lib/mongodb'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const page = parseInt(searchParams.get('page') || '1', 10)
-  const limit = parseInt(searchParams.get('limit') || '10', 10)
-  const search = searchParams.get('q') || ''
+  const { page, limit, search } = parsePagination(searchParams, 10)
   return await withDbConnection(() => handleGetPaginated({
     model: VolunteerModel,
     sort: { createdAt: -1 },
@@ -20,7 +18,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const data = await request.json()
-  console.log("======>>>>DATA", data)
   return await withDbConnection(() => handlePost({ model: VolunteerModel, data }))
 }
 

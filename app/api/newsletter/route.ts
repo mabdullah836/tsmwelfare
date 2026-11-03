@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ success: true, message: 'Successfully subscribed.' });
   } catch (error) {
+    console.error('Failed to subscribe.:', error);
     return NextResponse.json({ success: false, message: 'Failed to subscribe.' }, { status: 500 });
   }
 }
@@ -30,6 +31,7 @@ export async function GET() {
     const emails = await withDbConnection(() => Newsletter.find({}, { email: 1, createdAt: 1, _id: 0 }).sort({ createdAt: -1 }));
     return NextResponse.json({ success: true, emails });
   } catch (error) {
+    console.error('Failed to fetch emails.:', error);
     return NextResponse.json({ success: false, message: 'Failed to fetch emails.' }, { status: 500 });
   }
 } 

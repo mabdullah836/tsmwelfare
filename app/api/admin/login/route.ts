@@ -1,15 +1,25 @@
 import { NextResponse } from 'next/server';
+import { SignJWT } from 'jose';
+import bcrypt from 'bcrypt';
 import { withDbConnection } from '@/lib/mongodb';
 import Admin from '@/models/Admin';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme'; // Use env var in production
-
+import { AUTH_COOKIE, AUTH_MAX_AGE, getJwtSecret } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const limited = rateLimit(request, 'admin-login', { limit: 10, windowMs: 15 * 60 * 1000 });
+    if (limited) return limited;
+
+    const secret = getJwtSecret();
+    if (!secret) {
+      console.error('Admin login error: JWT_SECRET is not configured');
+      return NextResponse.json({ success: false, message: 'Internal server error.' }, { status: 500 });
+    }
+
+    const body = await request.json().catch(() => null);
+    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body?.password === 'string' ? body.password : '';
     if (!email || !password) {
       return NextResponse.json({ success: false, message: 'Email and password are required.' }, { status: 400 });
     }
@@ -37,19 +47,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Invalid credentials.' }, { status: 401 });
     }
 
-    // Set JWT to expire in 7 days
-    const token = jwt.sign({ id: admin._id, role: 'admin', email: admin.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = await new SignJWT({ id: String(admin._id), role: 'admin', email: admin.email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(new TextEncoder().encode(secret));
+
     const response = NextResponse.json({ success: true });
-    response.cookies.set('auth-token', token, {
+    response.cookies.set(AUTH_COOKIE, token, {
       httpOnly: true,
-      path: '/', // Match the middleware path
-      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+      maxAge: AUTH_MAX_AGE,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production', // Secure in production
+      secure: process.env.NODE_ENV === 'production',
     });
     return response;
   } catch (error) {
     console.error('Admin login error:', error);
     return NextResponse.json({ success: false, message: 'Internal server error.' }, { status: 500 });
   }
-} 
+}

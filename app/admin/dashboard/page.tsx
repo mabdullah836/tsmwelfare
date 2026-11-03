@@ -2,7 +2,14 @@
 
 import { useState, useEffect} from "react";
 import { Calendar, DollarSign, Users } from "lucide-react";
-import { DonationChart } from '@/components/donation-chart';
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+// Recharts is large; load the charts after the dashboard shell renders.
+const DonationChart = dynamic(
+  () => import('@/components/donation-chart').then((m) => m.DonationChart),
+  { ssr: false, loading: () => <Skeleton className="h-[380px] w-full rounded-xl" /> }
+);
 import {
   DashboardHeader,
   StatsCards,
@@ -130,45 +137,43 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
-      
-      <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
-        <DashboardHeader onExport={handleExportTopDonors} />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <StatsCards data={analytics?.stats} loading={loading} />
-            <DonationChart
-              type="area"
-              title="Donation Trends"
-              description="Recent donation patterns over the last 30 days."
-              xKey="date"
-              yKey="donations"
-            />
-            <div className="grid md:grid-cols-2 gap-6">
-              <DonationChart
-                type="pie"
-                title="Donations by Type"
-                description="Breakdown of donation sources."
-                pieNameKey="name"
-                pieValueKey="value"
-              />
-              <DonationChart
-                type="bar"
-                title="Monthly Donations"
-                description="Donation amounts over recent months."
-                xKey="month"
-                yKey="amount"
-              />
-            </div>
-          </div>
-          
-          <div className="lg:col-span-1 space-y-6">
-            <TopDonorsList data={topDonors} loading={loading} />
-            <RecentActivities activities={RECENT_ACTIVITIES} />
-          </div>
+    <div className="flex flex-col gap-6">
+      <DashboardHeader onExport={handleExportTopDonors} />
+
+      <StatsCards data={analytics?.stats} loading={loading} />
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <DonationChart
+            type="area"
+            title="Donation Trends"
+            description="Recent donation patterns over the last 30 days."
+            xKey="date"
+            yKey="donations"
+          />
         </div>
-      </main>
+        <TopDonorsList data={topDonors} loading={loading} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <DonationChart
+          type="pie"
+          title="Donations by Type"
+          description="Breakdown of donation sources."
+          pieNameKey="name"
+          pieValueKey="value"
+        />
+        <DonationChart
+          type="bar"
+          title="Monthly Donations"
+          description="Donation amounts over recent months."
+          xKey="month"
+          yKey="amount"
+        />
+        <div className="md:col-span-2 xl:col-span-1">
+          <RecentActivities activities={RECENT_ACTIVITIES} />
+        </div>
+      </div>
     </div>
   );
 }

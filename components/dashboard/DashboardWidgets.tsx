@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { exportToCSV } from "@/lib/utils/export-csv";
-import { FileText,Download, Users, TrendingUp, DollarSign, Loader2 } from "lucide-react";
+import { FileText, Download, Users, TrendingUp, DollarSign } from "lucide-react";
 import React from "react";
 
 // Types for props
@@ -25,15 +26,23 @@ export type Activity = {
 };
 
 // Update DashboardHeader to accept an onExport prop
+// Summary stats, top donors and recent activity are not yet connected to the API;
+// this tag keeps placeholder figures from being mistaken for real records.
+const SampleDataTag = () => (
+  <Badge variant="neutral" className="font-normal" title="These figures are placeholders and are not loaded from your records">
+    Sample data
+  </Badge>
+);
+
 export function DashboardHeader({ onExport }: { onExport?: () => void }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+    <div className="page-header">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Overview and analytics for your organization.</p>
+        <h1 className="page-title">Dashboard</h1>
+        <p className="page-description">Overview and analytics for your organization.</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button className="gap-2" onClick={onExport}>
+        <Button onClick={onExport}>
           <FileText className="h-4 w-4" />
           Generate Report
         </Button>
@@ -43,7 +52,12 @@ export function DashboardHeader({ onExport }: { onExport?: () => void }) {
 }
 
 export const StatsCards = ({ data, loading }: { data: AnalyticsStats | undefined, loading: boolean }) => (
-  <div className="grid gap-4 md:grid-cols-3">
+  <section aria-labelledby="summary-heading" className="space-y-3">
+  <div className="flex items-center gap-2">
+    <h2 id="summary-heading" className="text-sm font-medium text-muted-foreground">Summary</h2>
+    <SampleDataTag />
+  </div>
+  <div className="grid gap-4 sm:grid-cols-3">
     <StatCard 
       title="Total Donations" 
       value={`PKR ${data?.totalAmount?.toLocaleString() ?? '0'}`} 
@@ -63,13 +77,14 @@ export const StatsCards = ({ data, loading }: { data: AnalyticsStats | undefined
       loading={loading} 
     />
   </div>
+  </section>
 );
 
 export const StatCard = ({ title, value, icon, loading }: { title: string; value: string; icon: React.ReactNode; loading: boolean }) => (
-  <Card className="hover:shadow-md transition-shadow">
-    <CardHeader className="flex flex-row items-center justify-between pb-2">
+  <Card>
+    <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 pb-2">
       <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-      <div className="rounded-full bg-primary/10 p-2 text-primary">
+      <div className="rounded-lg bg-accent p-2 text-primary" aria-hidden>
         {icon}
       </div>
     </CardHeader>
@@ -77,7 +92,7 @@ export const StatCard = ({ title, value, icon, loading }: { title: string; value
       {loading ? (
         <Skeleton className="h-8 w-3/4" />
       ) : (
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-semibold tabular-nums tracking-tight">{value}</div>
       )}
     </CardContent>
   </Card>
@@ -86,7 +101,10 @@ export const StatCard = ({ title, value, icon, loading }: { title: string; value
 export const TopDonorsList = ({ data, loading }: { data: TopDonor[], loading: boolean }) => (
   <Card>
     <CardHeader>
-      <CardTitle>Top Donors</CardTitle>
+      <div className="flex items-center justify-between gap-2">
+        <CardTitle className="text-base">Top Donors</CardTitle>
+        <SampleDataTag />
+      </div>
       <CardDescription>Your most generous supporters.</CardDescription>
     </CardHeader>
     <CardContent>
@@ -121,7 +139,7 @@ export const TopDonorsList = ({ data, loading }: { data: TopDonor[], loading: bo
                     Last: {new Date(donor.lastDate).toLocaleDateString()}
                   </div>
                 </TableCell>
-                <TableCell className="text-right font-medium">
+                <TableCell className="text-right font-medium tabular-nums whitespace-nowrap">
                   PKR {donor.total.toLocaleString()}
                 </TableCell>
               </TableRow>
@@ -148,11 +166,12 @@ export const RecentActivities = ({ activities }: { activities: Activity[] }) => 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-2">
           <div>
-            <CardTitle>Recent Activities</CardTitle>
+            <CardTitle className="text-base">Recent Activities</CardTitle>
             <CardDescription>Latest updates across the organization.</CardDescription>
           </div>
+          <SampleDataTag />
         </div>
       </CardHeader>
       <CardContent>
@@ -160,13 +179,13 @@ export const RecentActivities = ({ activities }: { activities: Activity[] }) => 
           {activities.map((activity, index) => (
             <div 
               key={index} 
-              className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+              className="flex items-start gap-3 rounded-lg p-2"
             >
-              <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-primary" aria-hidden>
                 {activity.icon}
               </div>
               <div className="flex-1 space-y-1">
-                <p className="text-sm font-medium leading-none">
+                <p className="text-sm font-medium leading-snug">
                   {activity.description}
                 </p>
                 <p className="text-sm text-muted-foreground">

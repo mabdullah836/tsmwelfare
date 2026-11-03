@@ -1,14 +1,14 @@
 "use client"
 import { useState } from "react"
 import Link from "next/link"
-import { MenuIcon } from "lucide-react"
-import { motion } from "framer-motion"
+import { usePathname } from "next/navigation"
+import { HeartHandshake, MenuIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { OrganizationHeader } from "@/components/organization-header"
 import { AdminDetailsSheet } from "@/components/shared/AdminDetailsSheet"
+import { cn } from "@/lib/utils/cn"
 
 const navigationItems = [
   { title: "About", href: "/about" },
@@ -20,79 +20,65 @@ const navigationItems = [
 
 export function SiteHeader() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const pathname = usePathname()
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 shadow-sm">
-      <div className="container flex h-20 items-center justify-between">
-      <Link href="/">
-        <OrganizationHeader 
-          variant="full" 
-          size="md" 
-          showTagline={false}
-          className="md:flex hidden items-center gap-3"
-        />
-        <OrganizationHeader 
-          variant="icon" 
-          size="md" 
-          className="md:hidden flex items-center gap-3"
-        />
-      </Link>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur-lg supports-[backdrop-filter]:bg-background/75">
+      <div className="container flex h-[var(--header-height)] items-center justify-between gap-4 lg:h-20">
+        <Link href="/" className="min-w-0 rounded-lg" aria-label="The Sirat-e-Mustaqeem Welfare Trust — home">
+          <OrganizationHeader
+            variant="full"
+            size="md"
+            showTagline={false}
+            className="hidden items-center gap-3 sm:flex [&_span]:font-display [&_span]:text-base xl:[&_span]:text-lg"
+          />
+          <OrganizationHeader
+            variant="icon"
+            size="md"
+            className="flex items-center gap-3 sm:hidden"
+          />
+        </Link>
+
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
-          {navigationItems.map((item, index) => (
-            <motion.div
+        <nav aria-label="Main" className="hidden items-center gap-0.5 lg:flex">
+          {navigationItems.map((item) => (
+            <Link
               key={item.title}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.3 }}
+              href={item.href}
+              aria-current={isActive(item.href) ? "page" : undefined}
+              className={cn(
+                "whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-muted hover:text-foreground",
+                isActive(item.href) ? "text-primary" : "text-foreground/80"
+              )}
             >
-              <Link
-                href={item.href}
-                className="px-4 py-2 text-sm font-medium text-foreground/90 hover:text-primary transition-colors relative group"
-              >
-                {item.title}
-                <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 h-0.5 w-0 bg-primary transition-all duration-300 group-hover:w-3/4"></span>
-              </Link>
-            </motion.div>
+              {item.title}
+            </Link>
           ))}
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: navigationItems.length * 0.1, duration: 0.3 }}
-            className="ml-4"
-          >
-            <Button 
-              asChild
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-md hover:shadow-lg transition-all"
-            >
-              <Link href="/donate">
-                Donate Now
-              </Link>
-            </Button>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: (navigationItems.length + 1) * 0.1, duration: 0.3 }}
-            className="ml-4"
-          >
+          <Button asChild className="ml-3 whitespace-nowrap">
+            <Link href="/donate">
+              <HeartHandshake /> Donate Now
+            </Link>
+          </Button>
+          <div className="ml-1">
             <ThemeToggle />
-          </motion.div>
+          </div>
         </nav>
 
         {/* Mobile Navigation */}
-        <div className="flex items-center gap-4 md:hidden">
+        <div className="flex items-center gap-1 lg:hidden">
+          <Button asChild size="sm" className="hidden sm:inline-flex">
+            <Link href="/donate">Donate Now</Link>
+          </Button>
           <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"
-            className="hover:bg-primary/10 focus:ring-2 focus:ring-primary/50"
             onClick={() => setMobileNavOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={mobileNavOpen}
           >
             <MenuIcon className="h-5 w-5" />
-            <span className="sr-only">Toggle menu</span>
           </Button>
           <AdminDetailsSheet
             open={mobileNavOpen}
@@ -101,36 +87,36 @@ export function SiteHeader() {
             side="right"
             size="sm"
             title="Navigation Menu"
+            contentClassName="flex flex-col overflow-y-auto"
           >
-            <div className="mt-6 mb-8">
-              <OrganizationHeader size="md" />
+            <div className="mb-6 mt-2 pr-8">
+              <OrganizationHeader size="md" className="[&_span]:text-base" />
             </div>
-            <nav className="flex flex-col gap-2">
+            <nav aria-label="Main" className="flex flex-col gap-1">
               {navigationItems.map((item) => (
                 <Link
                   key={item.title}
                   href={item.href}
-                  className="px-4 py-3 rounded-lg text-sm font-medium hover:bg-primary/10 hover:text-primary transition-colors"
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  className={cn(
+                    "rounded-lg px-4 py-3 text-sm font-medium transition-colors hover:bg-muted",
+                    isActive(item.href) ? "bg-accent text-accent-foreground" : "text-foreground"
+                  )}
                   onClick={() => setMobileNavOpen(false)}
                 >
                   {item.title}
                 </Link>
               ))}
-              <div className="mt-4">
-                <Button 
-                  asChild
-                  className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white shadow-md"
-                >
-                  <Link href="/donate">
-                    Donate Now
-                  </Link>
-                </Button>
-              </div>
+              <Button asChild className="mt-4 w-full">
+                <Link href="/donate" onClick={() => setMobileNavOpen(false)}>
+                  Donate Now
+                </Link>
+              </Button>
             </nav>
-            
-            <div className="absolute bottom-6 left-6 right-6 text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Your Organization
-            </div>
+
+            <p className="mt-auto pt-8 text-xs text-muted-foreground">
+              © {new Date().getFullYear()} The Sirat-e-Mustaqeem Welfare Trust
+            </p>
           </AdminDetailsSheet>
         </div>
       </div>

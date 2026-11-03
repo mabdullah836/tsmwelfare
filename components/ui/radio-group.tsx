@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils/cn"
-import { Circle, Check } from "lucide-react"
+import { Check } from "lucide-react"
 
 const RadioGroup = React.forwardRef<
   HTMLDivElement,
@@ -54,7 +54,8 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
     return (
       <label className={cn(
         "flex items-center space-x-3 cursor-pointer group",
-        props.disabled ? "cursor-not-allowed opacity-70" : ""
+        props.disabled ? "cursor-not-allowed opacity-70" : "",
+        className
       )}>
         <div className="relative flex items-center justify-center">
           <input

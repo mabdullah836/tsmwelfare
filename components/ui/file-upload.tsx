@@ -98,10 +98,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   // Simple variant (no RHF context required)
   return (
     <div className="space-y-2">
-      {label && <label className="block font-medium mb-1">{label}</label>}
+      {label && <label htmlFor={`file-input-${name}`} className="block font-medium mb-1">{label}</label>}
       
       <Input
         type="file"
+        id={`file-input-${name}`}
+        aria-label={label ? undefined : "Choose files"}
         name={name}
         multiple={multiple}
         accept={accept}

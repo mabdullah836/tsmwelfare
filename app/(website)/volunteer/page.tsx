@@ -3,7 +3,8 @@
 import { PageHeader } from "@/components/page-header"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Info, Loader2, Send } from "lucide-react"
+import { cn } from "@/lib/utils/cn"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { VolunteerBenefits } from "@/components/features/volunteer/volunteer-benefits"
 import { INTEREST_OPTIONS, AVAILABILITY_OPTIONS } from "@/lib/constants/volunteer"
@@ -48,8 +49,7 @@ export default function VolunteerPage() {
         )
       }
 
-      const data = await response.json()
-      console.log(data)
+      await response.json()
       setAlert({
         message: "Thank you for your interest in volunteering. We'll contact you soon!",
         type: "success",
@@ -73,8 +73,6 @@ export default function VolunteerPage() {
     {
       title: "Personal Information",
       description: "Please provide your basic contact details",
-      borderColor: "border-primary",
-      textColor: "text-primary",
       fields: [
         {
           grid: "md:grid-cols-2",
@@ -143,8 +141,6 @@ export default function VolunteerPage() {
     {
       title: "Availability & Interests",
       description: "Tell us about your availability and areas of interest",
-      borderColor: "border-green-500",
-      textColor: "text-green-700",
       fields: [
         {
           inputs: [
@@ -163,13 +159,13 @@ export default function VolunteerPage() {
         {
           custom: (
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-foreground">
-                Areas of Interest <span className="text-destructive ml-1">*</span>
-              </label>
+              <p className="block text-sm font-medium text-foreground" id="interests-label">
+                Areas of Interest <span className="text-destructive ml-1" aria-hidden="true">*</span>
+              </p>
               <p className="text-sm text-muted-foreground mb-4">
                 Select all areas where you'd like to contribute (choose at least one)
               </p>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+              <div role="group" aria-labelledby="interests-label" className="grid gap-3 rounded-xl border bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-3">
                 {INTEREST_OPTIONS.map((interest) => (
                   <FormInput
                     key={interest}
@@ -192,8 +188,6 @@ export default function VolunteerPage() {
     {
       title: "Experience & Qualifications",
       description: "Share your skills and experience with us",
-      borderColor: "border-blue-500",
-      textColor: "text-blue-700",
       fields: [
         {
           inputs: [
@@ -220,8 +214,6 @@ export default function VolunteerPage() {
     {
       title: "Motivation & References",
       description: "Help us understand your motivation and provide references",
-      borderColor: "border-purple-500",
-      textColor: "text-purple-700",
       fields: [
         {
           inputs: [
@@ -258,105 +250,83 @@ export default function VolunteerPage() {
         />
       )}
 
-      <PageHeader title="Volunteer With Us">
-        <p className="text-xl text-white/90">
-          Join our community of dedicated volunteers and make a real difference in people's lives.
-        </p>
+      <PageHeader title="Volunteer with us" eyebrow="Get involved">
+        <p>Join our community of dedicated volunteers and make a real difference in people&apos;s lives.</p>
       </PageHeader>
 
       <VolunteerBenefits />
 
-      <section className="py-16 bg-gradient-to-b from-background to-muted/20">
-        <div className="container">
-          <div className="max-w-5xl mx-auto">
-            <Card className="shadow-lg border-0">
-              <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 border-b">
-                <div className="text-center space-y-4">
-                  <CardTitle className="text-3xl font-bold text-primary">
-                    Volunteer Application Form
-                  </CardTitle>
-                  <CardDescription className="text-lg max-w-2xl mx-auto">
-                    Join our mission to make a positive impact in the community.
-                  </CardDescription>
-                </div>
-                <div className="mt-6 p-6 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center mt-0.5">
-                      <svg className="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-amber-800 mb-2">Important Notice</p>
-                      <p className="text-amber-700 leading-relaxed">
-                        This is an unpaid volunteer position. As a faith-based organization, we believe in serving our community through selfless dedication.
-                      </p>
-                    </div>
+      <section className="py-12 md:py-16">
+        <div className="container max-w-4xl">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl sm:text-4xl">Volunteer application</h2>
+            <p className="mt-3 text-muted-foreground">Join our mission to make a positive impact in the community. It takes about 5 minutes.</p>
+          </div>
+
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-gold/40 bg-gold-soft p-4 text-sm" role="note">
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-warning dark:text-gold" aria-hidden />
+            <p>
+              <strong className="font-semibold text-foreground">Important notice. </strong>
+              <span className="text-muted-foreground">
+                This is an unpaid volunteer position. As a faith-based organization, we believe in serving our community through selfless dedication.
+              </span>
+            </p>
+          </div>
+
+          <form onSubmit={handleFormSubmit} className="space-y-6" noValidate>
+            {formSections.map((section, sectionIndex) => (
+              <fieldset key={sectionIndex} className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+                <legend className="sr-only">{section.title}</legend>
+                <div className="mb-6 flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary font-display text-sm font-bold text-primary-foreground" aria-hidden>
+                    {sectionIndex + 1}
+                  </span>
+                  <div>
+                    <h3 className="text-xl">{section.title}</h3>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{section.description}</p>
                   </div>
                 </div>
-              </CardHeader>
 
-              <CardContent className="p-8">
-                <form onSubmit={handleFormSubmit} className="space-y-8">
-                  {formSections.map((section, sectionIndex) => (
-                    <div key={sectionIndex} className="space-y-6">
-                      <div className={`border-l-4 ${section.borderColor} pl-4`}>
-                        <h3 className={`text-xl font-semibold ${section.textColor} mb-2`}>
-                          {section.title}
-                        </h3>
-                        <p className="text-muted-foreground">{section.description}</p>
-                      </div>
-
-                      {section.fields.map((field, fieldIndex) => (
-                        <div key={fieldIndex} className={'grid' in field ? field.grid : ""}>
-                          {'custom' in field ? field.custom : (
-                            'inputs' in field && field.inputs ? field.inputs.map((input) => (
-                              <FormInput
-                                key={input.id}
-                                id={input.id}
-                                label={input.label}
-                                type={'type' in input ? input.type : undefined}
-                                register={register}
-                                errors={errors}
-                                required={'required' in input ? input.required : false}
-                                options={'options' in input ? input.options : undefined}
-                                onValueChange={'onValueChange' in input ? input.onValueChange : undefined}
-                                placeholder={'placeholder' in input ? input.placeholder : undefined}
-                                rows={'rows' in input ? input.rows : undefined}
-                                watch={watch}
-                              />
-                            )) : null
-                          )}
-                        </div>
-                      ))}
+                <div className="space-y-5">
+                  {section.fields.map((field, fieldIndex) => (
+                    // Previously the md:grid-cols-2 hint was applied without "grid", so fields never sat side by side.
+                    <div key={fieldIndex} className={'grid' in field ? cn("grid gap-5", field.grid) : ""}>
+                      {'custom' in field ? field.custom : (
+                        'inputs' in field && field.inputs ? field.inputs.map((input) => (
+                          <FormInput
+                            key={input.id}
+                            id={input.id}
+                            label={input.label}
+                            type={'type' in input ? input.type : undefined}
+                            register={register}
+                            errors={errors}
+                            required={'required' in input ? input.required : false}
+                            options={'options' in input ? input.options : undefined}
+                            onValueChange={'onValueChange' in input ? input.onValueChange : undefined}
+                            placeholder={'placeholder' in input ? input.placeholder : undefined}
+                            rows={'rows' in input ? input.rows : undefined}
+                            watch={watch}
+                          />
+                        )) : null
+                      )}
                     </div>
                   ))}
+                </div>
+              </fieldset>
+            ))}
 
-                  <div className="pt-6 border-t">
-                    <Button 
-                      type="submit" 
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg transition-all duration-200" 
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                          <span>Submitting Application...</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-2">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                          </svg>
-                          <span>Submit Volunteer Application</span>
-                        </div>
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
+            <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" aria-hidden /> Submitting application…
+                </>
+              ) : (
+                <>
+                  <Send aria-hidden /> Submit volunteer application
+                </>
+              )}
+            </Button>
+          </form>
         </div>
       </section>
 

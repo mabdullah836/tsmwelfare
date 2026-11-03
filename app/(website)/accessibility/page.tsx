@@ -4,15 +4,15 @@ import Link from "next/link"
 export default function AccessibilityPage() {
   return (
     <>
-      <PageHeader title="Accessibility">
-        <p className="text-xl text-white/90">
+      <PageHeader title="Accessibility" eyebrow="Our commitment">
+        <p className="text-lg text-muted-foreground">
         We are committed to ensuring our website is accessible to everyone, regardless of ability or technology, as we believe in serving all members of our community.
         </p>
       </PageHeader>
 
-      <section className="py-16">
+      <section className="py-12 md:py-16">
         <div className="container max-w-4xl">
-          <div className="prose prose-lg dark:prose-invert max-w-none">
+          <div className="prose-site rounded-2xl border bg-card p-6 shadow-sm sm:p-10">
             <h2>Our Commitment to Accessibility</h2>
             <p>
               The Sirat-e-Mustaqeem Welfare Trust is committed to providing a website that is accessible to the widest

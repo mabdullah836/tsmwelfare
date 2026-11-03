@@ -6,8 +6,6 @@ import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cel
 import React from "react";
 import { useDonations } from '@/lib/hooks/useDonations';
 
-type ChartType = "bar" | "area" | "pie";
-
 type DonationChartProps = {
   type: "bar" | "area" | "pie";
   title?: string;
@@ -47,7 +45,7 @@ export function DonationChart({
     <Card>
       {(title || description) && (
         <CardHeader>
-          {title && <CardTitle>{title}</CardTitle>}
+          {title && <CardTitle className="text-base">{title}</CardTitle>}
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
       )}

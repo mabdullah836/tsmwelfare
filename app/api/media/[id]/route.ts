@@ -4,8 +4,10 @@ import Media from '@/models/Media'
 import { NextResponse } from 'next/server'
 import mongoose from 'mongoose';
 
-export async function DELETE(req: Request, context: { params: { id: string } }) {
-  const { id } = await context.params;
+type RouteParams = { params: Promise<{ id: string }> }
+
+export async function DELETE(req: Request, { params }: RouteParams) {
+  const { id } = await params;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json({ error: 'Invalid media id' }, { status: 400 });
   }
@@ -20,6 +22,7 @@ export async function DELETE(req: Request, context: { params: { id: string } }) 
     await withDbConnection(() => Media.findByIdAndDelete(id));
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Failed to delete media:', error);
     return NextResponse.json({ error: 'Failed to delete media' }, { status: 500 });
   }
 } 

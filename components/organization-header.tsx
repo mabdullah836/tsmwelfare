@@ -1,6 +1,4 @@
 import Image from "next/image"
-import Link from "next/link"
-import { motion } from "framer-motion"
 
 type OrganizationHeaderProps = {
   variant?: "full" | "icon" | "text"
@@ -30,16 +28,13 @@ export function OrganizationHeader({
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex items-center gap-3 ${className}`} // Ensure flex and gap-3 are here
-    >
+    <div className={`flex items-center gap-3 ${className}`}>
       {variant !== "text" && (
         <div className={`relative ${sizeClasses[size].logo} shrink-0`}>
           <Image
             src="/images/logo.png"
             alt="Sirat-e-Mustaqeem Welfare Trust Logo"
+            sizes="48px"
             fill
             className="object-contain"
           />
@@ -49,24 +44,20 @@ export function OrganizationHeader({
       {(variant === "full" || variant === "text") && (
         <div className="flex flex-col">
           <div className="group">
-            <h1 className={`font-bold tracking-tight ${sizeClasses[size].text} text-foreground group-hover:text-primary transition-colors`}>
+            {/* Not a heading: this brand mark appears on every page, which already has its own <h1>. */}
+            <span className={`block font-bold leading-tight tracking-tight ${sizeClasses[size].text} text-foreground group-hover:text-primary transition-colors`}>
               The Sirat-e-Mustaqeem
               <span className="text-primary"> Welfare Trust</span>
-            </h1>
+            </span>
           </div>
           
           {showTagline && (
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className={`${sizeClasses[size].tagline} text-muted-foreground mt-1`}
-            >
+            <p className={`${sizeClasses[size].tagline} text-muted-foreground mt-1`}>
               Guiding towards the straight path
-            </motion.p>
+            </p>
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }

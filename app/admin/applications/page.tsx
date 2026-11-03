@@ -5,12 +5,9 @@ import {
   Card, 
   CardContent, 
   CardDescription, 
-  CardHeader, 
-  CardTitle 
+  CardHeader
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { 
   TableCell, 
   TableRow 
@@ -47,6 +44,9 @@ import AdminDetailsSheet from "@/components/shared/AdminDetailsSheet";
 import { useApplications } from '@/lib/hooks/useApplications';
 import { useSelection } from '@/lib/hooks/use-selection';
 import { changeResourceStatus } from '@/lib/utils/changeResourceStatus';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { TablePagination } from '@/components/shared/TablePagination';
+import { SearchInput } from '@/components/shared/SearchInput';
 
 export default function ApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
@@ -89,14 +89,17 @@ export default function ApplicationsPage() {
   const handleDeleteSelected = async () => {
     setBulkDeleteLoading(true);
     try {
-      await Promise.all(selectedIds.map(id => 
-        fetch(`/api/application/${id}`, { method: 'DELETE' })
-      ));
+      const response = await fetch('/api/applications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      if (!response.ok) throw new Error('Failed to delete applications');
       mutate(); // Re-fetch applications after bulk deletion
       setSelectedIds([]); // Deselect all rows
       setIsDeleteConfirmationOpen(false);
       setAlert({ type: 'success', message: `${selectedIds.length} application(s) deleted successfully` });
-    } catch (error) {
+    } catch {
       setAlert({ type: 'error', message: 'Failed to delete applications' });
     } finally {
       setBulkDeleteLoading(false);
@@ -112,12 +115,12 @@ export default function ApplicationsPage() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <Card className="flex flex-col flex-1 min-h-0">
-        <CardHeader>
-          <CardTitle>Applications</CardTitle>
+      <Card className="flex flex-col flex-1 min-h-0 shadow-none">
+        <CardHeader className="p-4 sm:p-6">
+          <h1 className="text-xl font-semibold tracking-tight">Applications</h1>
           <CardDescription>Manage and review assistance applications</CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col min-h-0">
+        <CardContent className="flex flex-1 flex-col min-h-0 p-4 pt-0 sm:p-6 sm:pt-0">
           {alert && (
             <AlertMessage
               message={alert.message}
@@ -125,12 +128,12 @@ export default function ApplicationsPage() {
               onClose={() => setAlert(null)}
             />
           )}
-          <div className="flex items-center justify-between pb-4">
-            <Input
-              placeholder="Filter by name..."
+          <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <SearchInput
+              label="Search applications by name, email or type"
+              placeholder="Search applications…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
             {selectedIds.length > 0 && (
               <Button 
@@ -143,7 +146,7 @@ export default function ApplicationsPage() {
             )}
           </div>
           
-          <div className="rounded-md border overflow-x-auto h-full">
+          <div className="rounded-lg border overflow-hidden">
             <AdminTable
               columns={[
                 {
@@ -190,18 +193,7 @@ export default function ApplicationsPage() {
                     {application.email}
                   </TableCell>
                   <TableCell className="w-32 text-center">
-                    <Badge 
-                      variant={
-                        application.status === 'approved' 
-                          ? 'secondary' 
-                          : application.status === 'rejected' 
-                          ? 'destructive' 
-                          : 'outline'
-                      } 
-                      className="capitalize"
-                    >
-                      {application.status || 'pending'}
-                    </Badge>
+                    <StatusBadge status={application.status} />
                   </TableCell>
                   <TableCell className="w-40">
                     {application.createdAt ? formatDate(application.createdAt) : 'N/A'}
@@ -237,33 +229,19 @@ export default function ApplicationsPage() {
                   </TableCell>
                 </TableRow>
               )}
-              handleSort={sortConfig ? requestSort : undefined}
+              handleSort={requestSort}
               sortBy={sortConfig?.key}
               sortOrder={sortConfig?.direction}
             />
           </div>
           
-          <div className="flex items-center justify-end space-x-2 py-4">
-            <div className="flex-1 text-sm text-muted-foreground">
-              {selectedIds.length} of {applications.length} row(s) selected.
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page <= 1}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
-              disabled={page >= meta.pages}
-            >
-              Next
-            </Button>
-          </div>
+          <TablePagination
+            page={page}
+            pages={meta.pages}
+            selectedCount={selectedIds.length}
+            pageCount={applications.length}
+            onPageChange={setPage}
+          />
 
           <AdminDetailsSheet
             open={!!selectedApplication}
@@ -274,18 +252,7 @@ export default function ApplicationsPage() {
               </>
             }
             statusBadge={selectedApplication && (
-              <Badge
-                variant={
-                  selectedApplication.status === 'approved'
-                    ? 'secondary'
-                    : selectedApplication.status === 'rejected'
-                    ? 'destructive'
-                    : 'outline'
-                }
-                className="capitalize"
-              >
-                {selectedApplication.status || 'pending'}
-              </Badge>
+              <StatusBadge status={selectedApplication.status} />
             )}
             description={selectedApplication ? 'application details.' : undefined}
           >

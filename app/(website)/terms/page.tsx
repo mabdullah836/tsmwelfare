@@ -3,15 +3,15 @@ import { PageHeader } from "@/components/page-header"
 export default function TermsPage() {
   return (
     <>
-      <PageHeader title="Terms of Service">
-        <p className="text-xl text-white/90">
+      <PageHeader title="Terms of Service" eyebrow="Legal">
+        <p className="text-lg text-muted-foreground">
           Please read these terms carefully before using our website and services.
         </p>
       </PageHeader>
 
-      <section className="py-16">
+      <section className="py-12 md:py-16">
         <div className="container max-w-4xl">
-          <div className="prose prose-lg dark:prose-invert max-w-none">
+          <div className="prose-site rounded-2xl border bg-card p-6 shadow-sm sm:p-10">
             <h2>1. Acceptance of Terms</h2>
             <p>
               By accessing and using this website, you accept and agree to be bound by the terms and provisions of

@@ -29,7 +29,7 @@ export const metadata = {
     siteName: "The Sirat-e-Mustaqeem Welfare Trust",
     images: [
       {
-        url: "/images/smw-logo-transparent.png",
+        url: "/images/logo.png",
         width: 800,
         height: 600,
         alt: "The Sirat-e-Mustaqeem Welfare Trust Logo"
@@ -43,7 +43,7 @@ export const metadata = {
     title: "The Sirat-e-Mustaqeem Welfare Trust | Charity in Pakistan | Non-Profit Organization",
     description:
       "Support The Sirat-e-Mustaqeem Welfare Trust in Pakistan. Join our mission for education, healthcare, food distribution, and community service. Donate or volunteer today!",
-    images: ["/images/smw-logo-transparent.png"]
+    images: ["/images/logo.png"]
   },
   alternates: {
     canonical: "https://www.smwelfare.org/"
@@ -70,15 +70,11 @@ export default function WebsiteLayout({
       {/* Floating Zakat Calculator Button */}
       <Link
         href="/zakat-calculator"
-        className="fixed z-50 bottom-4 right-4 md:bottom-10 md:right-10 flex items-center md:justify-center bg-primary text-primary-foreground shadow-lg transition-transform focus-visible:ring-4 focus-visible:ring-primary/40 group
-          rounded-full md:w-20 md:h-20 w-auto h-14 px-6 md:px-0 font-bold
-          md:rounded-full md:flex md:items-center md:w-20 md:h-20
-          hover:scale-105 hover:shadow-xl"
+        className="fixed bottom-4 right-4 z-40 flex h-12 items-center gap-2 rounded-full bg-primary px-4 font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:shadow-xl md:bottom-8 md:right-8 md:h-16 md:w-16 md:justify-center md:px-0"
         aria-label="Open Zakat Calculator"
-        style={{ minWidth: '56px' }}
       >
-        <Calculator className="w-7 h-7 md:w-10 md:h-10 mx-auto" />
-        <span className="ml-3 text-base md:hidden">Zakat</span>
+        <Calculator className="h-5 w-5 md:h-7 md:w-7" aria-hidden />
+        <span className="text-sm md:hidden">Zakat</span>
       </Link>
     </>
   )

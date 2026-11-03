@@ -4,17 +4,15 @@ import { withDbConnection } from '@/lib/mongodb'
 import { deleteImage } from '@/lib/cloudinary'
 import Team from '@/models/Team'
 
-interface Params {
-  params: {
-    id: string
-  }
-}
+type RouteParams = { params: Promise<{ id: string }> }
+
 
 // GET single team member
-export async function GET(request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
   try {
     const teamMember = await withDbConnection(async () => {
-      return Team.findById(params.id)
+      return Team.findById(id)
     })
     
     if (!teamMember) {
@@ -35,24 +33,27 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 // PATCH update team member
-export async function PATCH(request: NextRequest, { params }: Params) {
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
   const data = await request.json();
-  return await withDbConnection(() => handlePatchOrPut({ model: Team, id: params.id, data }));
+  return await withDbConnection(() => handlePatchOrPut({ model: Team, id: id, data }));
 }
 
 // DELETE team member
-export async function DELETE(request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const { id } = await params;
   try {
-    const member = await withDbConnection(() => Team.findById(params.id));
+    const member = await withDbConnection(() => Team.findById(id));
     if (!member) {
       return NextResponse.json({ error: 'Team member not found' }, { status: 404 });
     }
     if (member.imageUrl) {
       await deleteImage(member.imageUrl);
     }
-    await withDbConnection(() => Team.findByIdAndDelete(params.id));
+    await withDbConnection(() => Team.findByIdAndDelete(id));
     return NextResponse.json({ message: 'Team member deleted successfully' });
   } catch (error) {
+    console.error('Failed to delete team member:', error);
     return NextResponse.json({ error: 'Failed to delete team member' }, { status: 500 });
   }
 } 

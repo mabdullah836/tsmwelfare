@@ -19,7 +19,7 @@ export default function ZakatCalculatorPage() {
   const [debtsValue, setDebtsValue] = useState<number>(0)
   const [expensesValue, setExpensesValue] = useState<number>(0)
   const [calculatedZakat, setCalculatedZakat] = useState<number | null>(null)
-  const [nisabValue, setNisabValue] = useState<number>(100000) // Example nisab value
+  const [nisabValue] = useState<number>(100000) // Example nisab value
 
   const calculateZakat = () => {
     const totalAssets = goldValue + silverValue + cashValue + investmentsValue + propertyValue + businessValue
@@ -48,14 +48,14 @@ export default function ZakatCalculatorPage() {
 
   return (
     <>
-      <PageHeader title="Zakat Calculator">
-        <p className="text-xl text-white/90">Calculate your Zakat accurately with our easy-to-use calculator.</p>
+      <PageHeader title="Zakat Calculator" eyebrow="Tools">
+        <p className="text-lg text-muted-foreground">Calculate your Zakat accurately with our easy-to-use calculator.</p>
       </PageHeader>
 
-      <section className="py-16">
+      <section className="py-12 md:py-16">
         <div className="container max-w-4xl">
           <Tabs defaultValue="calculator" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsList className="mb-8 grid h-auto w-full grid-cols-2 rounded-xl p-1">
               <TabsTrigger value="calculator">Calculator</TabsTrigger>
               <TabsTrigger value="information">Zakat Information</TabsTrigger>
             </TabsList>
@@ -90,7 +90,7 @@ export default function ZakatCalculatorPage() {
                             <Input
                               id="gold"
                               type="number"
-                              className="input-class"
+                              className="h-11"
                               value={goldValue || ""}
                               onChange={e => setGoldValue(Number(e.target.value))}
                               placeholder="Enter gold amount"
@@ -109,7 +109,7 @@ export default function ZakatCalculatorPage() {
                             <Input
                               id="silver"
                               type="number"
-                              className="input-class"
+                              className="h-11"
                               value={silverValue || ""}
                               onChange={e => setSilverValue(Number(e.target.value))}
                               placeholder="Enter silver amount"
@@ -131,7 +131,7 @@ export default function ZakatCalculatorPage() {
                             <Input
                               id="cash"
                               type="number"
-                              className="input-class"
+                              className="h-11"
                               value={cashValue || ""}
                               onChange={e => setCashValue(Number(e.target.value))}
                               placeholder="Enter cash amount"
@@ -150,7 +150,7 @@ export default function ZakatCalculatorPage() {
                             <Input
                               id="investments"
                               type="number"
-                              className="input-class"
+                              className="h-11"
                               value={investmentsValue || ""}
                               onChange={e => setInvestmentsValue(Number(e.target.value))}
                               placeholder="Enter investments amount"
@@ -172,7 +172,7 @@ export default function ZakatCalculatorPage() {
                             <Input
                               id="property"
                               type="number"
-                              className="input-class"
+                              className="h-11"
                               value={propertyValue || ""}
                               onChange={e => setPropertyValue(Number(e.target.value))}
                               placeholder="Enter property amount"
@@ -191,7 +191,7 @@ export default function ZakatCalculatorPage() {
                             <Input
                               id="business"
                               type="number"
-                              className="input-class"
+                              className="h-11"
                               value={businessValue || ""}
                               onChange={e => setBusinessValue(Number(e.target.value))}
                               placeholder="Enter business amount"
@@ -217,7 +217,7 @@ export default function ZakatCalculatorPage() {
                           <Input
                             id="debts"
                             type="number"
-                            className="input-class"
+                            className="h-11"
                             value={debtsValue || ""}
                             onChange={e => setDebtsValue(Number(e.target.value))}
                             placeholder="Enter debts amount"
@@ -236,7 +236,7 @@ export default function ZakatCalculatorPage() {
                           <Input
                             id="expenses"
                             type="number"
-                            className="input-class"
+                            className="h-11"
                             value={expensesValue || ""}
                             onChange={e => setExpensesValue(Number(e.target.value))}
                             placeholder="Enter expenses amount"
@@ -246,17 +246,17 @@ export default function ZakatCalculatorPage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
-                      <Button onClick={calculateZakat} className="flex-1">
+                      <Button onClick={calculateZakat} size="lg" className="flex-1">
                         Calculate Zakat
                       </Button>
-                      <Button variant="outline" onClick={resetCalculator}>
+                      <Button variant="outline" size="lg" onClick={resetCalculator}>
                         Reset
                       </Button>
                     </div>
 
                     {calculatedZakat !== null && (
-                      <div className="mt-6 p-4 bg-primary/10 rounded-lg">
-                        <h3 className="text-lg font-medium mb-2">Your Zakat Calculation</h3>
+                      <div className="mt-6 overflow-hidden rounded-2xl border border-primary/20 bg-accent/50 p-5 sm:p-6" role="status" aria-live="polite">
+                        <h3 className="mb-4 text-lg">Your Zakat calculation</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <p className="text-sm text-muted-foreground">Total Assets:</p>
@@ -297,23 +297,24 @@ export default function ZakatCalculatorPage() {
                             <p className="font-medium">Rs. {nisabValue.toLocaleString()}</p>
                           </div>
                         </div>
-                        <div className="mt-4 pt-4 border-t">
-                          <p className="text-lg font-bold text-primary">
-                            Your Zakat Amount: Rs. {calculatedZakat.toLocaleString()}
+                        <div className="mt-5 rounded-xl bg-ink p-5 text-ink-foreground">
+                          <p className="text-sm text-ink-muted">Your Zakat amount</p>
+                          <p className="font-display text-3xl font-bold tabular-nums text-gold sm:text-4xl">
+                            Rs. {calculatedZakat.toLocaleString()}
                           </p>
                           {calculatedZakat > 0 ? (
-                            <p className="text-sm mt-2">
+                            <p className="text-sm mt-2 text-ink-muted">
                               You are eligible to pay Zakat. Consider donating your Zakat to The Sirat-e-Mustaqeem
                               Welfare Trust to support our community initiatives.
                             </p>
                           ) : (
-                            <p className="text-sm mt-2">
+                            <p className="text-sm mt-2 text-ink-muted">
                               Your wealth does not reach the Nisab threshold. You are not obligated to pay Zakat this
                               year.
                             </p>
                           )}
                           {calculatedZakat > 0 && (
-                            <Button asChild className="mt-4">
+                            <Button asChild className="mt-4 bg-gold text-ink hover:bg-gold/90">
                               <Link href={`/donate?amount=${calculatedZakat}&type=zakat`}>Pay Zakat Now</Link>
                             </Button>
                           )}
@@ -369,7 +370,7 @@ export default function ZakatCalculatorPage() {
                   <div>
                     <h3 className="text-lg font-medium mb-2">Who Can Receive Zakat?</h3>
                     <p>The Quran specifies eight categories of people who are eligible to receive Zakat:</p>
-                    <ol className="list-decimal pl-5 mt-2 space-y-1">
+                    <ol className="list-decimal pl-5 mt-2 space-y-1 text-muted-foreground">
                       <li>The poor (Al-Fuqara)</li>
                       <li>The needy (Al-Masakin)</li>
                       <li>Zakat administrators</li>
@@ -389,7 +390,7 @@ export default function ZakatCalculatorPage() {
                       At The Sirat-e-Mustaqeem Welfare Trust, we ensure that your Zakat reaches those who are most in
                       need. We distribute Zakat funds to support:
                     </p>
-                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                    <ul className="list-disc pl-5 mt-2 space-y-1 text-muted-foreground">
                       <li>Education for underprivileged children</li>
                       <li>Medical assistance for those who cannot afford healthcare</li>
                       <li>Food and basic necessities for poor families</li>

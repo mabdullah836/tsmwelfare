@@ -8,6 +8,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { faqs } from "@/lib/data/faqs"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function FAQPage() {
   return (
@@ -29,37 +31,36 @@ export default function FAQPage() {
           })
         }}
       />
-      <PageHeader title="Frequently Asked Questions">
-        <p className="text-xl text-white/90">
-          Find answers to common questions about our organization, programs, and how you can get involved in our mission of serving humanity.
-        </p>
+      <PageHeader title="Frequently asked questions" eyebrow="FAQ">
+        <p>Find answers to common questions about our organization, programs, and how you can get involved in our mission of serving humanity.</p>
       </PageHeader>
 
-      <section className="py-16">
-        <div className="container max-w-4xl">
-          <Accordion type="single" collapsible className="space-y-4">
+      <section className="py-12 md:py-16">
+        <div className="container max-w-3xl">
+          <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="bg-card rounded-lg px-6">
-                <AccordionTrigger className="text-lg font-medium">
-                  <h2 className="text-lg font-semibold m-0">{faq.question}</h2>
+              <AccordionItem
+                key={index}
+                value={`item-${index}`}
+                className="rounded-2xl border bg-card px-5 shadow-sm transition-shadow data-[state=open]:shadow-md sm:px-6"
+              >
+                {/* Radix renders the trigger inside a heading element; a nested <h2> inside the button was invalid HTML. */}
+                <AccordionTrigger className="py-5 text-left text-base font-semibold hover:no-underline sm:text-lg">
+                  {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">
+                <AccordionContent className="pb-5 text-base leading-relaxed text-muted-foreground">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
 
-          <div className="mt-12 text-center">
-            <p className="text-lg text-muted-foreground mb-6">
-              Still have questions? We're here to help!
-            </p>
-            <a
-              href="/contact"
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-            >
-              Contact Us
-            </a>
+          <div className="mt-12 rounded-2xl bg-accent/60 p-8 text-center">
+            <h2 className="text-2xl">Still have questions?</h2>
+            <p className="mt-2 text-muted-foreground">We&apos;re here to help!</p>
+            <Button asChild className="mt-6">
+              <Link href="/contact">Contact us</Link>
+            </Button>
           </div>
         </div>
       </section>

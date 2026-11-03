@@ -1,11 +1,13 @@
 
 import { DonationCounter } from "@/components/features/donation-counter";
 import { EventsSection } from "@/components/features/events-section";
-import DepartmentsPage from "./departments/page";
+import { DepartmentsSection } from "@/components/departments/DepartmentsSection";
 import GazaPage from "@/components/gaza/page";
 import { HeroSection } from "@/components/Hero/page";
-import UrduTitleSection from "@/components/home/UrduTitleSection";
-import HomeClientSections from '@/components/home/HomeClientSections';
+import TestimonialsCarousel from "@/components/home/TestimonialsCarousel";
+import ImpactNumbersSection from "@/components/home/ImpactNumbersSection";
+import CallToActionSection from "@/components/home/CallToActionSection";
+import { NewsletterSignup } from "@/components/features/newsletter-signup";
 
 export const metadata = {
   title: "Sirat-e-Mustaqeem Welfare Trust | Charity in Pakistan | Non-Profit Organization",
@@ -35,7 +37,7 @@ export default function HomePage() {
             "@type": "Organization",
             "name": "Sirat-e-Mustaqeem Welfare Trust",
             "url": "https://www.smwelfare.org/",
-            "logo": "/images/smw-logo-transparent.png",
+            "logo": "/images/logo.png",
             "description": "A non-profit organization in Pakistan dedicated to community service, education, healthcare, and food distribution.",
             "sameAs": [
               "https://www.facebook.com/smwelfare/"
@@ -48,13 +50,15 @@ export default function HomePage() {
           })
         }}
       />
-      <HeroSection/>
-      <UrduTitleSection/>
-      <DepartmentsPage />
+      <HeroSection />
+      <DepartmentsSection headingLevel={2} />
       <GazaPage />
       <DonationCounter />
       <EventsSection />
-      <HomeClientSections />
+      <TestimonialsCarousel />
+      <ImpactNumbersSection />
+      <CallToActionSection />
+      <NewsletterSignup />
     </>
   );
 }

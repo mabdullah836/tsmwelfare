@@ -30,7 +30,6 @@ export function ApplicationForm() {
     formState: { errors, isSubmitting }, 
     reset, 
     watch, 
-    control 
   } = useForm<ApplicationFormData>({
     defaultValues: {
       type: "",
@@ -193,7 +192,7 @@ export function ApplicationForm() {
   ]
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       {alert && (
         <AlertMessage
           message={alert.message}
@@ -225,10 +224,11 @@ export function ApplicationForm() {
         Please provide as much detail as possible to help us understand your situation better.
       </p>
 
-      <div className="space-y-4">
-        <label className="block text-sm font-medium">
-          Supporting Documents<span className="text-destructive ml-1">*</span>
-        </label>
+      <div className="space-y-3 rounded-xl border border-dashed bg-muted/40 p-5">
+        <p className="block text-sm font-medium" id="documents-label">
+          Supporting Documents<span className="text-destructive ml-1" aria-hidden="true">*</span>
+        </p>
+        <p className="text-xs text-muted-foreground">Images or PDF, up to 10 MB each (for example CNIC copy, medical reports or fee vouchers).</p>
         <FileUpload
           name="documents"
           form={{ setValue, watch }}
@@ -244,7 +244,7 @@ export function ApplicationForm() {
         )}
       </div>
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isSubmitting}>
         {isSubmitting ? "Submitting..." : "Submit Application"}
       </Button>
     </form>

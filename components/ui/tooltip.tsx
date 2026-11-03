@@ -26,9 +26,14 @@ const Tooltip = ({ children }: TooltipProps) => {
     ? React.cloneElement(trigger as React.ReactElement<{
         onMouseEnter?: React.MouseEventHandler
         onMouseLeave?: React.MouseEventHandler
+        onFocus?: React.FocusEventHandler
+        onBlur?: React.FocusEventHandler
       }>, {
         onMouseEnter: () => setIsOpen(true),
         onMouseLeave: () => setIsOpen(false),
+        // Keyboard users get the same hint when the trigger receives focus.
+        onFocus: () => setIsOpen(true),
+        onBlur: () => setIsOpen(false),
       })
     : null
 
@@ -67,6 +72,7 @@ const TooltipContent = React.forwardRef<HTMLDivElement, TooltipContentProps>(
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
+      role="tooltip"
       className={cn(
         "absolute z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95",
         "top-full left-1/2 transform -translate-x-1/2 mt-2",

@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { MailIcon } from "lucide-react"
 import { AlertMessage } from "@/components/ui/alert-message"
 import { useForm } from 'react-hook-form';
-import { FormInput } from '@/components/ui/form-input';
 
 export function NewsletterSignup() {
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -47,35 +46,46 @@ export function NewsletterSignup() {
   };
 
   return (
-    <section className="py-12 md:py-20 bg-secondary">
-      <div className="container max-w-4xl">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Stay in Touch</h2>
-          <p className="text-lg text-muted-foreground">
-            Get updates about our work and upcoming events. We'll only send you the important stuff, we promise!
-          </p>
-        </div>
+    <section className="py-16 md:py-20">
+      <div className="container">
+        <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl border bg-muted/60 px-6 py-10 sm:px-12 sm:py-14">
+          <div aria-hidden className="bg-dots absolute inset-0 [mask-image:radial-gradient(ellipse_at_right,black_20%,transparent_70%)]" />
+          <div className="relative grid items-center gap-8 md:grid-cols-2">
+            <div>
+              <p className="eyebrow mb-4">
+                <MailIcon className="h-3.5 w-3.5" aria-hidden /> Newsletter
+              </p>
+              <h2 className="text-3xl leading-tight sm:text-4xl">Stay in touch</h2>
+              <p className="mt-3 text-muted-foreground">
+                Get updates about our work and upcoming events. We&apos;ll only send you the important stuff, we promise!
+              </p>
+            </div>
 
-        {isSubmitted ? (
-          <div className="bg-primary/10 text-primary p-6 rounded-lg text-center max-w-md mx-auto">
-            <MailIcon className="h-12 w-12 mx-auto mb-4 text-primary" />
-            <h3 className="text-xl font-bold mb-2">Thanks for Signing Up!</h3>
-            <p>We'll keep you updated on all the good work we're doing together.</p>
+            {isSubmitted ? (
+              <div className="rounded-2xl border bg-card p-6 text-center" role="status">
+                <MailIcon className="mx-auto mb-3 h-10 w-10 text-primary" aria-hidden />
+                <h3 className="text-lg font-bold">Thanks for signing up!</h3>
+                <p className="mt-1 text-sm text-muted-foreground">We&apos;ll keep you updated on all the good work we&apos;re doing together.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-3 sm:flex-row" noValidate>
+                <Input
+                  id="email"
+                  type="email"
+                  aria-label="Email address"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  {...register("email", { required: "Email is required" })}
+                  className="h-12 flex-1 bg-background"
+                  aria-invalid={!!errors.email}
+                />
+                <Button type="submit" size="lg" disabled={isSubmitting} className="h-12 w-full sm:w-auto">
+                  {isSubmitting ? "Subscribing…" : "Subscribe"}
+                </Button>
+              </form>
+            )}
           </div>
-        ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              {...register("email", { required: "Email is required" })}
-              className="flex-1"
-              aria-invalid={!!errors.email}
-              aria-describedby="newsletter-email-error"
-            />
-            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">Subscribe</Button>
-          </form>
-        )}
+        </div>
         {errors.email && (
           <AlertMessage
             message={errors.email.message as string}

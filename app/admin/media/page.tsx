@@ -5,7 +5,6 @@ import { AlertMessage } from '@/components/ui/alert-message'
 import { ConfirmDeleteModal } from '@/components/modals/ConfirmDeleteModal'
 import { useSelection } from '@/lib/hooks/use-selection'
 import { useBulkDelete } from '@/lib/hooks/use-bulk-delete'
-import { uploadVideoByUrl } from '@/lib/services/media'
 import type { Media } from '@/lib/types/media'
 import { useDebounce } from '@/lib/hooks/use-debounce'
 import { useMedia } from '@/lib/hooks/useMedia';
@@ -156,12 +155,6 @@ export default function MediaPage() {
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    await uploadFiles(files);
-    // Reset the file input
-    e.target.value = '';
-  };
 
   // Filter media by type
   const filteredMedia = useMemo(() => {
@@ -170,8 +163,8 @@ export default function MediaPage() {
   }, [media, filterType]);
 
   return (
-    <div className="min-h-screen">
-      <div className="container space-y-8 py-8">
+    <div>
+      <div className="space-y-6">
         {alert && (
           <AlertMessage
             message={alert.message}
@@ -179,6 +172,12 @@ export default function MediaPage() {
             onClose={() => setAlert(null)}
           />
         )}
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Media Library</h1>
+            <p className="page-description">Photos and videos shown in the public media gallery.</p>
+          </div>
+        </div>
         <MediaStats stats={stats} />
         <MediaToolbar
           view={view}

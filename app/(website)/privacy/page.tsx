@@ -3,15 +3,15 @@ import { PageHeader } from "@/components/page-header"
 export default function PrivacyPolicyPage() {
   return (
     <>
-      <PageHeader title="Privacy Policy">
-        <p className="text-xl text-white/90">
+      <PageHeader title="Privacy Policy" eyebrow="Legal">
+        <p className="text-lg text-muted-foreground">
           Learn about how we collect, use, and protect your personal information at The Sirat-e-Mustaqeem Welfare Trust.
         </p>
       </PageHeader>
 
-      <section className="py-16">
+      <section className="py-12 md:py-16">
         <div className="container max-w-4xl">
-          <div className="prose prose-lg dark:prose-invert max-w-none">
+          <div className="prose-site rounded-2xl border bg-card p-6 shadow-sm sm:p-10">
             <h2>Introduction</h2>
             <p>
               At The Sirat-e-Mustaqeem Welfare Trust, we take your privacy seriously. This Privacy Policy explains how

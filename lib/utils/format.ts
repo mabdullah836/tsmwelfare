@@ -39,6 +39,6 @@ export function isValidVideoUrl(url: string): boolean {
 }
 
 export function getYouTubeId(url: string): string {
-  const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/]\S{11})/);
+  const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/]\S{11})/);
   return match ? match[1] : '';
 } 

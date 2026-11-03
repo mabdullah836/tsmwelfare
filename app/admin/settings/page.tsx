@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useForm } from 'react-hook-form';
@@ -33,13 +33,9 @@ export default function AdminSettingsPage() {
     }
 
     try {
-      const token = localStorage.getItem("adminToken")
       const res = await fetch("/api/admin/settings", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           currentPassword: data.currentPassword,
           email: data.email,
@@ -53,7 +49,7 @@ export default function AdminSettingsPage() {
       } else {
         setError(respData.message || "Failed to update settings.")
       }
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
@@ -61,10 +57,17 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-150px)] flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Admin Settings</CardTitle>
+    <div className="space-y-6">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-description">Update the email and password used to sign in to the admin console.</p>
+        </div>
+      </div>
+      <Card className="w-full max-w-xl">
+        <CardHeader>
+          <CardTitle className="text-base">Account security</CardTitle>
+          <CardDescription>Your current password is required to save any change. Leave a field blank to keep it unchanged.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -106,18 +109,20 @@ export default function AdminSettingsPage() {
               }}
             />
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" role="alert">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             {success && (
-              <Alert variant="default">
+              <Alert variant="default" role="status">
                 <AlertDescription>{success}</AlertDescription>
               </Alert>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

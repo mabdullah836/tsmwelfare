@@ -31,17 +31,18 @@ export function AdminDetailsSheet({
   statusBadge,
   description,
   children,
-  contentClassName = "w-full sm:max-w-lg overflow-y-auto",
+  contentClassName = "overflow-y-auto",
   headerClassName = "mb-6",
   showHeader = true,
   side = "right",
   size = "md",
 }: AdminDetailsSheetProps) {
+  // Width is capped by the viewport so the panel never overflows narrow phones.
   const sizeClasses = {
-    sm: "w-[300px]",
-    md: "w-[350px]",
-    lg: "w-[400px]",
-    xl: "w-[450px]",
+    sm: "w-[85vw] sm:max-w-[300px]",
+    md: "w-[90vw] sm:max-w-md",
+    lg: "w-[92vw] sm:max-w-lg",
+    xl: "w-[94vw] sm:max-w-xl",
   }
 
   return (
@@ -52,13 +53,14 @@ export function AdminDetailsSheet({
       >
         {showHeader ? (
           <SheetHeader className={headerClassName}>
-            <SheetTitle className="flex items-center gap-2 text-2xl">
+            <SheetTitle className="flex items-center gap-2 pr-8 text-xl [&_svg]:h-5 [&_svg]:w-5 [&_svg]:text-muted-foreground">
               {title}
             </SheetTitle>
             {(statusBadge || description) && (
-              <SheetDescription>
-                {statusBadge} {description}
-              </SheetDescription>
+              <div className="flex flex-wrap items-center gap-2">
+                {statusBadge}
+                {description && <SheetDescription className="first-letter:uppercase">{description}</SheetDescription>}
+              </div>
             )}
           </SheetHeader>
         ) : (

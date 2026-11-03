@@ -1,119 +1,99 @@
-import React from 'react'
-import { Typewriter } from '../shared/typewriter'
-import { Button } from '../ui/button'
-import { ArrowRightIcon } from 'lucide-react'
-import Link from 'next/link'
-import { CustomImage } from '../shared/custom-image'
+import Image from "next/image"
+import Link from "next/link"
+import { ArrowRight, HeartHandshake, Stethoscope, GraduationCap, UtensilsCrossed } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-const collageImages = [
-  [
-    {
-      src: '/images/welfare-work-1.jpg',
-      alt: 'Volunteers distributing food to children',
-      badgeText: 'Nutrition Support',
-      className: 'h-[180px] sm:h-[220px] md:h-[240px]',
-    },
-    {
-      src: '/images/welfare-work-2.jpg',
-      alt: 'Doctor examining a child',
-      badgeText: 'Medical Care',
-      className: 'h-[180px] sm:h-[220px] md:h-[240px]',
-    },
-  ],
-  [
-    {
-      src: '/images/welfare-work-3.jpg',
-      alt: 'Community members learning in a workshop',
-      badgeText: 'Flood Relief Efforts',
-      className: 'h-[220px] sm:h-[260px] md:h-[280px] mt-8',
-    },
-    {
-      src: '/images/welfare-work-4.jpg',
-      alt: 'Smiling child receiving school supplies',
-      badgeText: 'Hope Delivered',
-      className: 'h-[140px] sm:h-[180px] md:h-[200px]',
-    },
-  ],
+const services = [
+  { icon: Stethoscope, label: "Medical care" },
+  { icon: UtensilsCrossed, label: "Food for families" },
+  { icon: GraduationCap, label: "Education" },
+  { icon: HeartHandshake, label: "Financial assistance" },
+]
+
+const stats = [
+  { value: "2,500+", label: "Families nourished" },
+  { value: "800+", label: "Students supported" },
+  { value: "50+", label: "Medical camps" },
 ]
 
 export const HeroSection = () => {
   return (
-    <section className="relative py-16 md:py-24 overflow-hidden bg-background">
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10">
-        <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary/30 blur-3xl animate-float"></div>
-        <div className="absolute bottom-10 right-20 w-80 h-80 rounded-full bg-indigo-300/30 blur-3xl animate-float-delay"></div>
-      </div>
-      
-      <div className="container relative z-10">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center min-h-[600px]">
-          <div className="order-2 lg:order-1 space-y-8">
-            <div className="space-y-6">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight tracking-tight">
-                <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">Transforming Lives</span> Through Community Support
-              </h1>
+    <section className="relative overflow-hidden">
+      <div aria-hidden className="bg-dots absolute inset-0 [mask-image:radial-gradient(ellipse_at_top_left,black_25%,transparent_70%)]" />
+      <div aria-hidden className="absolute -left-32 top-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
+      <div aria-hidden className="absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-gold/10 blur-3xl" />
 
-              <div className="text-xl md:text-2xl font-medium text-muted-foreground">
-                <span>We provide </span>
-                <span className="text-primary font-semibold">
-                  <Typewriter
-                    words={[
-                      "medical care for families in need",
-                      "nutritious meals for children",
-                      "education opportunities",
-                      "financial assistance",
-                      "hope for brighter futures"
-                    ]}
-                    typingSpeed={70}
-                    deletingSpeed={40}
-                    delayBetweenWords={2000}
-                  />
-                </span>
-              </div>
+      <div className="container relative grid items-center gap-12 py-14 md:py-20 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:py-24">
+        <div className="animate-fade-up">
+          <p dir="rtl" lang="ur" className="mb-4 text-lg font-semibold text-primary sm:text-xl">
+            دی صراط مستقیم ویلفیئر ٹرسٹ
+          </p>
+          <h1 className="text-4xl leading-[1.08] text-foreground sm:text-5xl lg:text-6xl xl:text-[4.25rem]">
+            Transforming lives through <span className="text-primary">community support</span>
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+            For over a decade, we&apos;ve delivered essential services directly to communities — reaching families in
+            remote areas with medical care, food, education and financial help.
+          </p>
 
-              <p className="text-lg text-muted-foreground leading-relaxed max-w-lg">
-                For over a decade, we've delivered essential services directly to communities, reaching those in remote areas with life-changing support.
-              </p>
-            </div>
+          <ul className="mt-6 flex flex-wrap gap-2" aria-label="What we provide">
+            {services.map(({ icon: Icon, label }) => (
+              <li key={label} className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm font-medium shadow-sm">
+                <Icon className="h-4 w-4 text-primary" aria-hidden />
+                {label}
+              </li>
+            ))}
+          </ul>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="font-medium shadow-lg hover:shadow-primary/30 transition-all">
-                <Link href="/services">Explore Our Impact</Link>
-              </Button>
-              <Button variant="outline" size="lg" className="font-medium group border-primary/30 hover:border-primary hover:bg-primary/5">
-                <Link href="/donate" className="flex items-center gap-2">
-                  Join Our Cause
-                  <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-            </div>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button asChild size="lg" className="h-12 px-7 text-base">
+              <Link href="/donate">
+                Donate now <ArrowRight />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="h-12 px-7 text-base">
+              <Link href="/services">Explore our work</Link>
+            </Button>
           </div>
 
-          <div className="order-1 lg:order-2 hidden sm:grid grid-cols-2 gap-4 relative">
-            {collageImages.map((col, colIdx) => (
-              <div className={colIdx === 1 ? 'space-y-4 mt-8' : 'space-y-4'} key={colIdx}>
-                {col.map((img) => (
-                  <CustomImage
-                    key={img.src}
-                    src={img.src}
-                    alt={img.alt}
-                    badgeText={img.badgeText}
-                    className={`group-hover:shadow-xl transition-shadow duration-300 ${img.className}`}
-                    priority
-                  />
-                ))}
+          <dl className="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t pt-6">
+            {stats.map((s) => (
+              <div key={s.label} className="flex flex-col">
+                <dt className="text-xs text-muted-foreground sm:text-sm">{s.label}</dt>
+                <dd className="order-first font-display text-2xl font-bold text-foreground sm:text-3xl">{s.value}</dd>
               </div>
             ))}
+          </dl>
+        </div>
+
+        <div className="relative">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="relative col-span-2 aspect-[16/10] overflow-hidden rounded-3xl bg-muted shadow-xl sm:col-span-1 sm:row-span-2 sm:aspect-auto">
+              <Image
+                src="/images/welfare-work-1.jpg"
+                alt="Volunteers distributing food to children"
+                fill
+                priority
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="relative hidden aspect-[4/3] overflow-hidden rounded-3xl bg-muted shadow-lg sm:block">
+              <Image src="/images/welfare-work-2.jpg" alt="Doctor examining a child at a free medical camp" fill sizes="25vw" className="object-cover" />
+            </div>
+            <div className="relative hidden aspect-[4/3] overflow-hidden rounded-3xl bg-muted shadow-lg sm:block">
+              <Image src="/images/welfare-work-3.jpg" alt="Community members during relief work" fill sizes="25vw" className="object-cover" />
+            </div>
           </div>
 
-          {/* Mobile - Single Image */}
-          <div className="sm:hidden order-1 lg:order-2">
-            <CustomImage
-              src="/images/welfare-work-mobile.jpg"
-              alt="Community members receiving support"
-              className="h-[300px]"
-              badgeText="Making a Difference"
-              priority
-            />
+          <div className="absolute -bottom-6 left-4 flex items-center gap-3 rounded-2xl border bg-card/95 p-4 shadow-xl backdrop-blur sm:left-auto sm:right-6">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-primary" aria-hidden>
+              <HeartHandshake className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-display text-lg font-bold leading-none">Since 2016</p>
+              <p className="mt-1 text-sm text-muted-foreground">Serving Landhi, Karachi &amp; beyond</p>
+            </div>
           </div>
         </div>
       </div>

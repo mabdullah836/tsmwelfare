@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { withDbConnection } from '@/lib/mongodb';
 import Donation from '@/models/Donation';
 
+type RouteParams = { params: Promise<{ id: string }> }
+
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const body = await request.json();
     
     const donation = await withDbConnection(async () => {
@@ -40,10 +42,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
-    const { id } = params;
     const deleted = await withDbConnection(async () => {
       return Donation.findByIdAndDelete(id);
     });

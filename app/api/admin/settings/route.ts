@@ -2,25 +2,12 @@ import { NextResponse } from 'next/server';
 import { withDbConnection } from '@/lib/mongodb';
 import Admin from '@/models/Admin';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { cookies } from 'next/headers';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+import { getAdminFromRequest } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-    }
-    let decoded: any;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-    }
-    if (decoded.role !== 'admin') {
+    const decoded = await getAdminFromRequest(request);
+    if (!decoded) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -39,8 +26,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Current password is incorrect.' }, { status: 401 });
     }
 
-    if (email) {
-      admin.email = email;
+    if (typeof email === 'string' && email.trim()) {
+      admin.email = email.trim().toLowerCase();
     }
     if (newPassword) {
       admin.password = await bcrypt.hash(newPassword, 10);

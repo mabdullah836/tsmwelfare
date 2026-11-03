@@ -4,32 +4,37 @@ import { deleteImage } from '@/lib/cloudinary'
 import Event from '@/models/Event'
 import { NextResponse } from 'next/server'
 
+type RouteParams = { params: Promise<{ id: string }> }
+
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
-    const event = await withDbConnection(() => Event.findById(params.id));
+    const event = await withDbConnection(() => Event.findById(id));
     if (!event) {
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
     if (event.imageUrl) {
       await deleteImage(event.imageUrl);
     }
-    await withDbConnection(() => Event.findByIdAndDelete(params.id));
+    await withDbConnection(() => Event.findByIdAndDelete(id));
     return NextResponse.json({ message: 'Event deleted successfully' });
   } catch (error) {
+    console.error('Failed to delete event:', error);
     return NextResponse.json({ error: 'Failed to delete event' }, { status: 500 });
   }
 }
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   try {
     const event = await withDbConnection(async () => {
-      return Event.findById(params.id)
+      return Event.findById(id)
     })
 
     if (!event) {
@@ -51,8 +56,9 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
+  const { id } = await params;
   const data = await request.json();
-  return await withDbConnection(() => handlePatchOrPut({ model: Event, id: params.id, data }));
+  return await withDbConnection(() => handlePatchOrPut({ model: Event, id: id, data }));
 } 

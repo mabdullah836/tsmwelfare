@@ -17,6 +17,7 @@ export async function DELETE(req: Request) {
     await withDbConnection(() => Media.deleteMany({ _id: { $in: validIds } }));
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Bulk delete failed:', error);
     return NextResponse.json({ error: 'Bulk delete failed' }, { status: 500 });
   }
 } 

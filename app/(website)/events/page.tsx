@@ -1,19 +1,8 @@
-export const metadata = {
-  title: "Events | Sirat-e-Mustaqeem Welfare Trust | Community Service in Pakistan",
-  description:
-    "Explore upcoming events by Sirat-e-Mustaqeem Welfare Trust. Join our charity events, community service, and social welfare initiatives in Pakistan.",
-  keywords: [
-    "welfare trust events",
-    "charity events Pakistan",
-    "community service",
-    "non-profit events"
-  ]
-};
-
 "use client";
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { EventCard } from "@/components/features/EventCard";
 import { AdminGrid } from "@/components/shared/AdminGrid";
 import { PageHeader } from "@/components/page-header";
@@ -49,7 +38,7 @@ export default function EventsPage() {
               }
             },
             "image": [
-              "/images/smw-logo-transparent.png"
+              "/images/logo.png"
             ],
             "description": "Charity and community service events by Sirat-e-Mustaqeem Welfare Trust in Pakistan.",
             "organizer": {
@@ -60,31 +49,35 @@ export default function EventsPage() {
           })
         }}
       />
-      <PageHeader title="Events">
-        <p className="text-xl text-white/90">
-          Explore our upcoming events and join us in making a difference in the community.
-        </p>
+      <PageHeader title="Events" eyebrow="Join us">
+        <p>Explore our upcoming events and join us in making a difference in the community.</p>
       </PageHeader>
 
-      <section>
-        <div className="container mx-auto py-8 px-4">
-          <div className="mb-6 flex justify-between items-center">
-            <Input
-              placeholder="Search events..."
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setPage(1);
-              }}
-              className="w-full max-w-xs"
-            />
+      <section className="py-10 md:py-14">
+        <div className="container">
+          <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-2xl">All events</h2>
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+              <Input
+                type="search"
+                aria-label="Search events"
+                placeholder="Search events..."
+                value={q}
+                onChange={(e) => {
+                  setQ(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-9"
+              />
+            </div>
           </div>
           <AdminGrid
             items={events}
             loading={isLoading}
             emptyState={{ title: "No events found.", description: "Try adjusting your search or check back later." }}
-            skeletonItems={limit}
-            gridClassName="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+            skeletonItems={3}
+            gridClassName="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
             renderItem={(event: Event) => <EventCard key={event._id} event={event} />}
           />
         </div>
