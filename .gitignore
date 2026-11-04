@@ -1,19 +1,15 @@
 # Dependencies
 node_modules/
-frontend/node_modules/
 
-# Backend (tracked in separate repository: tsm-welfare-backend)
+# Backend (separate repository: tsm-welfare-backend)
 backend/
 
 # Next.js
 .next/
-frontend/.next/
 out/
-frontend/out/
 
 # Production
 build/
-frontend/build/
 
 # Debug logs
 npm-debug.log*
@@ -23,19 +19,14 @@ yarn-error.log*
 
 # Environment files
 .env*
-frontend/.env*
 !.env.example
-!frontend/.env.example
 
 # Vercel
 .vercel
-frontend/.vercel
 
 # TypeScript
 *.tsbuildinfo
-frontend/*.tsbuildinfo
 next-env.d.ts
-frontend/next-env.d.ts
 
 # OS files
 .DS_Store

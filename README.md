@@ -1,6 +1,6 @@
-# TSM Welfare - Frontend
+# TSM Welfare
 
-A modern, responsive web application for TSM Welfare built with Next.js 15, React 18, TypeScript, and Tailwind CSS.
+A modern, responsive website and application for TSM Welfare built with Next.js 15, React 18, TypeScript, and Tailwind CSS.
 
 ## Features
 
@@ -19,25 +19,20 @@ A modern, responsive web application for TSM Welfare built with Next.js 15, Reac
 
 ## Getting Started
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
+1. Install dependencies:
    ```bash
    npm install
    ```
 
-3. Set up environment variables:
+2. Set up environment variables:
    ```bash
    cp .env.example .env
    ```
    Configure `BACKEND_URL` (defaults to `http://localhost:4000`) and `JWT_SECRET`.
 
-4. Run the development server:
+3. Run the development server:
    ```bash
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
